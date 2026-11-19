@@ -36,16 +36,9 @@ import type {
   ThroughputResult,
 } from "@/lib/model/types";
 import { APP_VERSION } from "@/lib/version";
+import { t } from "@/lib/i18n";
 import { deriveNodeVerdict, type NodeVerdict } from "./node-verdict";
 import { findDeathSpirals } from "./death-spiral";
-
-/** Kept as short lines: one long paragraph wraps into mush in a chat window. */
-const READ_ME = [
-  "GTNH Planner diagnostics.",
-  "Rates are per second, durations in seconds, power in EU/tick.",
-  "Cards are referenced by handle: M = machine, D = drawer.",
-  "A machine's in/out reads 'flowing now of what it would move at full speed'.",
-];
 
 export interface BoardDumpOptions {
   project: FactoryProject;
@@ -87,9 +80,17 @@ export function buildBoardDump({ project, result, selectedIds }: BoardDumpOption
       const recipe = recipesById.get(node.recipeId);
       return recipe
         ? dumpMachine(project, result, node, recipe, refs, naming)
-        : { ref: refs.get(node.id), id: node.id, recipe: "MISSING RECIPE", recipeId: node.recipeId };
+        : { ref: refs.get(node.id), id: node.id, recipe: t("MISSING RECIPE"), recipeId: node.recipeId };
     })
     .sort((a, b) => String(a.ref).localeCompare(String(b.ref), undefined, { numeric: true }));
+
+  // Kept as short lines: one long paragraph wraps into mush in a chat window.
+  const READ_ME = [
+    t("GTNH Planner diagnostics."),
+    t("Rates are per second, durations in seconds, power in EU/tick."),
+    t("Cards are referenced by handle: M = machine, D = drawer."),
+    t("A machine's in/out reads 'flowing now of what it would move at full speed'."),
+  ];
 
   const dump: Record<string, unknown> = {
     _: READ_ME,
@@ -104,10 +105,10 @@ export function buildBoardDump({ project, result, selectedIds }: BoardDumpOption
   dropEmpty(dump);
 
   dump.mode = project.poolMode
-    ? "pool: no wires, every resource shared, imports worked out"
+    ? t("pool: no wires, every resource shared, imports worked out")
     : project.solveMode
-      ? "solve: typed amounts, machine counts solved"
-      : "build: machine counts and wires are the player's";
+      ? t("solve: typed amounts, machine counts solved")
+      : t("build: machine counts and wires are the player's");
   if (result) {
     dump.power = dropEmpty({
       euPerTickWhenEverythingRuns: round(scopeEuT(result, nodes, false)),
@@ -128,9 +129,9 @@ export function buildBoardDump({ project, result, selectedIds }: BoardDumpOption
       goods: spiral.resourceNames,
       note: spiral.hasExternalSource
         ? spiral.externalSourceDry
-          ? "fed from outside, but that feed delivers nothing"
-          : "fed from outside"
-        : "nothing feeds this ring, so it can never start",
+          ? t("fed from outside, but that feed delivers nothing")
+          : t("fed from outside")
+        : t("nothing feeds this ring, so it can never start"),
     }));
   if (loops.length) {
     dump.deadLoops = loops;
@@ -177,17 +178,17 @@ export function buildBoardDump({ project, result, selectedIds }: BoardDumpOption
       `${moved ?? "?"}/s`,
     ];
     if (wanted !== undefined && moved !== undefined && Math.abs(wanted - moved) > 1e-6) {
-      parts.push(`(wants ${wanted}/s)`);
+      parts.push(t("(wants {rate}/s)", { rate: wanted }));
     }
     if (flow && flow.constraint !== "full") {
-      parts.push(flow.constraint === "supply" ? "[short]" : "[not needed]");
+      parts.push(flow.constraint === "supply" ? t("[short]") : t("[not needed]"));
     }
     return parts.join("  ");
   });
   if (links.length) {
     dump.links = links;
   } else if (nodes.length > 1) {
-    dump.links = "none: nothing in this scope is wired to anything else in it";
+    dump.links = t("none: nothing in this scope is wired to anything else in it");
   }
 
   const warnings = (result?.bottlenecks ?? [])
@@ -302,11 +303,11 @@ function dumpMachine(
 function explainVerdict(verdict: NodeVerdict, refs: Map<string, string>): string | undefined {
   switch (verdict.kind) {
     case "off":
-      return "switched off";
+      return t("switched off");
     case "no-recipe":
-      return "no recipe on the card";
+      return t("no recipe on the card");
     case "unwired":
-      return "nothing wired to it";
+      return t("nothing wired to it");
     case "starved":
     case "blocked":
     case "bottleneck": {
@@ -318,47 +319,65 @@ function explainVerdict(verdict: NodeVerdict, refs: Map<string, string>): string
         return describeDeficit(verdict);
       }
       const tied = binding.tiedWithNames?.length
-        ? `, tied with ${binding.tiedWithNames.join(", ")}`
+        ? t(", tied with {names}", { names: binding.tiedWithNames.join(", ") })
         : "";
       const upstream = binding.upstream
-        ? `; fix at ${binding.upstream.name} (${binding.upstream.kind}, ${round(binding.upstream.pct, 1)}%${
-            binding.upstream.machinesToAdd
-              ? `, add ${binding.upstream.machinesToAdd} machines`
-              : ""
-          })`
+        ? t("; fix at {name} ({kind}, {pct}%{add})", {
+            name: binding.upstream.name,
+            kind: binding.upstream.kind,
+            pct: round(binding.upstream.pct, 1) ?? 0,
+            add: binding.upstream.machinesToAdd
+              ? t(", add {count} machines", { count: binding.upstream.machinesToAdd })
+              : "",
+          })
         : binding.upstreamName
-          ? `; fix at ${binding.upstreamName}`
+          ? t("; fix at {name}", { name: binding.upstreamName })
           : "";
-      return `short of ${binding.displayName}: gets ${round(binding.suppliedPerSecond)}/s, needs ${round(
-        binding.neededPerSecond,
-      )}/s${tied}${upstream}`;
+      return t("short of {name}: gets {supplied}/s, needs {needed}/s{tied}{upstream}", {
+        name: binding.displayName,
+        supplied: round(binding.suppliedPerSecond) ?? 0,
+        needed: round(binding.neededPerSecond) ?? 0,
+        tied,
+        upstream,
+      });
     }
     case "clogged": {
       const clog = verdict.clog;
       return clog
-        ? `${clog.displayName} has nowhere to go: makes ${round(clog.madePerSecond)}/s, only ${round(
-            clog.takenPerSecond,
-          )}/s is taken, so the card is held ${round(clog.heldBackPct, 1)} points below full`
+        ? t(
+            "{name} has nowhere to go: makes {made}/s, only {taken}/s is taken, so the card is held {held} points below full",
+            {
+              name: clog.displayName,
+              made: round(clog.madePerSecond) ?? 0,
+              taken: round(clog.takenPerSecond) ?? 0,
+              held: round(clog.heldBackPct, 1) ?? 0,
+            },
+          )
         : undefined;
     }
     case "dead-loop":
       return verdict.spiral
-        ? `trapped in a ring with ${verdict.spiral.nodeIds
-            .map((id) => refs.get(id) ?? id)
-            .join(", ")}: nothing outside it supplies the ring, so it never starts`
+        ? t(
+            "trapped in a ring with {cards}: nothing outside it supplies the ring, so it never starts",
+            { cards: verdict.spiral.nodeIds.map((id) => refs.get(id) ?? id).join(", ") },
+          )
         : undefined;
     case "clog-lock":
       return verdict.clogLock
-        ? `clog-locked with ${verdict.clogLock.machineIds
-            .map((id) => refs.get(id) ?? id)
-            .join(", ")}: ${verdict.clogLock.vents
-            .map((vent) => `${vent.resourceName} ${round(vent.perSecond)}/s`)
-            .join(", ")} has nowhere to go, and the jam holds every member at 0`
+        ? t(
+            "clog-locked with {cards}: {vents} has nowhere to go, and the jam holds every member at 0",
+            {
+              cards: verdict.clogLock.machineIds.map((id) => refs.get(id) ?? id).join(", "),
+              vents: verdict.clogLock.vents
+                .map((vent) => t("{name} {rate}/s", { name: vent.resourceName, rate: round(vent.perSecond) ?? 0 }))
+                .join(", "),
+            },
+          )
         : undefined;
     case "demand-set":
-      return "nothing asks for more";
+      return t("nothing asks for more");
     case "paced":
-      return "inputs covered, nothing jammed; the machines around it set the speed";
+      return t("inputs covered, nothing jammed; the machines around it set the speed");
     case "balanced":
       return describeDeficit(verdict);
     default:
@@ -371,10 +390,14 @@ function describeDeficit(verdict: NodeVerdict): string | undefined {
   if (!deficit) {
     return undefined;
   }
-  const advice = deficit.machinesToAdd ? `; add ${deficit.machinesToAdd} machines` : "";
-  return `running flat out and still ${round(deficit.missingPerSecond)}/s short of ${
-    deficit.displayName
-  }${advice}`;
+  const advice = deficit.machinesToAdd
+    ? t("; add {count} machines", { count: deficit.machinesToAdd })
+    : "";
+  return t("running flat out and still {missing}/s short of {name}{advice}", {
+    missing: round(deficit.missingPerSecond) ?? 0,
+    name: deficit.displayName,
+    advice,
+  });
 }
 
 function describeFlows(
@@ -435,8 +458,8 @@ function describeBoundary(
   }
   return dropEmpty({
     _: scope.isSelection
-      ? "this section solved on its own, as if nothing else were on the board"
-      : "the whole plan's edges",
+      ? t("this section solved on its own, as if nothing else were on the board")
+      : t("the whole plan's edges"),
     needs,
     makes,
   });
@@ -462,7 +485,10 @@ function resolveScope(project: FactoryProject, selectedIds: readonly string[]) {
         isSelection: true,
         selectedIds,
         itemIds,
-        label: `${itemIds.size} selected card(s) out of ${totalCards} on the plan`,
+        label: t("{selected} selected card(s) out of {total} on the plan", {
+          selected: itemIds.size,
+          total: totalCards,
+        }),
       };
     }
   }
@@ -474,7 +500,7 @@ function resolveScope(project: FactoryProject, selectedIds: readonly string[]) {
     isSelection: false,
     selectedIds,
     itemIds,
-    label: `the whole plan, ${totalCards} card(s)`,
+    label: t("the whole plan, {total} card(s)", { total: totalCards }),
   };
 }
 

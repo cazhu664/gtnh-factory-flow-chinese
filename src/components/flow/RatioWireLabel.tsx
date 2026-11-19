@@ -13,6 +13,7 @@ import type { RatioWireLabel as Label } from "./ratio-label-layout";
 import { arrowInkFor } from "./node-colors";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
 import { RatioSplitPreview } from "./RatioSplitPreview";
+import { useT } from "@/lib/i18n";
 
 export const RatioWireLabel = memo(function RatioWireLabel({
   edgeId,
@@ -148,6 +149,7 @@ function WirePercentage({
   locked: boolean;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
+  const t = useT();
   useEffect(() => {
     const element = ref.current;
     if (!element || locked) return;
@@ -174,7 +176,7 @@ function WirePercentage({
         data-ratio-control={side}
         role="spinbutton"
         tabIndex={locked ? -1 : 0}
-        aria-label={`${side === "export" ? "Setup output" : side === "input" ? "Incoming" : "Outgoing"} percentage`}
+        aria-label={t("{side} percentage", { side: side === "export" ? t("Setup output") : side === "input" ? t("Incoming") : t("Outgoing") })}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={share * 100}

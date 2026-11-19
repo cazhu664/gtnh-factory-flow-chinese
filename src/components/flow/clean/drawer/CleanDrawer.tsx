@@ -32,7 +32,7 @@ import { usePortRowBrowse } from "../../use-port-row-browse";
 import type { StorageNodeData } from "../../StorageNode";
 import { checklistLocked } from "../../RecipeNode";
 import { useFontEpoch } from "../text-measure";
-import { TO_PRODUCT, TO_TRASH, bufferThroughput, buildDrawerView } from "./drawer-model";
+import { toProduct, toTrash, bufferThroughput, buildDrawerView } from "./drawer-model";
 import { DrawerIcon } from "./DrawerIcon";
 import { BoardMenu, MenuLine, MenuRow } from "../menus/BoardMenu";
 import { ensureInteractionHost, tipAttrs } from "../interaction";
@@ -41,6 +41,7 @@ import { startPromptClock } from "../../virtual/prompt-phase";
 import type { TargetMode } from "@/lib/model/storage-target";
 import { playEditSfx } from "@/lib/sound/sfx";
 import { wheelChangesValues } from "@/lib/device-settings";
+import { useT } from "@/lib/i18n";
 
 /** A press that moved this far (screen px) before release is a drag, not a click. */
 const CLICK_SLOP = 3;
@@ -89,6 +90,7 @@ export function CleanDrawer({
   role: StorageRole;
 }) {
   const { storage, result } = data;
+  const t = useT();
   const fontEpoch = useFontEpoch();
   useEffect(() => ensureInteractionHost(), []);
   const category = useFactoryStore((state) =>
@@ -275,7 +277,7 @@ export function CleanDrawer({
       for (const step of RULE_STEPS) {
         rows.push({
           mark: RULE_MARK[step],
-          label: RULE_NAME[step],
+          label: t(RULE_NAME[step]),
           on: step === rule.shownMode,
           muted: false,
           run: () => chooseRule(step),
@@ -286,7 +288,7 @@ export function CleanDrawer({
     if (view.kind === "product" || view.kind === "trash") {
       rows.push({
         mark: "",
-        label: view.kind === "trash" ? TO_PRODUCT : TO_TRASH,
+        label: view.kind === "trash" ? toProduct() : toTrash(),
         on: false,
         muted: true,
         run: () => setDrainMode(storage.id, view.kind === "trash" ? "product" : "trash"),
@@ -294,7 +296,7 @@ export function CleanDrawer({
     }
     return rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view.kind, rule.shownMode, storage.id, role]);
+  }, [view.kind, rule.shownMode, storage.id, role, t]);
 
   const pressed = (event: PointerEvent) => {
     slopDown.current = { x: event.clientX, y: event.clientY };
@@ -401,7 +403,7 @@ export function CleanDrawer({
           tabIndex={0}
           className="cd-del"
           {...tipAttrs(view.tips.del)}
-          aria-label="Delete drawer"
+          aria-label={t("Delete drawer")}
           onPointerDownCapture={pressed}
           onClick={(event) => {
             event.stopPropagation();
@@ -454,7 +456,10 @@ export function CleanDrawer({
             data-resource-handle="true"
             data-resource-node-id={storage.id}
             data-resource-handle-id={outputHandleId}
-            aria-label={`${label}${readOnly ? "" : ". Drag to connect, R for recipes, U for uses"}`}
+            aria-label={t("{label}{hint}", {
+              label,
+              hint: readOnly ? "" : t(". Drag to connect, R for recipes, U for uses"),
+            })}
             className="nodrag"
             style={WELL_HANDLE}
           />
@@ -497,7 +502,9 @@ export function CleanDrawer({
               {...tipAttrs(view.tips.rule)}
               aria-haspopup="menu"
               aria-expanded={rule.open}
-              aria-label={`Rule: ${view.kind === "trash" ? "Trash" : RULE_NAME[view.rule]}`}
+              aria-label={t("Rule: {label}", {
+                label: view.kind === "trash" ? t("Trash") : t(RULE_NAME[view.rule]),
+              })}
               onPointerDown={(event) => event.stopPropagation()}
               onMouseDown={middleDown}
               onAuxClick={middle}
@@ -530,8 +537,11 @@ export function CleanDrawer({
               {...(view.kind === "trash" ? tipAttrs(view.tips.body) : tipAttrs(view.tips.rate))}
               aria-label={
                 view.target
-                  ? `Your rate: ${view.target.number} ${view.target.unit}`
-                  : "Your rate: none"
+                  ? t("Your rate: {number} {unit}", {
+                      number: view.target.number,
+                      unit: view.target.unit,
+                    })
+                  : t("Your rate: none")
               }
               {...(editing ? {} : boxProps)}
               {...(editing ? {} : boxTextProps)}
@@ -576,7 +586,7 @@ export function CleanDrawer({
             <span className="cd-forced-num" data-unit={view.spill.unit}>
               {view.spill.number}
             </span>
-            <span className="cd-forced-name">Forced out</span>
+            <span className="cd-forced-name">{t("Forced out")}</span>
           </div>
         ) : null}
         {rowBrowse.menu}
@@ -585,7 +595,7 @@ export function CleanDrawer({
         <BoardMenu
           x={menu.left}
           y={menu.bottom + 2}
-          label="Rule"
+          label={t("Rule")}
           width={210}
           onClose={() => rule.setOpen(false)}
         >
@@ -593,11 +603,11 @@ export function CleanDrawer({
         </BoardMenu>
       ) : null}
       {context ? (
-        <BoardMenu x={context.x} y={context.y} label="Drawer" onClose={() => setContext(undefined)}>
+        <BoardMenu x={context.x} y={context.y} label={t("Drawer")} onClose={() => setContext(undefined)}>
           {ruleRows(() => setContext(undefined))}
           {menuRows.length > 0 ? <MenuLine /> : null}
           <MenuRow
-            label="Delete drawer"
+            label={t("Delete drawer")}
             danger
             onClick={() => {
               setContext(undefined);
@@ -612,13 +622,14 @@ export function CleanDrawer({
 
 /** The rate box while it is typed into: a number, `2.5k`, `1M` or `1/3` in the board's unit. */
 function RateField({ rule, onCommit }: { rule: RateRule; onCommit: () => void }) {
+  const t = useT();
   return (
     <input
       autoFocus
       value={rule.draft}
       inputMode="text"
-      aria-label="Your rate"
-      placeholder="rate"
+      aria-label={t("Your rate")}
+      placeholder={t("rate")}
       className="nodrag"
       onChange={(event) => rule.setDraft(event.target.value)}
       onBlur={onCommit}

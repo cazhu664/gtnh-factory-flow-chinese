@@ -9,12 +9,14 @@ import { loginCommunityUser, registerCommunityUser } from "@/lib/community/clien
 import { useCommunityUser } from "@/components/community/auth";
 import { useDropdownDismiss } from "@/lib/hooks/use-dropdown-dismiss";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 import { CHROME_SCREEN_K, type ChromeAnchor } from "./ChromeMenu";
 
 /** The sign-in form, hung from the account key: sign in, or make an account (a name and a password, no email). */
 export function SignInPanel({ anchor, onClose }: { anchor: ChromeAnchor; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const { setUser } = useCommunityUser();
+  const t = useT();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +37,7 @@ export function SignInPanel({ anchor, onClose }: { anchor: ChromeAnchor; onClose
       setUser(signedIn);
       onClose();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Sign in failed.");
+      setError(failure instanceof Error ? failure.message : t("Sign in failed."));
     } finally {
       setBusy(false);
     }
@@ -45,7 +47,7 @@ export function SignInPanel({ anchor, onClose }: { anchor: ChromeAnchor; onClose
     <div
       ref={ref}
       role="dialog"
-      aria-label="Sign in"
+      aria-label={t("Sign in")}
       className="mm ml-signpanel ui-zoom"
       style={{ top: anchor.bottom / scale + 2, right: Math.max(2, vw - (anchor.right ?? anchor.left) / scale) }}
       onPointerDown={(event) => event.stopPropagation()}
@@ -56,23 +58,23 @@ export function SignInPanel({ anchor, onClose }: { anchor: ChromeAnchor; onClose
           void submit();
         }}
       >
-        <div className="ml-sign-title">{mode === "login" ? "Sign in" : "Create an account"}</div>
-        <div className="ml-sign-sub">Your plans are kept in your account</div>
-        <label className="ml-sign-label">USERNAME</label>
+        <div className="ml-sign-title">{mode === "login" ? t("Sign in") : t("Create an account")}</div>
+        <div className="ml-sign-sub">{t("Your plans are kept in your account")}</div>
+        <label className="ml-sign-label">{t("USERNAME")}</label>
         <input
           autoFocus
           className="ml-search ml-sign-field"
-          placeholder="Username"
+          placeholder={t("Username")}
           autoComplete="username"
           maxLength={24}
           value={username}
           onChange={(event) => setUsername(event.target.value)}
         />
-        <label className="ml-sign-label">PASSWORD</label>
+        <label className="ml-sign-label">{t("PASSWORD")}</label>
         <input
           className="ml-search ml-sign-field"
           type="password"
-          placeholder="Password"
+          placeholder={t("Password")}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
           maxLength={128}
           value={password}
@@ -80,7 +82,7 @@ export function SignInPanel({ anchor, onClose }: { anchor: ChromeAnchor; onClose
         />
         {error ? <div className="ml-sign-error">{error}</div> : <div className="ml-sign-gap" />}
         <button className="ml-sign-go" type="submit" disabled={busy || username.trim().length < 3 || password.length < 6}>
-          {busy ? "..." : mode === "login" ? "Sign in" : "Create account"}
+          {busy ? "..." : mode === "login" ? t("Sign in") : t("Create account")}
         </button>
         <div
           className="ml-sign-switch"
@@ -90,7 +92,7 @@ export function SignInPanel({ anchor, onClose }: { anchor: ChromeAnchor; onClose
             setError(undefined);
           }}
         >
-          {mode === "login" ? "No account yet? Create one" : "Have an account? Sign in"}
+          {mode === "login" ? t("No account yet? Create one") : t("Have an account? Sign in")}
         </div>
       </form>
     </div>,

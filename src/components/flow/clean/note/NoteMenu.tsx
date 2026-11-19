@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n";
 import type { FactoryNodeColorTag } from "@/lib/model/types";
 import { BoardMenu, MenuLine, MenuRow } from "../menus/BoardMenu";
 import { NOTE, NOTE_COLOR_MENU, notePalette } from "./note-model";
@@ -32,6 +33,7 @@ export function NoteMenu({
   onFont: (steps: number) => void;
   onDelete: () => void;
 }) {
+  const t = useT();
   const run = (action: () => void) => () => {
     action();
     onClose();
@@ -39,11 +41,11 @@ export function NoteMenu({
   if (state.view === "colour") {
     const current = colorTag ?? NOTE.defaultColor;
     return (
-      <BoardMenu x={state.x} y={state.y} label="Note colour" title="Colour" onClose={onClose}>
+      <BoardMenu x={state.x} y={state.y} label={t("Note colour")} title={t("Colour")} onClose={onClose}>
         {NOTE_COLOR_MENU.map(([tag, name]) => (
           <MenuRow
             key={tag}
-            label={name}
+            label={t(name)}
             swatch={notePalette(tag).paper}
             checked={tag === current}
             onClick={run(() => onColor(tag))}
@@ -53,13 +55,13 @@ export function NoteMenu({
     );
   }
   return (
-    <BoardMenu x={state.x} y={state.y} label="Sticky note" onClose={onClose}>
-      <MenuRow label="Write on it" onClick={run(onWrite)} />
-      <MenuRow label="Colour..." onClick={() => onView("colour")} />
-      <MenuRow label="Bigger text" detail={`${font} px`} onClick={run(() => onFont(1))} />
-      <MenuRow label="Smaller text" onClick={run(() => onFont(-1))} />
+    <BoardMenu x={state.x} y={state.y} label={t("Sticky note")} onClose={onClose}>
+      <MenuRow label={t("Write on it")} onClick={run(onWrite)} />
+      <MenuRow label={t("Colour...")} onClick={() => onView("colour")} />
+      <MenuRow label={t("Bigger text")} detail={`${font} px`} onClick={run(() => onFont(1))} />
+      <MenuRow label={t("Smaller text")} onClick={run(() => onFont(-1))} />
       <MenuLine />
-      <MenuRow label="Delete note" danger onClick={run(onDelete)} />
+      <MenuRow label={t("Delete note")} danger onClick={run(onDelete)} />
     </BoardMenu>
   );
 }

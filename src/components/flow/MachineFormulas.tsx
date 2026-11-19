@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import type { FormulaLine, FormulaTerm } from "@/lib/machines/formula-lines";
 
 /** One browser-wide fold for every machine card's worked formulas (the crop card keeps its own). */
@@ -56,6 +57,7 @@ function Term({ term }: { term: FormulaTerm }) {
  * its head; the choice is a browser preference shared by every machine card.
  */
 export function MachineFormulas({ lines }: { lines: FormulaLine[] }) {
+  const t = useT();
   const [open, setOpen] = useState(readOpen);
   if (lines.length === 0) return null;
   const head = (
@@ -70,13 +72,13 @@ export function MachineFormulas({ lines }: { lines: FormulaLine[] }) {
         });
       }}
       aria-expanded={open}
-      title={open ? "Hide the worked formulas" : "Show the worked formulas"}
+      title={open ? t("Hide the worked formulas") : t("Show the worked formulas")}
     >
       <ChevronDown
         aria-hidden
         className={["h-2.5 w-2.5 shrink-0 transition-transform duration-100", open ? "" : "-rotate-90"].join(" ")}
       />
-      <span className="text-[9px] leading-[11px]">Formulas</span>
+      <span className="text-[9px] leading-[11px]">{t("Formulas")}</span>
     </button>
   );
   const line = (entry: FormulaLine, index: number): ReactNode => (

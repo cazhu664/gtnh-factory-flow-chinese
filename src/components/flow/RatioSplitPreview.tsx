@@ -11,6 +11,7 @@ import {
   ratioExportShare,
 } from "@/lib/model/storage-ratios";
 import { useFactoryStore } from "@/store/factory-store";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 import { MouseIcon } from "./RecipeTooltip";
 
 /** Mounted only while a percentage is hovered; idle wires do no graph-wide work. */
@@ -26,6 +27,7 @@ export function RatioSplitPreview({
   locked: boolean;
 }) {
   const project = useFactoryStore((s) => s.project);
+  const t = useT();
   const view = useMemo(() => {
     const edge = project.edges.find((edge) => edge.id === edgeId);
     const owner = side === "export" ? storageId : side === "input" ? edge?.target : edge?.source;
@@ -38,7 +40,7 @@ export function RatioSplitPreview({
         const recipe = recipes.get(node.recipeId);
         return [
           node.id,
-          recipe ? getSelectedMachineHandler(recipe, node).label || recipe.machineType : "Machine",
+          recipe ? datasetNameLabel(getSelectedMachineHandler(recipe, node).label || recipe.machineType) : t("Machine"),
         ];
       }),
     );
@@ -48,34 +50,34 @@ export function RatioSplitPreview({
         peer.id,
         role === "buffer"
           ? peer.bufferMode === "ratio"
-            ? "Ratio"
+            ? t("Ratio")
             : peer.bufferMode === "strict"
-              ? "Strict"
-              : "Buffer"
+              ? t("Strict")
+              : t("Buffer")
           : role === "source"
-            ? "Source"
+            ? t("Source")
             : role === "product"
-              ? "Product"
+              ? t("Product")
               : role === "byproduct"
-                ? "Byproduct"
+                ? t("Byproduct")
                 : role === "trash"
-                  ? "Trash"
-                  : "Drawer",
+                  ? t("Trash")
+                  : t("Drawer"),
       );
     }
     const sections = (["input", "output"] as const).map((section) => {
       const branches = getProjectRatioBranches(project, section).get(storage.id) ?? [];
       const counts = new Map<string, number>();
       for (const branch of branches) {
-        const name = names.get(branch.targetId) ?? "Machine";
+        const name = names.get(branch.targetId) ?? t("Machine");
         counts.set(name, (counts.get(name) ?? 0) + 1);
       }
       const seen = new Map<string, number>();
       return {
         side: section,
-        title: section === "input" ? "Incoming" : "Outgoing",
+        title: section === "input" ? t("Incoming") : t("Outgoing"),
         rows: branches.map((branch) => {
-          const name = names.get(branch.targetId) ?? "Machine";
+          const name = names.get(branch.targetId) ?? t("Machine");
           const ordinal = (seen.get(name) ?? 0) + 1;
           seen.set(name, ordinal);
           return {
@@ -88,13 +90,13 @@ export function RatioSplitPreview({
       };
     });
     return { storage, sections };
-  }, [project, edgeId, storageId, side]);
+  }, [project, edgeId, storageId, side, t]);
   if (!view) return null;
   return (
     <div
       data-ratio-preview
       role="tooltip"
-      aria-label="Ratio split"
+      aria-label={t("Ratio split")}
       className="w-[220px] max-w-[calc(100vw-40px)] text-[10px] font-normal leading-[14px] text-fg-subtle"
     >
       <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-fg">
@@ -129,7 +131,7 @@ export function RatioSplitPreview({
               >
                 <span className="flex items-center gap-0.5 text-[9px]">
                   <ArrowUpRight aria-hidden className="h-2.5 w-2.5" />
-                  Setup output
+                  {t("Setup output")}
                 </span>
                 <span className="shrink-0 tabular-nums">
                   {formatRatioShare(ratioExportShare(view.storage))}
@@ -141,11 +143,11 @@ export function RatioSplitPreview({
       </div>
       {!locked && (
         <div className="mt-1 flex items-center gap-1 border-t border-line pt-1 text-[9px] leading-3 text-fg-muted">
-          <span role="img" aria-label="Mouse wheel" className="[&_svg]:h-3.5 [&_svg]:w-3">
+          <span role="img" aria-label={t("Mouse wheel")} className="[&_svg]:h-3.5 [&_svg]:w-3">
             <MouseIcon gesture="wheel" />
           </span>
-          <span>↑ +1% · ↓ −1%</span>
-          <span className="ml-auto">Shift: 10%</span>
+          <span>{t("↑ +1% · ↓ −1%")}</span>
+          <span className="ml-auto">{t("Shift: 10%")}</span>
         </div>
       )}
     </div>

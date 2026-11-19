@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, History, X } from "lucide-react";
 import { CHANGELOG, type ChangelogEntry } from "@/lib/changelog";
+import { useT } from "@/lib/i18n";
 import { APP_VERSION } from "@/lib/version";
 
 /**
@@ -22,6 +23,7 @@ export function ChangelogDialog({
   /** Which versions this reader has not seen; these are what opens on top. */
   unseenVersions?: ReadonlySet<string>;
 }) {
+  const t = useT();
   // Memoized because it feeds the useMemo below: a fresh empty Set every
   // render would re-split the list on every keystroke the dialog ever sees.
   const unseen = useMemo(() => unseenVersions ?? new Set<string>(), [unseenVersions]);
@@ -66,7 +68,7 @@ export function ChangelogDialog({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="What's new in GTNH Planner"
+        aria-label={t("What's new in GTNH Planner")}
         className="flex max-h-[calc(88*var(--ui-vh))] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-line-strong bg-surface shadow-2xl compact:max-h-[calc(92*var(--ui-vh))]"
         onClick={(event) => event.stopPropagation()}
       >
@@ -84,7 +86,7 @@ export function ChangelogDialog({
               {showHistory ? (
                 <div ref={historyRef}>
                   <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-fg-muted">
-                    Earlier releases
+                    {t("Earlier releases")}
                   </p>
                   <ul>
                     {history.map((entry) => (
@@ -110,7 +112,9 @@ export function ChangelogDialog({
                   className="flex w-full items-center justify-center gap-2 rounded border border-line-strong px-3 py-2.5 text-xs font-bold text-fg-subtle hover:border-cyan-700 hover:bg-surface-raised hover:text-cyan-300"
                 >
                   <History className="h-3.5 w-3.5" aria-hidden />
-                  {`Full history (${history.length} earlier release${history.length === 1 ? "" : "s"})`}
+                  {history.length === 1
+                    ? t("Full history (1 earlier release)")
+                    : t("Full history ({count} earlier releases)", { count: history.length })}
                   <ChevronDown className="h-3.5 w-3.5" aria-hidden />
                 </button>
               )}
@@ -132,6 +136,7 @@ function Masthead({
   oldestMissed?: string;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
     <div
       className="relative shrink-0 overflow-hidden border-b border-line bg-gradient-to-br from-surface-raised to-surface px-6 py-5 compact:px-4 compact:py-4"
@@ -139,7 +144,7 @@ function Masthead({
       <button
         type="button"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t("Close")}
         // Above the title block, which is `relative` to clear the glow behind
         // it and would otherwise paint over this button and eat the click.
         className="absolute right-3 top-3 z-10 rounded p-1.5 text-fg-subtle hover:bg-surface-raised hover:text-fg"
@@ -155,26 +160,30 @@ function Masthead({
           header chip carries the one you are running, and a third copy in the
           title just made the reader check whether the three agreed. */}
       <h2 className="relative mt-1.5 text-2xl font-black leading-none tracking-tight compact:text-xl">
-        What&apos;s new
+        {t("What's new")}
       </h2>
 
       <p className="relative mt-2 text-sm text-fg-muted">
         {missedCount === 1
-          ? "One release since your last visit."
+          ? t("One release since your last visit.")
           : missedCount > 1
             ? // Counted and dated, because "some updates" is not a reason to
               // read anything.
-              `${missedCount} releases since you were last here${
-                oldestMissed ? ` (v${oldestMissed} onwards)` : ""
-              }. Here they are.`
+              t(
+                oldestMissed
+                  ? "{count} releases since you were last here (v{version} onwards). Here they are."
+                  : "{count} releases since you were last here. Here they are.",
+                oldestMissed ? { count: missedCount, version: oldestMissed } : { count: missedCount },
+              )
             : // Not "you are up to date": the sheet still shows the recent notes.
-              "Everything that has changed, newest first."}
+              t("Everything that has changed, newest first.")}
       </p>
     </div>
   );
 }
 
 function EntryRow({ entry }: { entry: ChangelogEntry }) {
+  const t = useT();
   return (
     <li
       // A rule between releases, not a gap: at this width the eye needs telling
@@ -197,7 +206,7 @@ function EntryRow({ entry }: { entry: ChangelogEntry }) {
         {entry.warning ? (
           <span className="mt-1.5 inline-flex items-center gap-1 rounded border border-amber-500/70 bg-amber-500/20 px-1.5 py-px text-[10px] font-black uppercase tracking-wide text-amber-200">
             <AlertTriangle className="h-3 w-3" aria-hidden />
-            Read this
+            {t("Read this")}
           </span>
         ) : null}
       </div>
@@ -224,7 +233,7 @@ function EntryRow({ entry }: { entry: ChangelogEntry }) {
                 <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-400" aria-hidden />
                 <div className="min-w-0">
                   <p className="text-xs font-black uppercase tracking-wide text-amber-300">
-                    Heads up
+                    {t("Heads up")}
                   </p>
                   {/* Lit in the callout's OWN colour: the notes' cyan means
                       "all fine" and would clash inside an amber warning. */}

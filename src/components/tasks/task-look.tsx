@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n";
 import { inkOn } from "@/components/live/LiveFaces";
 import { PixelRuns } from "@/components/chrome/pixel-icons";
 import { colorFor } from "@/lib/live/protocol";
@@ -107,12 +108,13 @@ export function initialsFor(name: string | undefined): string {
 
 /** Someone's face: their initials on their colour, square with its corners cut, 12 high. */
 export function TaskFace({ id, name }: { id: string; name: string | undefined }) {
+  const t = useT();
   const color = colorFor(id);
   return (
     <span
       className="tb-face"
       style={{ background: color, color: inkOn(color) }}
-      title={name ?? "Someone"}
+      title={name ?? t("Someone")}
     >
       {initialsFor(name)}
     </span>

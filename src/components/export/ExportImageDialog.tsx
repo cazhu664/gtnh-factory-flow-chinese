@@ -3,6 +3,7 @@
 import { Check, Eye, EyeOff, ImageDown, LoaderCircle, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDialogA11y } from "@/lib/hooks/use-dialog-a11y";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 import { toBlob, toSvg } from "html-to-image";
 import { computeCommunityPlanStats } from "@/lib/community/plan-stats";
 import type { PlanResourceStat } from "@/lib/community/types";
@@ -82,15 +83,16 @@ const CHECKER_STYLE: React.CSSProperties = {
  * itself; a GIF carries the motion.
  */
 export function ExportImageDialog({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogA11y(dialogRef, { onClose });
   const project = useFactoryStore((state) => state.project);
   const result = useFactoryStore((state) => state.lastResult);
   const mode = project.poolMode ? "pool" : project.solveMode ? "solve" : "build";
-  const activeTabName = useDesignStore(
-    (state) =>
-      state.designs.find((design) => design.id === state.activeDesignId)?.name ?? "Untitled",
+  const activeDesignName = useDesignStore(
+    (state) => state.designs.find((design) => design.id === state.activeDesignId)?.name,
   );
+  const activeTabName = activeDesignName ?? t("Untitled");
   // The rate unit is shared with the board (the /t /s /m /h buttons):
   // flipping it here changes the live numbers everywhere, and the preview
   // photographs them again.
@@ -127,7 +129,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
   // clash.
   const borderColor =
     background === "transparent" ? "#454a52" : getCanvasTheme(background).patternColor;
-  const planName = project.name || activeTabName || "My factory";
+  const planName = project.name || activeTabName || t("My factory");
 
   const needs = useMemo(
     () => stats.needs.filter((stat) => !excluded.has(statKey(stat))),
@@ -184,11 +186,11 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
         // dialog on a spinner forever.
         window.setTimeout(() => {
           if (pendingRef.current.delete(requestId)) {
-            resolve({ error: "Timed out photographing the board." });
+            resolve({ error: t("Timed out photographing the board.") });
           }
         }, 120_000);
       }),
-    [background, backgroundColor, cardDetail, includeAnnotations],
+    [background, backgroundColor, cardDetail, includeAnnotations, t],
   );
 
   // Recapture when the mode, card look, paper or rates change. The summary
@@ -213,7 +215,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
           }
           setCapturing(false);
           setError(
-            result.error ?? "The board could not be captured. Close the dialog and try again.",
+            result.error ?? t("The board could not be captured. Close the dialog and try again."),
           );
           return;
         }
@@ -229,7 +231,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
     };
     // rateUnit repaints the BOARD, not the request: the photograph must be
     // retaken to show the new numbers.
-  }, [requestBoardCapture, rateUnit, mode]);
+  }, [requestBoardCapture, rateUnit, mode, t]);
 
   const previewUrl = useMemo(
     () => (capture?.blob ? URL.createObjectURL(capture.blob) : undefined),
@@ -316,11 +318,11 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
         wantFooter && footerElement ? await resolveExportFontCss(footerElement) : undefined;
 
       if (format === "svg") {
-        setBusy("Rendering the SVG");
+        setBusy(t("Rendering the SVG"));
         const svgResult = await requestBoardCapture("svg");
         const svgCapture = svgResult.capture;
         if (!svgCapture?.svgText) {
-          throw new Error(svgResult.error ?? "The board could not be rendered as SVG.");
+          throw new Error(svgResult.error ?? t("The board could not be rendered as SVG."));
         }
         const footerSvg =
           wantFooter && footerElement
@@ -346,9 +348,9 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
         );
       } else {
         if (!capture.blob) {
-          throw new Error("The board capture is missing.");
+          throw new Error(t("The board capture is missing."));
         }
-        setBusy("Composing the image");
+        setBusy(t("Composing the image"));
         const footerBlob =
           wantFooter && footerElement
             ? ((await toBlob(footerElement, {
@@ -369,7 +371,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
             background: backgroundColor,
             border: exportBorder,
           });
-          setBusy("Embedding the plan");
+          setBusy(t("Embedding the plan"));
           const withPlan = await embedProjectJsonInPng(composed, projectJson, backgroundColor);
           downloadBlob(withPlan, `${fileName}.png`);
         } else {
@@ -380,7 +382,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
             capture,
             background: backgroundColor,
             border: exportBorder,
-            onProgress: (frame, total) => setBusy(`Drawing frame ${frame} of ${total}`),
+            onProgress: (frame, total) => setBusy(t("Drawing frame {frame} of {total}", { frame, total })),
           });
           downloadBlob(gifBlob, `${fileName}.gif`);
         }
@@ -389,23 +391,23 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : "Export failed.");
+      setError(exportError instanceof Error ? exportError.message : t("Export failed."));
     } finally {
       setBusy(undefined);
     }
   };
 
   return (
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Screenshot editor" className="fixed inset-0 z-[100] grid place-items-center bg-neutral-950/50 p-4">
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t("Screenshot editor")} className="fixed inset-0 z-[100] grid place-items-center bg-neutral-950/50 p-4">
       <div className="flex max-h-[calc(94*var(--ui-vh))] w-full max-w-5xl flex-col overflow-y-auto rounded border border-line-strong bg-surface p-4 shadow-xl">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-semibold">
-            <ImageDown className="h-4 w-4" /> Export an image
+            <ImageDown className="h-4 w-4" /> {t("Export an image")}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
             className="rounded p-1 text-fg-subtle hover:bg-surface-raised"
           >
             <X className="h-4 w-4" />
@@ -427,7 +429,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
                   ...(background === "transparent" ? CHECKER_STYLE : {}),
                 }}
               >
-                <img src={previewUrl} alt="Board export preview" className="block w-full" />
+                <img src={previewUrl} alt={t("Board export preview")} className="block w-full" />
                 {footerVisible && layout && previewScale > 0 ? (
                   <div
                     style={{
@@ -475,7 +477,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
           {isCapturing ? (
             <div className="absolute inset-0 grid place-items-center bg-neutral-950/40">
               <span className="flex items-center gap-2 rounded border border-line-strong bg-surface px-3 py-1.5 text-sm text-fg-subtle">
-                <LoaderCircle className="h-4 w-4 animate-spin" /> Photographing the board
+                <LoaderCircle className="h-4 w-4 animate-spin" /> {t("Photographing the board")}
               </span>
             </div>
           ) : null}
@@ -484,7 +486,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
         <div className="mt-3 space-y-3 text-sm">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-fg-subtle">Type</span>
+              <span className="text-xs font-medium text-fg-subtle">{t("Type")}</span>
               <div className="flex overflow-hidden rounded border border-line-strong">
                 {FORMATS.map((entry) => (
                   <button
@@ -504,7 +506,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
               </div>
             </div>
             <div className={mode === "pool" ? "hidden" : "flex items-center gap-2"}>
-              <span className="text-xs font-medium text-fg-subtle">Cards</span>
+              <span className="text-xs font-medium text-fg-subtle">{t("Cards")}</span>
               <div className="flex overflow-hidden rounded border border-line-strong">
                 {CARD_DETAILS.map((entry) => (
                   <button
@@ -518,13 +520,13 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
                         : "bg-surface px-3 py-1 text-xs text-fg-subtle hover:bg-surface-raised"
                     }
                   >
-                    {entry.label}
+                    {t(entry.label)}
                   </button>
                 ))}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-fg-subtle">Rates</span>
+              <span className="text-xs font-medium text-fg-subtle">{t("Rates")}</span>
               <div className="flex overflow-hidden rounded border border-line-strong">
                 {RATE_UNITS.map((entry) => (
                   <button
@@ -546,13 +548,13 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-medium text-fg-subtle">Paper</span>
+            <span className="mr-1 text-xs font-medium text-fg-subtle">{t("Paper")}</span>
             {CANVAS_THEMES.map((theme) => (
               <button
                 key={theme.id}
                 type="button"
                 title={theme.name}
-                aria-label={`${theme.name} background`}
+                aria-label={t("{name} background", { name: theme.name })}
                 aria-pressed={background === theme.id}
                 onClick={() => setBackground(theme.id)}
                 className={[
@@ -566,8 +568,8 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
             ))}
             <button
               type="button"
-              title="Transparent"
-              aria-label="Transparent background"
+              title={t("Transparent")}
+              aria-label={t("Transparent background")}
               aria-pressed={background === "transparent"}
               onClick={() => setBackground("transparent")}
               className={[
@@ -587,7 +589,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
                 checked={includeFooter}
                 onChange={(event) => setIncludeFooter(event.target.checked)}
               />
-              Summary bar
+              {t("Summary bar")}
             </label>
             <label
               className={includeFooter ? "flex items-center gap-1.5" : "hidden"}
@@ -597,7 +599,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
                 checked={includeTitle}
                 onChange={(event) => setIncludeTitle(event.target.checked)}
               />
-              Title and stats
+              {t("Title and stats")}
             </label>
             <label
               className={includeFooter ? "flex items-center gap-1.5" : "hidden"}
@@ -607,7 +609,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
                 checked={includeIo}
                 onChange={(event) => setIncludeIo(event.target.checked)}
               />
-              Inputs and outputs
+              {t("Inputs and outputs")}
             </label>
             <label className={mode === "pool" ? "hidden" : "flex items-center gap-1.5"}>
               <input
@@ -615,20 +617,20 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
                 checked={includeAnnotations}
                 onChange={(event) => setIncludeAnnotations(event.target.checked)}
               />
-              Annotations
+              {t("Annotations")}
             </label>
           </div>
 
           {includeFooter && includeIo ? (
             <div className="space-y-2">
               <ResourceChipRow
-                label="Inputs"
+                label={t("Inputs")}
                 stats={stats.needs}
                 excluded={excluded}
                 onToggle={(key) => setExcluded((current) => toggleKey(current, key))}
               />
               <ResourceChipRow
-                label="Outputs"
+                label={t("Outputs")}
                 stats={stats.outputs}
                 excluded={excluded}
                 onToggle={(key) => setExcluded((current) => toggleKey(current, key))}
@@ -649,7 +651,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
               onClick={onClose}
               className="rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
             >
-              Close
+              {t("Close")}
             </button>
             <button
               type="button"
@@ -662,7 +664,7 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
               ) : saved ? (
                 <Check className="h-4 w-4" />
               ) : null}
-              {saved ? "Saved" : `Save ${format.toUpperCase()}`}
+              {saved ? t("Saved") : t("Save {format}", { format: format.toUpperCase() })}
             </button>
           </div>
         </div>
@@ -701,6 +703,7 @@ function ResourceChipRow({
   excluded: ReadonlySet<string>;
   onToggle: (key: string) => void;
 }) {
+  const t = useT();
   if (stats.length === 0) {
     return null;
   }
@@ -717,7 +720,7 @@ function ResourceChipRow({
               type="button"
               onClick={() => onToggle(key)}
               aria-pressed={!isExcluded}
-              title={isExcluded ? "Show on the summary bar" : "Hide from the summary bar"}
+              title={isExcluded ? t("Show on the summary bar") : t("Hide from the summary bar")}
               className={[
                 "inline-flex max-w-48 items-center gap-1 rounded border px-1.5 py-0.5 text-xs",
                 isExcluded
@@ -731,7 +734,7 @@ function ResourceChipRow({
                 <Eye className="h-3 w-3 shrink-0 text-cyan-500" />
               )}
               <span className={isExcluded ? "truncate line-through" : "truncate"}>
-                {stat.displayName ?? stat.resourceId}
+                {datasetNameLabel(stat.displayName ?? stat.resourceId)}
               </span>
             </button>
           );

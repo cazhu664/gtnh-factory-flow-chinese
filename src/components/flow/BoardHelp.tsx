@@ -20,6 +20,7 @@ import {
 import { Fragment, memo, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 import { BOARD_TOOL_SCALE } from "./toolbar-fold";
 import {
   GLANCE_CARD_CLASS,
@@ -701,14 +702,23 @@ function GlanceCard({
   className?: string;
   style?: CSSProperties;
 }) {
+  const t = useT();
   return (
     <div
       className={[GLANCE_CARD_CLASS, "px-3 py-2.5", className].filter(Boolean).join(" ")}
       style={{ border: `2px solid ${GLANCE_LINE}`, ...style }}
     >
-      <GlanceTitle dense>{card.title}</GlanceTitle>
+      <GlanceTitle dense>{t(card.title)}</GlanceTitle>
       <div className="mt-2">
-        <GlanceRows rows={card.rows} accent={ACCENT} dense />
+        <GlanceRows
+          rows={card.rows.map((row) => ({
+            ...row,
+            text: t(row.text),
+            chip: row.chip === undefined ? undefined : t(row.chip),
+          }))}
+          accent={ACCENT}
+          dense
+        />
       </div>
     </div>
   );
@@ -724,6 +734,7 @@ const HELP_BUTTON_CLASS =
  * one way out, and no pointing.
  */
 function HelpSheet({ onClose }: { onClose: () => void }) {
+  const t = useT();
   return (
     <div className="ui-zoom fixed inset-0 z-[120] flex flex-col bg-[#101419] font-mono text-[#dbe3ec]">
       <div
@@ -731,12 +742,12 @@ function HelpSheet({ onClose }: { onClose: () => void }) {
         style={{ borderBottom: `1px solid ${GLANCE_LINE}` }}
       >
         <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#aebccd]">
-          Board help
+          {t("Board help")}
         </span>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close help"
+          aria-label={t("Close help")}
           className="flex h-9 w-9 items-center justify-center border text-[16px] text-[#aebccd]"
           style={{ borderColor: GLANCE_LINE }}
         >
@@ -866,6 +877,7 @@ function HelpGlanceSheet({
 }
 
 export const BoardHelp = memo(function BoardHelp({ compact }: { compact: boolean }) {
+  const t = useT();
   const [measured, setMeasured] = useState<Measured | undefined>(undefined);
   const [isSheetOpen, setSheetOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -908,8 +920,8 @@ export const BoardHelp = memo(function BoardHelp({ compact }: { compact: boolean
           data-help-anchor="help"
           className={HELP_BUTTON_CLASS}
           style={{ zoom: BOARD_TOOL_SCALE }}
-          title="Board help"
-          aria-label="Show board help"
+          title={t("Board help")}
+          aria-label={t("Show board help")}
         >
           ?
         </button>
@@ -953,8 +965,8 @@ export const BoardHelp = memo(function BoardHelp({ compact }: { compact: boolean
         data-help-anchor="help"
         className={HELP_BUTTON_CLASS}
         style={{ zoom: BOARD_TOOL_SCALE }}
-        title="Board help"
-        aria-label="Show board help"
+        title={t("Board help")}
+        aria-label={t("Show board help")}
       >
         ?
       </button>

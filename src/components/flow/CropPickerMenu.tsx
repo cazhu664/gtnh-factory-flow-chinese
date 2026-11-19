@@ -5,6 +5,7 @@ import type { RecipeSummary } from "@/lib/datasets/types";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
 import { useFactoryStore } from "@/store/factory-store";
 import { RecipeListPicker, recipeChoiceName } from "./RecipeListPicker";
+import { useT } from "@/lib/i18n";
 
 export const cropDisplayName = recipeChoiceName;
 
@@ -23,12 +24,13 @@ function byTierThenName(a: RecipeSummary, b: RecipeSummary): number {
 
 /** The crop's harvest, drawn: each drop with its icon, name and roll chance. */
 function CropHover({ crop }: { crop: RecipeSummary }) {
+  const t = useT();
   const tier = cropTier(crop);
   return (
     <div className="min-w-[170px]" style={{ fontFamily: "var(--app-font)" }}>
       <p className="text-[14px] font-bold leading-4 text-white">
         {cropDisplayName(crop.name)}
-        {tier ? <span className="text-[11px] font-normal text-slate-400"> · Tier {tier}</span> : null}
+        {tier ? <span className="text-[11px] font-normal text-slate-400">{t(" · Tier {tier}", { tier })}</span> : null}
       </p>
       <div className="mt-1.5 space-y-1">
         {crop.outputs.map((output) => (
@@ -55,7 +57,7 @@ function CropHover({ crop }: { crop: RecipeSummary }) {
         ))}
       </div>
       {cropMachineOnly(crop) ? (
-        <p className="mt-1.5 text-[12px] leading-4 text-slate-400">Only works in an Industrial Farm.</p>
+        <p className="mt-1.5 text-[12px] leading-4 text-slate-400">{t("Only works in an Industrial Farm.")}</p>
       ) : null}
     </div>
   );
@@ -66,6 +68,7 @@ function CropHover({ crop }: { crop: RecipeSummary }) {
  * recipe to that crop's Crop Farm entry.
  */
 export function CropPickerMenu({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
+  const t = useT();
   const setNodeRecipe = useFactoryStore((state) => state.setNodeRecipe);
   // On the Crop Manager, a machine-only crop harvests to NOTHING; the tile
   // grays out so the dead pick is visible before it is made (the Industrial
@@ -79,7 +82,7 @@ export function CropPickerMenu({ nodeId, onClose }: { nodeId: string; onClose: (
     <RecipeListPicker
       cacheKey="crops"
       load={async (manifestUrl, version) => (await listRecipeDatasetCrops(manifestUrl, version)).crops}
-      noun="crops"
+      noun={t("crops")}
       toggleSelector="[data-crop-picker-toggle]"
       onPick={(recipe) => setNodeRecipe(nodeId, recipe)}
       onClose={onClose}
@@ -87,7 +90,7 @@ export function CropPickerMenu({ nodeId, onClose }: { nodeId: string; onClose: (
       // The list is tier-sorted, so a tier's first crop opens its section.
       sectionOf={(crop) => {
         const tier = cropTier(crop);
-        return tier !== undefined ? `Tier ${tier}` : undefined;
+        return tier !== undefined ? t("Tier {tier}", { tier }) : undefined;
       }}
       tileResource={(crop) => crop.outputs[0]}
       hover={(crop) => <CropHover crop={crop} />}

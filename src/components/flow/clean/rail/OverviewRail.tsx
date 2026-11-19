@@ -41,8 +41,9 @@ import { useCleanCardModel, wheelDraft } from "../clean-model";
 import { powerPanelTip } from "../interaction/tips";
 import type { RecipeNodeData } from "../../RecipeNode";
 import { CC, tierChipColors } from "../tokens";
-import { UP_TO_COLOR, UP_TO_WORD, shownReason, upToSentence } from "../up-to-reason";
+import { UP_TO_COLOR, upToWord, shownReason, upToSentence } from "../up-to-reason";
 import { PIN_RULE_LABEL } from "@/lib/model/pin-rule";
+import { datasetNameLabel, t, useT } from "@/lib/i18n";
 import {
   pinCount,
   pinSnapshot,
@@ -164,7 +165,7 @@ export function ResourceGlyph({ line }: { line: Pick<RailLine, "resource" | "ene
       <span
         className="rail-icon rail-swatch"
         role="img"
-        aria-label={resource.displayName}
+        aria-label={datasetNameLabel(resource.displayName)}
         style={fluidSwatchStyle({ ...resource, dominantColor: color })}
       />
     );
@@ -209,10 +210,11 @@ export function OverviewRail({
 }
 
 function FoldedStrip({ side, onOpen }: { side: "left" | "right"; onOpen?: () => void }) {
+  const t = useT();
   return (
     <ColumnStrip
-      label="OVERVIEW"
-      open="Open the overview"
+      label={t("OVERVIEW")}
+      open={t("Open the overview")}
       side={side}
       helpAnchor="overview-rail"
       onOpen={() => {
@@ -264,6 +266,7 @@ export function ColumnStrip({
 
 function OpenRail({ side, fitWidth }: { side: "left" | "right"; fitWidth: boolean }) {
   useRateDisplayUnits();
+  const t = useT();
   const view = useRailView();
   const { rail, spares } = useRailData();
   const workspace = useWorkspaceView();
@@ -411,23 +414,23 @@ function OpenRail({ side, fitWidth }: { side: "left" | "right"; fitWidth: boolea
       }}
     >
       <div className="rail-head">
-        <span className="rail-head-title">OVERVIEW</span>
+        <span className="rail-head-title">{t("OVERVIEW")}</span>
         <RailKey
-          label="Fold the overview"
+          label={t("Fold the overview")}
           className="rail-key-fold"
           onClick={() => writeRailView({ open: false })}
-          tip={() => ({ title: "Fold the overview" })}
+          tip={() => ({ title: t("Fold the overview") })}
         >
           <FoldGlyph direction={side} />
         </RailKey>
       </div>
       <input
         className="rail-filter"
-        placeholder="Filter resources..."
+        placeholder={t("Filter resources...")}
         value={filter}
         spellCheck={false}
         onChange={(event) => setFilter(event.target.value)}
-        aria-label="Filter resources"
+        aria-label={t("Filter resources")}
       />
       <div
         ref={scroller}
@@ -473,6 +476,7 @@ const ItemView = memo(function ItemView({
   peak: boolean;
 }) {
   const { item } = placed;
+  const t = useT();
   switch (item.t) {
     case "section":
       return <SectionBar item={item} euText={euText} peak={peak} />;
@@ -485,7 +489,7 @@ const ItemView = memo(function ItemView({
     case "power":
       return (
         <div className="rail-power" style={{ height: placed.height }}>
-          <span style={{ color: CC.muted }}>{item.label}</span>
+          <span style={{ color: CC.muted }}>{t(item.label)}</span>
           <b
             style={{
               color: item.label === "Made" ? "#FCD34D" : item.value >= 0 ? CC.ok : CC.red,
@@ -514,6 +518,7 @@ function SectionBar({
   euText: string;
   peak: boolean;
 }) {
+  const t = useT();
   const shown = item.shown !== item.count;
   const filtering = shown;
   return (
@@ -529,13 +534,13 @@ function SectionBar({
         if (event.key === "Enter" || event.key === " ") toggleRailSection(item.id);
       }}
       {...tipProps(`sec|${item.id}`, () => ({
-        title: item.id,
-        actions: [{ input: "left", label: "Fold or unfold" }],
+        title: t(item.id),
+        actions: [{ input: "left", label: t("Fold or unfold") }],
       }))}
     >
       <span className="rail-sec-tri" />
       <span className="rail-sec-title" style={{ color: INK[item.id] }}>
-        {item.id}
+        {t(item.id)}
       </span>
       <span className="rail-sec-badge">
         {filtering ? `${item.shown} / ${item.count}` : item.count}
@@ -545,23 +550,25 @@ function SectionBar({
           <>
             <span>{euText}</span>
             <RailKey
-              label={peak ? "Peak power" : "Average power"}
+              label={peak ? t("Peak power") : t("Average power")}
               onClick={() => writeWorkspaceView({ averageMachineDraw: peak })}
               onContext={() => writeWorkspaceView({ averageMachineDraw: peak })}
               tip={() => ({
-                title: peak ? "Peak power" : "Average power",
+                title: peak ? t("Peak power") : t("Average power"),
                 notes: [
                   {
                     text: peak
-                      ? "Every machine running at once."
-                      : "Machines running only as much as the plan needs.",
+                      ? t("Every machine running at once.")
+                      : t("Machines running only as much as the plan needs."),
                     tone: "muted",
                   },
                 ],
-                actions: [{ input: "left", label: peak ? "Show the average" : "Show the peak" }],
+                actions: [
+                  { input: "left", label: peak ? t("Show the average") : t("Show the peak") },
+                ],
               })}
             >
-              {peak ? "Peak" : "Avg"}
+              {peak ? t("Peak") : t("Avg")}
             </RailKey>
           </>
         ) : item.id === "INTERNAL" ? null : (
@@ -581,8 +588,8 @@ function lineTip(line: RailLine, text: string): TipContent {
     title: line.label,
     sub: text,
     actions: [
-      { input: "left", label: "Go to the cards that make or use it, one by one" },
-      { input: "right", label: "Find public plans that make it" },
+      { input: "left", label: t("Go to the cards that make or use it, one by one") },
+      { input: "right", label: t("Find public plans that make it") },
     ],
   };
 }
@@ -712,6 +719,7 @@ function DrawerControls({
   line: RailLine;
   state: RailState;
 }) {
+  const t = useT();
   const mult = rateMultiplierForKind(line.kind);
   const key = `drawer:${drawer.id}`;
   const wheeled = state.wheeled[key];
@@ -724,7 +732,7 @@ function DrawerControls({
       <RuleKey
         mark={mark}
         tone={drawer.rule === "ignore" ? "muted" : "gold"}
-        label={`Rule of the ${line.label} drawer`}
+        label={t("Rule of the {label} drawer", { label: line.label })}
         onClick={(event) => {
           event.stopPropagation();
           const rect = event.currentTarget.getBoundingClientRect();
@@ -740,19 +748,19 @@ function DrawerControls({
         }}
         onWheel={(direction) => stepDrawerRule(drawer, direction)}
         tip={() => ({
-          title: "Rule",
-          sub: RULE_NAME[drawer.rule],
+          title: t("Rule"),
+          sub: t(RULE_NAME[drawer.rule]),
           notes: [{ text: ruleMeaning(drawer), tone: "muted" }],
           actions: [
-            { input: "left", label: "Pick" },
-            { input: "right", label: "Previous" },
-            { input: "wheel", label: "Next or previous" },
-            { input: "middle", label: "Clear" },
+            { input: "left", label: t("Pick") },
+            { input: "right", label: t("Previous") },
+            { input: "wheel", label: t("Next or previous") },
+            { input: "middle", label: t("Clear") },
           ],
         })}
       />
       <RateBox
-        label={`Rate of the ${line.label} drawer`}
+        label={t("Rate of the {label} drawer", { label: line.label })}
         text={formatCompact(shown)}
         gold={set}
         unmet={drawer.unmet}
@@ -771,22 +779,22 @@ function DrawerControls({
           )
         }
         tip={() => ({
-          title: set ? "Target rate" : "No rate yet",
+          title: set ? t("Target rate") : t("No rate yet"),
           rows: set
             ? [
                 [
-                  RULE_NAME[drawer.rule],
+                  t(RULE_NAME[drawer.rule]),
                   `${formatCompact(shown)} ${rateSuffixForKind(line.kind).trim()}`,
                 ],
               ]
             : undefined,
           notes: drawer.unmet
-            ? [{ text: "The plan cannot reach this rate.", tone: "red" }]
+            ? [{ text: t("The plan cannot reach this rate."), tone: "red" }]
             : undefined,
           actions: [
-            { input: "left", label: "Type it (2.5k, 1/3)" },
-            { input: "wheel", label: "+1, Ctrl 10, Shift 100" },
-            { input: "middle", label: "Clear" },
+            { input: "left", label: t("Type it (2.5k, 1/3)") },
+            { input: "wheel", label: t("+1, Ctrl 10, Shift 100") },
+            { input: "middle", label: t("Clear") },
           ],
         })}
       />
@@ -795,53 +803,57 @@ function DrawerControls({
 }
 
 function ruleMeaning(drawer: RailDrawer): string {
-  const verb = drawer.source ? "draws from it" : "puts in it";
+  const verb = drawer.source ? t("draws from it") : t("puts in it");
   switch (drawer.rule) {
     case "ignore":
-      return `No target: the plan ${verb} whatever it needs.`;
+      return t("No target: the plan {verb} whatever it needs.", { verb });
     case "at-least":
-      return `The plan ${verb} at least the rate.`;
+      return t("The plan {verb} at least the rate.", { verb });
     case "exact":
-      return `The plan ${verb} exactly the rate.`;
+      return t("The plan {verb} exactly the rate.", { verb });
     case "at-most":
-      return `The plan ${verb} no more than the rate.`;
+      return t("The plan {verb} no more than the rate.", { verb });
   }
 }
 
 function PortControls({ pin, line, state }: { pin: RailPin; line: RailLine; state: RailState }) {
+  const t = useT();
   const mult = rateMultiplierForKind(line.kind);
   const key = `port:${pin.nodeId}:${pin.handle}`;
   const wheeled = state.wheeled[key];
   const perSecond = wheeled ?? pin.ratePerSecond;
   const shown = perSecond * mult;
-  const side = pin.output ? "output" : "input";
+  const side = pin.output ? t("output") : t("input");
   return (
     <>
       <RuleKey
         mark="="
         tone="gold"
-        label={`Release the ${pin.machine}'s ${side}`}
+        label={t("Release the {machine}'s {side}", { machine: pin.machine, side })}
         onClick={(event) => {
           event.stopPropagation();
           setPortRate(pin.nodeId, pin.handle, 0);
         }}
         onMiddle={() => setPortRate(pin.nodeId, pin.handle, 0)}
         tip={() => ({
-          title: `Set on the ${pin.machine}'s ${side}`,
+          title: t("Set on the {machine}'s {side}", { machine: pin.machine, side }),
           notes: [
             {
-              text: `The machine runs so this ${side} ${pin.output ? "gives" : "takes"} exactly it.`,
+              text: t("The machine runs so this {side} {verb} exactly it.", {
+                side,
+                verb: pin.output ? t("gives") : t("takes"),
+              }),
               tone: "muted",
             },
           ],
           actions: [
-            { input: "left", label: "Let the plan decide" },
-            { input: "middle", label: "Clear" },
+            { input: "left", label: t("Let the plan decide") },
+            { input: "middle", label: t("Clear") },
           ],
         })}
       />
       <RateBox
-        label={`Rate set on the ${pin.machine}'s ${side}`}
+        label={t("Rate set on the {machine}'s {side}", { machine: pin.machine, side })}
         text={formatCompact(shown)}
         gold
         editing={state.editing === key}
@@ -859,11 +871,11 @@ function PortControls({ pin, line, state }: { pin: RailPin; line: RailLine; stat
           )
         }
         tip={() => ({
-          title: `Rate set on the ${pin.machine}'s ${side}`,
+          title: t("Rate set on the {machine}'s {side}", { machine: pin.machine, side }),
           actions: [
-            { input: "left", label: "Type it (2.5k, 1/3)" },
-            { input: "wheel", label: "+1, Ctrl 10, Shift 100" },
-            { input: "middle", label: "Clear" },
+            { input: "left", label: t("Type it (2.5k, 1/3)") },
+            { input: "wheel", label: t("+1, Ctrl 10, Shift 100") },
+            { input: "middle", label: t("Clear") },
           ],
         })}
       />
@@ -881,26 +893,30 @@ function OpenLineControls({
   sources: boolean;
   state: RailState;
 }) {
+  const t = useT();
   const mult = rateMultiplierForKind(line.kind);
   const key = `line:${sources ? "in" : "out"}:${line.key}`;
   const only = line.open.length === 1 ? line.open[0]! : undefined;
-  const side = sources ? "input" : "output";
+  const side = sources ? t("input") : t("output");
   const tip = (): TipContent => ({
-    title: "Rate: the plan decides",
+    title: t("Rate: the plan decides"),
     notes: [
       {
         text: only
-          ? `Sets the ${only.machine}'s ${side}, as on its card.`
-          : `Makes a drawer for it, wired to the ${line.open.length} ${side}s waiting for it.`,
+          ? t("Sets the {machine}'s {side}, as on its card.", { machine: only.machine, side })
+          : t("Makes a drawer for it, wired to the {count} {sides} waiting for it.", {
+              count: line.open.length,
+              sides: sources ? t("inputs") : t("outputs"),
+            }),
         tone: "muted",
       },
     ],
     actions: only
       ? [
-          { input: "left", label: "Type it (2.5k, 1/3)" },
-          { input: "wheel", label: "+1, Ctrl 10, Shift 100" },
+          { input: "left", label: t("Type it (2.5k, 1/3)") },
+          { input: "wheel", label: t("+1, Ctrl 10, Shift 100") },
         ]
-      : [{ input: "left", label: "Type it (2.5k, 1/3)" }],
+      : [{ input: "left", label: t("Type it (2.5k, 1/3)") }],
   });
   const wheeled = state.wheeled[key];
   return (
@@ -908,7 +924,7 @@ function OpenLineControls({
       <RuleKey
         mark="~"
         tone="muted"
-        label={`Rate of ${line.label}: the plan decides`}
+        label={t("Rate of {label}: the plan decides", { label: line.label })}
         onClick={(event) => {
           event.stopPropagation();
           state.edit(key);
@@ -916,7 +932,7 @@ function OpenLineControls({
         tip={tip}
       />
       <RateBox
-        label={`Set a rate for ${line.label}`}
+        label={t("Set a rate for {label}", { label: line.label })}
         text={wheeled !== undefined ? formatCompact(wheeled * mult) : ""}
         gold={wheeled !== undefined && wheeled > 0}
         editing={state.editing === key}
@@ -954,13 +970,14 @@ function RuleMenu({
   y: number;
   onClose: () => void;
 }) {
+  const t = useT();
   // The board's own menu, so it follows the interface zoom as every other menu does.
   return (
-    <BoardMenu x={x} y={y} label="Rule" width={210} onClose={onClose}>
+    <BoardMenu x={x} y={y} label={t("Rule")} width={210} onClose={onClose}>
       {RULE_STEPS.map((rule) => (
         <MenuRow
           key={rule}
-          label={RULE_NAME[rule]}
+          label={t(RULE_NAME[rule])}
           detail={RULE_MARK[rule]}
           checked={rule === drawer.rule}
           onClick={() => {
@@ -997,6 +1014,7 @@ function MachineGlyph({ entry }: { entry: RailMachine }) {
 }
 
 function GroupRow({ name, entries }: { name: string; entries: RailMachine[] }) {
+  const t = useT();
   const [hot, setHot] = useState(false);
   const go = () =>
     walkCards(
@@ -1020,8 +1038,8 @@ function GroupRow({ name, entries }: { name: string; entries: RailMachine[] }) {
         () => ({
           title: name,
           actions: [
-            { input: "left", label: "Go to its cards one by one" },
-            { input: "middle", label: "Go to its cards one by one" },
+            { input: "left", label: t("Go to its cards one by one") },
+            { input: "middle", label: t("Go to its cards one by one") },
           ],
         }),
         { enter: () => setHot(true), leave: () => setHot(false) },
@@ -1092,6 +1110,7 @@ const MachineRow = memo(function MachineRow({
   peak: boolean;
   state: RailState;
 }) {
+  const t = useT();
   useFontEpoch();
   const railWidth = useContext(RailWidthContext);
   const [hot, setHot] = useState(false);
@@ -1125,7 +1144,7 @@ const MachineRow = memo(function MachineRow({
   const withUnit = (number: string, unit: string) =>
     measureClean(`${number} ${unit}`, RAIL_FONT) <= room ? `${number} ${unit}` : number;
   let eu = "";
-  if (tooLow) eu = "TIER!";
+  if (tooLow) eu = t("TIER!");
   else if (made !== undefined && made > 0)
     eu = withUnit(`+${formatCompact(powerDisplayFromEuT(made))}`, powerDisplaySuffix());
   else if (steam !== undefined) eu = withUnit(formatCompact(steam), "L/s");
@@ -1139,15 +1158,20 @@ const MachineRow = memo(function MachineRow({
     state.wheelEdit(countKey, next < 1 ? 0 : next, (v) => pinCount(entry.nodeId, v));
   };
   const lines: TipContent = {
-    title: entry.label,
+    title: datasetNameLabel(entry.label),
     sub: upTo && entry.pinned
-      ? `${machinesText(entry.count)} of ${machinesText(entry.pin!)} machines`
-      : `${machinesText(entry.count)} machines${entry.pinned ? " (exactly)" : ""}`,
+      ? t("{count} of {pin} machines", {
+          count: machinesText(entry.count),
+          pin: machinesText(entry.pin!),
+        })
+      : entry.pinned
+        ? t("{count} machines (exactly)", { count: machinesText(entry.count) })
+        : t("{count} machines", { count: machinesText(entry.count) }),
     notes: [
       ...(upTo && entry.upTo?.reason
         ? [
             {
-              text: `${UP_TO_WORD[entry.upTo.reason]}. ${upToSentence(entry.upTo) ?? ""}`.trim(),
+              text: `${upToWord(entry.upTo.reason)}. ${upToSentence(entry.upTo) ?? ""}`.trim(),
               tone: "muted" as const,
             },
           ]
@@ -1155,15 +1179,15 @@ const MachineRow = memo(function MachineRow({
       ...(eu
         ? [
             {
-              text: `${eu} ${peak ? "peak" : "average"}`,
+              text: t("{eu} {mode}", { eu, mode: peak ? t("peak") : t("average") }),
               tone: tooLow ? ("red" as const) : ("muted" as const),
             },
           ]
         : []),
     ],
     actions: [
-      { input: "left", label: "Go to the card" },
-      ...(TASKS_ENABLED ? [{ input: "right" as const, label: "Add to a task" }] : []),
+      { input: "left", label: t("Go to the card") },
+      ...(TASKS_ENABLED ? [{ input: "right" as const, label: t("Add to a task") }] : []),
     ],
   };
   return (
@@ -1214,7 +1238,7 @@ const MachineRow = memo(function MachineRow({
             // ≤ Up to (a count wheeled onto Any is Up to), = Exactly, ~ Any.
             mark={entry.rule === "exact" ? "=" : upTo || set ? "≤" : "~"}
             tone={set ? "gold" : "muted"}
-            label={`Pin the ${entry.label}`}
+            label={t("Pin the {label}", { label: datasetNameLabel(entry.label) })}
             onClick={(event) => {
               event.stopPropagation();
               togglePin();
@@ -1226,34 +1250,37 @@ const MachineRow = memo(function MachineRow({
             tip={() =>
               entry.pinned
                 ? {
-                    title: PIN_RULE_LABEL[entry.rule],
+                    title: t(PIN_RULE_LABEL[entry.rule]),
                     notes: [
                       {
                         text: upTo
-                          ? `Never more than ${machinesText(entry.pin!)}.`
-                          : `Exactly ${machinesText(entry.pin!)}.`,
+                          ? t("Never more than {n}.", { n: machinesText(entry.pin!) })
+                          : t("Exactly {n}.", { n: machinesText(entry.pin!) }),
                         tone: "muted",
                       },
                     ],
                     actions: [
-                      { input: "left", label: upTo ? "Make it exact" : "Let the plan decide" },
-                      { input: "middle", label: "Let the plan decide" },
+                      {
+                        input: "left",
+                        label: upTo ? t("Make it exact") : t("Let the plan decide"),
+                      },
+                      { input: "middle", label: t("Let the plan decide") },
                     ],
                   }
                 : {
-                    title: PIN_RULE_LABEL[entry.rule],
+                    title: t(PIN_RULE_LABEL[entry.rule]),
                     notes: [
                       {
-                        text: "The plan decides how many.",
+                        text: t("The plan decides how many."),
                         tone: "muted",
                       },
                     ],
-                    actions: [{ input: "left", label: `Pin it at ${base}` }],
+                    actions: [{ input: "left", label: t("Pin it at {base}", { base }) }],
                   }
             }
           />
           <RateBox
-            label={`Pinned count of the ${entry.label}`}
+            label={t("Pinned count of the {label}", { label: datasetNameLabel(entry.label) })}
             text={machinesText(shownPin)}
             gold={set}
             editing={state.editing === countKey}
@@ -1277,11 +1304,11 @@ const MachineRow = memo(function MachineRow({
             onLive={(value) => pinCount(entry.nodeId, value)}
             onRevert={() => restorePin(entry.nodeId, opened.current)}
             tip={() => ({
-              title: "Machine count",
+              title: t("Machine count"),
               actions: [
-                { input: "left", label: "Type a pinned count" },
-                { input: "wheel", label: "One more or fewer (below one unpins)" },
-                { input: "middle", label: "Let the plan decide" },
+                { input: "left", label: t("Type a pinned count") },
+                { input: "wheel", label: t("One more or fewer (below one unpins)") },
+                { input: "middle", label: t("Let the plan decide") },
               ],
             })}
           />

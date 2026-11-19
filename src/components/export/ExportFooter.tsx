@@ -4,6 +4,7 @@ import type { CommunityPlanStats, EntryIcon, PlanResourceStat } from "@/lib/comm
 import { formatSlotRate } from "@/components/flow/flow-explainers";
 import { TierBadge } from "@/components/shelf-cards";
 import { fluidArtPixels, isSwatchFluid, ResourceIcon } from "@/components/nei/ResourceIcon";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 
 /**
  * The trim under an exported board image: the plan's icon, name, headline
@@ -119,6 +120,7 @@ export function ExportFooter({
   needs,
   outputs,
 }: ExportFooterProps) {
+  const t = useT();
   const palette = PALETTES[tone];
 
   return (
@@ -169,9 +171,9 @@ export function ExportFooter({
               style={{ color: palette.subtle }}
               className="flex items-center justify-end gap-2 text-[13px] tabular-nums"
             >
-              <span>{stats.machineCount} machines</span>
+              <span>{t("{count} machines", { count: stats.machineCount })}</span>
               <span aria-hidden>·</span>
-              <span>{stats.nodeCount} cards</span>
+              <span>{t("{count} cards", { count: stats.nodeCount })}</span>
               {stats.highestTier ? <TierBadge tier={stats.highestTier} /> : null}
             </div>
             <div className="mt-0.5 text-[12px]">
@@ -187,7 +189,7 @@ export function ExportFooter({
       {showIo ? (
         <div className="flex items-start gap-3">
         <IoColumn
-          label="Inputs"
+          label={t("Inputs")}
           accent={palette.needs}
           panel={palette.needsPanel}
           panelEdge={palette.needsEdge}
@@ -195,7 +197,7 @@ export function ExportFooter({
           stats={needs}
         />
         <IoColumn
-          label="Outputs"
+          label={t("Outputs")}
           accent={palette.makes}
           panel={palette.makesPanel}
           panelEdge={palette.makesEdge}
@@ -227,6 +229,7 @@ function IoColumn({
   palette: FooterPalette;
   stats: PlanResourceStat[];
 }) {
+  const t = useT();
   return (
     <div
       className="min-w-0 flex-1 rounded px-2.5 py-2"
@@ -237,7 +240,7 @@ function IoColumn({
       </div>
       {stats.length === 0 ? (
         <div style={{ color: palette.muted }} className="mt-1.5 text-[13px]">
-          Nothing
+          {t("Nothing")}
         </div>
       ) : (
         <div
@@ -271,7 +274,7 @@ function IoColumn({
                 />
               </span>
               <span className="min-w-0 flex-1 truncate text-[14px]">
-                {stat.displayName ?? stat.resourceId}
+                {datasetNameLabel(stat.displayName ?? stat.resourceId)}
               </span>
               <span
                 style={{ color: palette.subtle }}

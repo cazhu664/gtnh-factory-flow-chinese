@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n/core";
 import { applyMachineHandlerToRecipe } from "@/lib/model/recipe-rules";
 import { formatCompact } from "@/lib/model/resources";
 import { getVoltageTierMaxEuT } from "@/lib/model/tiers";
@@ -110,63 +111,63 @@ export function describePowerWorking(
   const imperfect = stats.overclockSteps - perfect;
   const kinds: string[] = [];
   if (perfect > 0) {
-    kinds.push(`${perfect} perfect`);
+    kinds.push(t("{count} perfect", { count: perfect }));
   }
   if (imperfect > 0) {
-    kinds.push(`${imperfect} imperfect`);
+    kinds.push(t("{count} imperfect", { count: imperfect }));
   }
 
   const rows: PowerLadderRow[] = [];
   if (Math.abs(discount - 1) > 1e-9) {
     rows.push({
       id: "discount",
-      label: "Discount",
+      label: t("Discount"),
       recipe: "—",
-      supplied: `${compact(discount * 100)}% power`,
-      help: "This machine runs recipes at a share of their power. It is taken first, before parallels or overclocks.",
+      supplied: t("{percent}% power", { percent: compact(discount * 100) }),
+      help: t("This machine runs recipes at a share of their power. It is taken first, before parallels or overclocks."),
     });
   }
   rows.push({
     id: "parallels",
-    label: "Parallels",
+    label: t("Parallels"),
     recipe: "1",
     supplied: String(parallels),
-    help: "Recipes running at once. Each one costs its own EU/t, and the supply pays for all of them before it buys any overclock. Parallels cost nothing extra per item.",
+    help: t("Recipes running at once. Each one costs its own EU/t, and the supply pays for all of them before it buys any overclock. Parallels cost nothing extra per item."),
   });
   rows.push({
     id: "overclocks",
-    label: "Overclocks",
+    label: t("Overclocks"),
     recipe: "—",
-    supplied: kinds.length > 0 ? kinds.join(", ") : "none",
-    help: "Every four times the draw the supply can cover buys one step. Imperfect: half the time for four times the power. Perfect: a quarter of the time for four times the power.",
+    supplied: kinds.length > 0 ? kinds.join(", ") : t("none"),
+    help: t("Every four times the draw the supply can cover buys one step. Imperfect: half the time for four times the power. Perfect: a quarter of the time for four times the power."),
   });
   rows.push({
     id: "time",
-    label: "Time per run",
+    label: t("Time per run"),
     recipe: ticks(baseTicks),
     supplied: ticks(stats.durationTicks),
-    help: "How long one recipe takes. Under one tick the machine runs several recipes every tick instead.",
+    help: t("How long one recipe takes. Under one tick the machine runs several recipes every tick instead."),
   });
   rows.push({
     id: "energy",
-    label: "EU per run",
+    label: t("EU per run"),
     recipe: compact(baseEuT * baseTicks),
     supplied: compact(Math.abs(stats.eut) * stats.durationTicks),
-    help: "What one recipe costs in energy. Imperfect overclocks double it every step. Perfect overclocks and parallels keep it flat.",
+    help: t("What one recipe costs in energy. Imperfect overclocks double it every step. Perfect overclocks and parallels keep it flat."),
   });
   rows.push({
     id: "draw",
-    label: "Draw",
+    label: t("Draw"),
     recipe: `${compact(baseEuT)} EU/t`,
     supplied: `${compact(report.drawEuT)} EU/t`,
-    help: "What the machine pulls from the hatches while it runs. Supply above this sits unused until the next boost.",
+    help: t("What the machine pulls from the hatches while it runs. Supply above this sits unused until the next boost."),
   });
   rows.push({
     id: "runs",
-    label: "Runs per second",
+    label: t("Runs per second"),
     recipe: compact(20 / baseTicks),
     supplied: compact((parallels * 20) / stats.durationTicks),
-    help: "How many recipes finish every second with everything the supply buys. Multiply by the recipe's outputs for what comes out.",
+    help: t("How many recipes finish every second with everything the supply buys. Multiply by the recipe's outputs for what comes out."),
     emphasis: true,
   });
 
@@ -174,7 +175,7 @@ export function describePowerWorking(
   // machines one step lower give the same output for half the power.
   const hint =
     imperfect > 0 && report.state === "ok"
-      ? `Two of these at ${compact(budgetEuT / 4)} EU/t each: same output, half the power.`
+      ? t("Two of these at {euT} EU/t each: same output, half the power.", { euT: compact(budgetEuT / 4) })
       : undefined;
 
   const wins = listPowerWinsCached(recipe, node);
@@ -192,8 +193,12 @@ export function describePowerWorking(
     readAs: `${tier} × ${compact(amps)} A`,
     draw:
       parallels > 1
-        ? `Uses ${compact(report.drawEuT)} EU/t (${compact(Math.abs(stats.eut))} × ${parallels})`
-        : `Uses ${compact(report.drawEuT)} EU/t`,
+        ? t("Uses {draw} EU/t ({each} × {parallels})", {
+            draw: compact(report.drawEuT),
+            each: compact(Math.abs(stats.eut)),
+            parallels,
+          })
+        : t("Uses {draw} EU/t", { draw: compact(report.drawEuT) }),
     drawEuT: report.drawEuT,
     rows,
     hint,

@@ -25,12 +25,7 @@ import { copyToClipboard } from "@/lib/clipboard";
 import { PastePlanDialog } from "./export/PastePlanDialog";
 import { openPlanFile } from "@/lib/import-export/open-plan-file";
 import { isLiveConfigured } from "@/lib/live/live-config";
-
-/**
- * With live plans, Share invites people into a plan (the plan bar) and
- * posting a copy to the library is Publish; without, posting is Share.
- */
-const PUBLISH_LABEL = isLiveConfigured() ? "Post a copy to Community" : "Share this setup";
+import { useT } from "@/lib/i18n";
 
 interface BoardActionsProps {
   /**
@@ -60,6 +55,7 @@ export function BoardActions({
   onShare,
   onExportImage,
 }: BoardActionsProps = {}) {
+  const t = useT();
   const isReadOnly = useFactoryStore((state) => state.isReadOnly);
   const projectInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -81,22 +77,26 @@ export function BoardActions({
   // trap, so the button waits until you are looking at the thing it posts.
   const isWelcomeCoveringBoard = useWelcomeTab().active;
   const canShare = !isWelcomeCoveringBoard && project.nodes.length > 0;
-  const shareWord = isLiveConfigured() ? "Publish" : "Share";
+  // With live plans, Share invites people into a plan (the plan bar) and
+  // posting a copy to the library is Publish; without, posting is Share.
+  const live = isLiveConfigured();
+  const publishLabel = live ? t("Post a copy to Community") : t("Share this setup");
+  const shareWord = live ? t("Publish") : t("Share");
   const shareTitle = isWelcomeCoveringBoard
-    ? `${shareWord}: open a design tab first`
+    ? t("{word}: open a design tab first", { word: shareWord })
     : project.nodes.length === 0
-      ? `${shareWord}: build something first`
-      : PUBLISH_LABEL;
+      ? t("{word}: build something first", { word: shareWord })
+      : publishLabel;
 
   const selectedCardCount = selectedBoardIds.length;
   const diagnosticsLabel =
     diagnosticsState === "copied"
-      ? "Copied to clipboard"
+      ? t("Copied to clipboard")
       : diagnosticsState === "failed"
-        ? "Could not reach the clipboard"
+        ? t("Could not reach the clipboard")
         : selectedCardCount > 0
-          ? `Copy diagnostics (${selectedCardCount} selected)`
-          : "Copy diagnostics (whole plan)";
+          ? t("Copy diagnostics ({count} selected)", { count: selectedCardCount })
+          : t("Copy diagnostics (whole plan)");
 
   /**
    * Copies every selected card's machine, tier, config, overclock, rates and
@@ -142,7 +142,7 @@ export function BoardActions({
     try {
       await openPlanFile(file);
     } catch (error) {
-      console.error(error instanceof Error ? error.message : "Plan import failed.");
+      console.error(error instanceof Error ? error.message : t("Plan import failed."));
     } finally {
       if (projectInputRef.current) {
         projectInputRef.current.value = "";
@@ -194,7 +194,7 @@ export function BoardActions({
       return;
     }
 
-    if (!window.confirm("Clean the board and remove all nodes and links?")) {
+    if (!window.confirm(t("Clean the board and remove all nodes and links?"))) {
       return;
     }
 
@@ -224,7 +224,7 @@ export function BoardActions({
         {onShare ? (
           <MenuAction
             icon={Share2}
-            label={PUBLISH_LABEL}
+            label={publishLabel}
             disabled={!canShare}
             onClick={() => {
               onShare();
@@ -234,7 +234,7 @@ export function BoardActions({
         ) : null}
         <MenuAction
           icon={Trash2}
-          label="Clean the board"
+          label={t("Clean the board")}
           onClick={() => {
             requestCleanBoard();
             onAction?.();
@@ -242,7 +242,7 @@ export function BoardActions({
         />
         <MenuAction
           icon={Upload}
-          label="Import a plan"
+          label={t("Import a plan")}
           disabled={isProjectImporting}
           onClick={() => {
             projectInputRef.current?.click();
@@ -251,7 +251,7 @@ export function BoardActions({
         />
         <MenuAction
           icon={ClipboardPaste}
-          label="Paste a copied plan"
+          label={t("Paste a copied plan")}
           onClick={() => setPastingPlan(true)}
         />
         <MenuAction
@@ -263,7 +263,7 @@ export function BoardActions({
         />
         <MenuAction
           icon={Download}
-          label="Export as JSON"
+          label={t("Export as JSON")}
           disabled={Boolean(pendingExport)}
           onClick={() => {
             void exportJson();
@@ -273,7 +273,7 @@ export function BoardActions({
         {onExportImage ? (
           <MenuAction
             icon={ImageDown}
-            label="Export an image"
+            label={t("Export an image")}
             onClick={() => {
               onExportImage();
               onAction?.();
@@ -303,8 +303,8 @@ export function BoardActions({
           <button
             type="button"
             onClick={() => setExportMenuOpen((isOpen) => !isOpen)}
-            title="Plan: share, import, export"
-            aria-label="Plan menu: share, import, export"
+            title={t("Plan: share, import, export")}
+            aria-label={t("Plan menu: share, import, export")}
             aria-expanded={isExportMenuOpen}
             aria-busy={pendingExport ? true : undefined}
             disabled={Boolean(pendingExport)}
@@ -322,7 +322,7 @@ export function BoardActions({
               {onShare ? (
                 <ExportMenuItem
                   icon={Share2}
-                  label={PUBLISH_LABEL}
+                  label={publishLabel}
                   title={shareTitle}
                   disabled={!canShare}
                   onClick={() => {
@@ -333,7 +333,7 @@ export function BoardActions({
               ) : null}
               <ExportMenuItem
                 icon={Upload}
-                label="Import a plan..."
+                label={t("Import a plan...")}
                 disabled={isProjectImporting}
                 onClick={() => {
                   setExportMenuOpen(false);
@@ -342,7 +342,7 @@ export function BoardActions({
               />
               <ExportMenuItem
                 icon={ClipboardPaste}
-                label="Paste a copied plan..."
+                label={t("Paste a copied plan...")}
                 onClick={() => {
                   setExportMenuOpen(false);
                   setPastingPlan(true);
@@ -359,7 +359,7 @@ export function BoardActions({
               <div className="my-1 border-t border-line-strong" />
               <ExportMenuItem
                 icon={Download}
-                label="Export plan JSON"
+                label={t("Export plan JSON")}
                 onClick={() => {
                   void exportJson();
                 }}
@@ -367,7 +367,7 @@ export function BoardActions({
               {onExportImage ? (
                 <ExportMenuItem
                   icon={ImageDown}
-                  label="Export an image..."
+                  label={t("Export an image...")}
                   onClick={() => {
                     setExportMenuOpen(false);
                     onExportImage();

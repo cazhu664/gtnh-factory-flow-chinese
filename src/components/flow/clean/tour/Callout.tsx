@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 import { getTourCursor } from "./tour-controller";
 import type { Aim, NoteSpec } from "./director";
 import { mouseGlyphSvg } from "./cursor";
@@ -62,6 +63,7 @@ export function Callout({
   onBack: () => void;
   onLeave: () => void;
 }) {
+  const t = useT();
   const boxRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const lines: Line[] = useMemo(() => parseLines(note.text), [note.text]);
@@ -160,20 +162,20 @@ export function Callout({
           ))}
         </div>
         <div className="tour-keys">
-          <div role="button" aria-label="Leave the tour" title="Leave the tour (Esc)" className="tour-key tour-key-x" onClick={onLeave} />
+          <div role="button" aria-label={t("Leave the tour")} title={t("Leave the tour (Esc)")} className="tour-key tour-key-x" onClick={onLeave} />
           <span className="tour-keys-gap" />
           <div
             role="button"
-            aria-label="Back"
-            title="Back (left arrow)"
+            aria-label={t("Back")}
+            title={t("Back (left arrow)")}
             className="tour-key tour-key-back"
             data-off={canBack ? undefined : ""}
             onClick={canBack ? onBack : undefined}
           />
           <div
             role="button"
-            aria-label={last ? "Finish" : "Next"}
-            title={last ? "Finish (Enter)" : "Next (right arrow, Space or Enter)"}
+            aria-label={last ? t("Finish") : t("Next")}
+            title={last ? t("Finish (Enter)") : t("Next (right arrow, Space or Enter)")}
             className="tour-key tour-key-next"
             data-done={done ? "" : undefined}
             data-last={last ? "" : undefined}

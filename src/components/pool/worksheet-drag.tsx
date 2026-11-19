@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from "react";
 import { GripVertical } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { useWorksheetPointerDrag } from "./worksheet-pointer-drag";
 
 type ListKind = "machines" | "products" | "resources";
@@ -40,6 +41,7 @@ export function moveWorksheetEntry(
 }
 
 export function OrderHandle({ kind, id, label }: { kind: ListKind; id: string; label: string }) {
+  const t = useT();
   const { readOnly, ids, move } = useContext(WorksheetOrderContext);
   const { begin } = useWorksheetPointerDrag();
   if (readOnly) return null;
@@ -48,7 +50,7 @@ export function OrderHandle({ kind, id, label }: { kind: ListKind; id: string; l
       type="button"
       draggable={false}
       className="pool-order-handle"
-      aria-label={`Reorder ${label}`}
+      aria-label={t("Reorder {label}", { label })}
 
       onPointerDown={(event) => begin(event, { kind, id, label })}
       onDragStart={(event) => event.preventDefault()}

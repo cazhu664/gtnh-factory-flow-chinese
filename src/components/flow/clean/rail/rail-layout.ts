@@ -7,6 +7,7 @@ import {
   type RailPin,
 } from "./rail-model";
 import { sparedByResource, type SpareView } from "./spare-model";
+import { t } from "@/lib/i18n";
 
 /**
  * The rail's list as a flat run of items with their tops and heights. Pure,
@@ -117,7 +118,7 @@ export function layoutRail(input: LayoutInput): { placed: Placed[]; height: numb
       return;
     }
     if (shown.length === 0 && groups.length === 0) {
-      push({ t: "empty", text: kept.length === 0 ? empty : "No matches." }, ROW_H, `e:${id}`);
+      push({ t: "empty", text: kept.length === 0 ? empty : t("No matches.") }, ROW_H, `e:${id}`);
       y += GAP;
       return;
     }
@@ -136,9 +137,9 @@ export function layoutRail(input: LayoutInput): { placed: Placed[]; height: numb
     y += GAP;
   };
 
-  resources("INPUTS", "inputs", rail.inputs, "Nothing missing.");
-  resources("OUTPUTS", "outputs", rail.outputs, "Nothing coming out yet.");
-  resources("INTERNAL", "internal", rail.internal, "Nothing internal.");
+  resources("INPUTS", "inputs", rail.inputs, t("Nothing missing."));
+  resources("OUTPUTS", "outputs", rail.outputs, t("Nothing coming out yet."));
+  resources("INTERNAL", "internal", rail.internal, t("Nothing internal."));
 
   // A folded section keeps its sliders reachable: they are not drawn, but a held bar is found by key.
   const groupsOf = new Map<string, RailMachine[]>();
@@ -170,7 +171,7 @@ export function layoutRail(input: LayoutInput): { placed: Placed[]; height: numb
   }
   if (groupsOf.size === 0) {
     push(
-      { t: "empty", text: rail.machines.length === 0 ? "No machines yet." : "No matches." },
+      { t: "empty", text: rail.machines.length === 0 ? t("No machines yet.") : t("No matches.") },
       ROW_H,
       "e:MACHINES",
     );

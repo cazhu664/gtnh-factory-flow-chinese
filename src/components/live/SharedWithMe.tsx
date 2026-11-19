@@ -10,6 +10,7 @@ import {
   useCloudLibraryStore,
 } from "@/lib/library/cloud-library";
 import { syncLibraryNow } from "@/lib/library/library-sync";
+import { useT } from "@/lib/i18n";
 import type { SharedDesign } from "@/lib/library/sync-types";
 import { colorFor } from "@/lib/live/protocol";
 import { useDesignStore } from "@/store/design-store";
@@ -23,6 +24,7 @@ import { Face } from "./LiveFaces";
  * and the copy goes live at once: the same plan everyone in it is editing.
  */
 export function SharedWithMe() {
+  const t = useT();
   const shared = useCloudLibraryStore((state) => state.shared);
   const designs = useDesignStore((state) => state.designs);
   const removeDesign = useDesignStore((state) => state.removeDesign);
@@ -55,7 +57,7 @@ export function SharedWithMe() {
     try {
       await openSharedPlan(ref, plan.name);
     } catch (thrown) {
-      setError(thrown instanceof Error ? thrown.message : "The plan could not be opened.");
+      setError(thrown instanceof Error ? thrown.message : t("The plan could not be opened."));
     } finally {
       setBusy(undefined);
     }
@@ -78,7 +80,7 @@ export function SharedWithMe() {
         shared: state.shared?.filter((entry) => keyOf(entry) !== keyOf(plan)),
       }));
     } catch (thrown) {
-      setError(thrown instanceof Error ? thrown.message : "Could not leave the plan.");
+      setError(thrown instanceof Error ? thrown.message : t("Could not leave the plan."));
     } finally {
       setBusy(undefined);
     }
@@ -91,11 +93,11 @@ export function SharedWithMe() {
       {error ? <p className="mb-2 text-[11px] text-red-400">{error}</p> : null}
       {!shared ? (
         <p className="px-0.5 pt-1 text-[12px] text-[var(--mc-ink-muted)]">
-          Loading the plans shared with you.
+          {t("Loading the plans shared with you.")}
         </p>
       ) : shared.length === 0 ? (
         <p className="px-0.5 pt-1 text-[12px] leading-relaxed text-[var(--mc-ink-muted)]">
-          Nothing shared with you yet
+          {t("Nothing shared with you yet")}
         </p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-2">
@@ -118,7 +120,7 @@ export function SharedWithMe() {
                   onOpen={() => void open(plan)}
                   onMenu={(left, top) => setMenu({ key: keyOf(plan), left, top })}
                 />
-                <div className="flex items-center gap-1 px-1" aria-label="Who is in it">
+                <div className="flex items-center gap-1 px-1" aria-label={t("Who is in it")}>
                   <Face username={plan.ownerName} color={colorFor(plan.ownerId)} size={16} />
                   {others.map((member) => (
                     <Face
@@ -138,18 +140,18 @@ export function SharedWithMe() {
         <LibraryMenu
           left={menu.left}
           top={menu.top}
-          label={`Options for ${menuPlan.name}`}
+          label={t("Options for {name}", { name: menuPlan.name })}
           onClose={() => setMenu(undefined)}
         >
           <MenuItem
-            label="Open"
+            label={t("Open")}
             onClick={() => {
               setMenu(undefined);
               void open(menuPlan);
             }}
           />
           <MenuItem
-            label="Leave this plan"
+            label={t("Leave this plan")}
             tone="danger"
             disabled={!me}
             onClick={() => {

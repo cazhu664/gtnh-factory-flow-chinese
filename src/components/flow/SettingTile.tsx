@@ -13,6 +13,7 @@ import { snapNumericSetting, type MachineConfigTierControl } from "@/lib/model/r
 import type { MachineConfigTierOption, ResourceAmount } from "@/lib/model/types";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
+import { t, useT } from "@/lib/i18n";
 
 /**
  * ONE TILE GRAMMAR for a card's machine settings.
@@ -75,7 +76,7 @@ const CAPTIONS: Record<string, string> = {
 };
 
 export function settingCaption(control: Pick<MachineConfigTierControl, "id" | "label">): string {
-  return CAPTIONS[control.id] ?? control.label;
+  return t(CAPTIONS[control.id] ?? control.label);
 }
 
 /**
@@ -165,6 +166,7 @@ export function SettingTile({
 }) {
   const wellRef = useRef<HTMLSpanElement>(null);
   const pressTimer = useRef<number | undefined>(undefined);
+  const t = useT();
   const openList = () => {
     const rect = wellRef.current?.getBoundingClientRect();
     if (rect && onList) onList(rect);
@@ -205,7 +207,7 @@ export function SettingTile({
             event.stopPropagation();
             onStep(-1);
           }}
-          aria-label={`Previous ${caption}`}
+          aria-label={t("Previous {caption}", { caption })}
         >
           <Minus className="h-3 w-3" />
         </button>
@@ -222,7 +224,7 @@ export function SettingTile({
           }
           role={onType ? "button" : undefined}
           tabIndex={onType && !disabled ? 0 : undefined}
-          aria-label={onType ? `Edit ${caption}` : undefined}
+          aria-label={onType ? t("Edit {caption}", { caption }) : undefined}
           onKeyDown={onType ? (event) => {
             if (!disabled && (event.key === "Enter" || event.key === " ")) {
               event.preventDefault();
@@ -242,7 +244,7 @@ export function SettingTile({
             event.stopPropagation();
             onStep(1);
           }}
-          aria-label={`Next ${caption}`}
+          aria-label={t("Next {caption}", { caption })}
         >
           <Plus className="h-3 w-3" />
         </button>
@@ -276,6 +278,7 @@ export function SettingListMenu({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
+  const t = useT();
   const viewport = useDropdownViewport();
   // Numbered hatch choices should match with or without thousands separators.
   const needle = query.trim().toLowerCase().replaceAll(",", "");
@@ -316,15 +319,15 @@ export function SettingListMenu({
                 onPick(shown[0].key);
               }
             }}
-            placeholder="Filter..."
-            aria-label="Filter options"
+            placeholder={t("Filter...")}
+            aria-label={t("Filter options")}
             className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--mc-ink-muted)]"
           />
         </label>
       ) : null}
       <div className="min-h-0 overflow-y-auto">
       {shown.length === 0 ? (
-        <div className="px-2 py-1.5 text-[12px] text-[var(--mc-ink-muted)]">No match.</div>
+        <div className="px-2 py-1.5 text-[12px] text-[var(--mc-ink-muted)]">{t("No match.")}</div>
       ) : null}
       {shown.map((row) => (
         <button

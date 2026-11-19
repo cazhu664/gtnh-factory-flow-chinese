@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { t } from "@/lib/i18n";
 import type { FactoryNode, Recipe } from "@/lib/model/types";
 import {
   applyMachineHandlerToRecipe,
@@ -87,35 +88,35 @@ const times = (text: string) => text.replace(/^[x×]/, "×");
 export function machineNameTip(view: CleanCardView, f: CardTipFacts): TipSpec {
   const tip: NonNullable<TipSpec["rows"]> = [
     {
-      label: view.count.pinned ? "Running machines" : "Required machines",
+      label: t(view.count.pinned ? "Running machines" : "Required machines"),
       value: times(view.count.text),
     },
   ];
   if (view.count.pinned)
-    tip.push({ label: PIN_RULE_LABEL[view.count.rule], value: `×${view.count.setText}` });
-  if (f.shared) tip.push({ label: "Recipes", value: String(f.recipes) });
-  if (view.tier && !f.steam) tip.push({ label: "Configured tier", value: view.tier.label });
-  tip.push({ label: "Time per operation", value: seconds(f.seconds) });
+    tip.push({ label: t(PIN_RULE_LABEL[view.count.rule]), value: `×${view.count.setText}` });
+  if (f.shared) tip.push({ label: t("Recipes"), value: String(f.recipes) });
+  if (view.tier && !f.steam) tip.push({ label: t("Configured tier"), value: view.tier.label });
+  tip.push({ label: t("Time per operation"), value: seconds(f.seconds) });
   tip.push(
     f.steam
-      ? { label: "Steam per machine", value: `${formatCompact(f.drawPerMachine)} L/s` }
-      : { label: "Draw per machine", value: `${formatCompact(f.drawPerMachine)} EU/t` },
+      ? { label: t("Steam per machine"), value: `${formatCompact(f.drawPerMachine)} L/s` }
+      : { label: t("Draw per machine"), value: `${formatCompact(f.drawPerMachine)} EU/t` },
   );
   if (f.parallels > 1)
-    tip.push({ label: "Parallel operations", value: String(Math.round(f.parallels)) });
+    tip.push({ label: t("Parallel operations"), value: String(Math.round(f.parallels)) });
   return {
     id: `${view.nodeId}|name`,
     title: view.name,
-    sub: view.amps ? "Multiblock" : "Machine",
+    sub: t(view.amps ? "Multiblock" : "Machine"),
     rows: tip,
-    notes: f.shared ? [{ text: "One machine runs these recipes in turns.", tone: "muted" }] : [],
+    notes: f.shared ? [{ text: t("One machine runs these recipes in turns."), tone: "muted" }] : [],
     actions: view.hasPicker
       ? [
           {
             input: "left",
-            label: f.shared ? "Machines that run them all" : "Machines that run it",
+            label: t(f.shared ? "Machines that run them all" : "Machines that run it"),
           },
-          { input: "wheel", label: "Next machine" },
+          { input: "wheel", label: t("Next machine") },
         ]
       : [],
   };
@@ -123,24 +124,24 @@ export function machineNameTip(view: CleanCardView, f: CardTipFacts): TipSpec {
 
 export function tierChipTip(view: CleanCardView, f: CardTipFacts): TipSpec {
   const tier = view.tier!;
-  const rows: NonNullable<TipSpec["rows"]> = [{ label: "Configured tier", value: tier.label }];
+  const rows: NonNullable<TipSpec["rows"]> = [{ label: t("Configured tier"), value: tier.label }];
   if (f.recipeTier && f.recipeTier !== "NONE")
-    rows.push({ label: "Recipe tier", value: f.recipeTier });
-  rows.push({ label: "Time per operation", value: seconds(f.seconds) });
-  rows.push({ label: "Draw per machine", value: `${formatCompact(f.drawPerMachine)} EU/t` });
+    rows.push({ label: t("Recipe tier"), value: f.recipeTier });
+  rows.push({ label: t("Time per operation"), value: seconds(f.seconds) });
+  rows.push({ label: t("Draw per machine"), value: `${formatCompact(f.drawPerMachine)} EU/t` });
   return {
     id: `${view.nodeId}|tier`,
-    title: tier.fixed ? "Fusion reactor power" : "Voltage tier",
+    title: t(tier.fixed ? "Fusion reactor power" : "Voltage tier"),
     rows,
     notes: view.power?.stalled
-      ? [{ text: "Below the recipe's tier: it cannot run.", tone: "red" }]
+      ? [{ text: t("Below the recipe's tier: it cannot run."), tone: "red" }]
       : [],
     actions: tier.fixed
       ? []
       : [
-          { input: "left", label: "Up" },
-          { input: "right", label: "Down" },
-          { input: "wheel", label: "Step" },
+          { input: "left", label: t("Up") },
+          { input: "right", label: t("Down") },
+          { input: "wheel", label: t("Step") },
         ],
   };
 }
@@ -151,23 +152,23 @@ export function powerRowTip(view: CleanCardView, f: CardTipFacts): TipSpec {
   return f.steam
     ? {
         id: `${view.nodeId}|power`,
-        title: "Steam",
+        title: t("Steam"),
         rows: [
-          { label: "Steam per machine", value: `${formatCompact(f.drawPerMachine)} L/s` },
-          { label: "Steam for this card", value: demand },
+          { label: t("Steam per machine"), value: `${formatCompact(f.drawPerMachine)} L/s` },
+          { label: t("Steam for this card"), value: demand },
         ],
-        notes: [{ text: "Not wired in plans.", tone: "muted" }],
+        notes: [{ text: t("Not wired in plans."), tone: "muted" }],
       }
     : {
         id: `${view.nodeId}|power`,
-        title: "Power",
+        title: t("Power"),
         rows: [
-          { label: "Draw per machine", value: `${formatCompact(f.drawPerMachine)} EU/t` },
-          { label: "Demand for this card", value: demand },
+          { label: t("Draw per machine"), value: `${formatCompact(f.drawPerMachine)} EU/t` },
+          { label: t("Demand for this card"), value: demand },
         ],
         notes: [
           ...(power.stalled ? [{ text: power.title, tone: "red" as const }] : []),
-          { text: "Not wired in plans.", tone: "muted" as const },
+          { text: t("Not wired in plans."), tone: "muted" as const },
         ],
       };
 }
@@ -181,44 +182,46 @@ export function countRowsTip(
   const rows: NonNullable<TipSpec["rows"]> = [];
   const notes: NonNullable<TipSpec["notes"]> = [];
   if (count.pinned) {
-    rows.push({ label: "Running", value: times(count.text) });
-    rows.push({ label: PIN_RULE_LABEL[count.rule], value: `×${count.setText}` });
+    rows.push({ label: t("Running"), value: times(count.text) });
+    rows.push({ label: t(PIN_RULE_LABEL[count.rule]), value: `×${count.setText}` });
     if (count.rule === "upTo" && count.set !== undefined && count.set > 0) {
       rows.push({
-        label: "Usage",
+        label: t("Usage"),
         value: `${formatCompact(Math.min(100, (100 * count.value) / count.set))}%`,
       });
     }
     notes.push({ text: count.title, tone: "muted" });
   } else {
-    rows.push({ label: "Calculated", value: times(count.text) });
+    rows.push({ label: t("Calculated"), value: times(count.text) });
     // What the number counts (a crop card's are crops).
     notes.push({ text: count.title, tone: "muted" });
     const whole = Math.ceil(count.value - 1e-9);
     if (count.value > 0 && whole !== count.value) {
-      rows.push({ label: "Whole machines", value: `×${whole}` });
+      rows.push({ label: t("Whole machines"), value: `×${whole}` });
       rows.push({
-        label: "Average utilization",
+        label: t("Average utilization"),
         value: `${formatCompact((100 * count.value) / whole)}%`,
       });
     }
     if (count.value <= 0)
       notes.push({
-        text: "No rate or set count in the plan needs this machine yet.",
+        text: t("No rate or set count in the plan needs this machine yet."),
         tone: "muted",
       });
   }
   if (shared)
-    notes.push({ text: "The total for all its recipes, which share the machines.", tone: "muted" });
+    notes.push({ text: t("The total for all its recipes, which share the machines."), tone: "muted" });
   return {
     id: `${view.nodeId}|count`,
-    title: count.pinned ? `${PIN_RULE_LABEL[count.rule]} ${count.setText}` : "Required machines",
+    title: count.pinned
+      ? t("{rule} {set}", { rule: t(PIN_RULE_LABEL[count.rule]), set: count.setText })
+      : t("Required machines"),
     rows,
     notes,
     actions: [
-      { input: "left", label: count.pinned ? "Type a count" : "Set a count" },
-      { input: "wheel", label: count.pinned ? "+1 / -1" : "Up to what runs" },
-      ...(count.pinned ? [{ input: "middle" as const, label: "Let the plan decide" }] : []),
+      { input: "left", label: t(count.pinned ? "Type a count" : "Set a count") },
+      { input: "wheel", label: t(count.pinned ? "+1 / -1" : "Up to what runs") },
+      ...(count.pinned ? [{ input: "middle" as const, label: t("Let the plan decide") }] : []),
     ],
   };
 }
@@ -228,23 +231,23 @@ export function ruleTip(view: Pick<CleanCardView, "nodeId" | "count">): TipSpec 
   const { count } = view;
   return {
     id: `${view.nodeId}|rule`,
-    title: PIN_RULE_LABEL[count.rule],
+    title: t(PIN_RULE_LABEL[count.rule]),
     notes: [
       {
         text:
           count.rule === "exact"
             ? count.ruleFixed
-              ? "A custom rate always runs at its dial."
-              : "Always this many. A gap comes in or goes out forced."
+              ? t("A custom rate always runs at its dial.")
+              : t("Always this many. A gap comes in or goes out forced.")
             : count.rule === "any"
-              ? "The plan decides how many."
+              ? t("The plan decides how many.")
               : count.pinned
-                ? "As many as the plan lets it run. Never more."
-                : "Set how many you have. Until then the plan picks.",
+                ? t("As many as the plan lets it run. Never more.")
+                : t("Set how many you have. Until then the plan picks."),
         tone: "muted",
       },
     ],
-    actions: count.ruleFixed ? [] : [{ input: "left", label: "Any, Up to, Exactly" }],
+    actions: count.ruleFixed ? [] : [{ input: "left", label: t("Any, Up to, Exactly") }],
   };
 }
 
@@ -255,78 +258,78 @@ export function footTip(nodeId: string, foot: CleanFootView): TipSpec {
   const rows: NonNullable<TipSpec["rows"]> = [];
   const notes: NonNullable<TipSpec["notes"]> = [];
   if (f.reason === "FORCED") {
-    for (const line of f.forced) rows.push({ label: "Forced in", value: line, tone: "warn" });
-    notes.push({ text: "Set it to Up to and it runs what its inputs allow.", tone: "muted" });
-    return { id: `${nodeId}|foot`, title: `Exactly ${n(f.capacity)} running`, rows, notes };
+    for (const line of f.forced) rows.push({ label: t("Forced in"), value: line, tone: "warn" });
+    notes.push({ text: t("Set it to Up to and it runs what its inputs allow."), tone: "muted" });
+    return { id: `${nodeId}|foot`, title: t("Exactly {n} running", { n: n(f.capacity) }), rows, notes };
   }
   const usage = f.capacity > 0 ? Math.min(100, (100 * f.running) / f.capacity) : 0;
-  rows.push({ label: "Usage", value: `${formatCompact(usage)}%` });
+  rows.push({ label: t("Usage"), value: `${formatCompact(usage)}%` });
   const all = f.running >= f.capacity - 0.000001;
   const title =
     f.running <= 0.0000005
-      ? "None running"
+      ? t("None running")
       : all
         ? f.capacity === 1
-          ? "Running flat out"
-          : `All ${n(f.capacity)} running`
-        : `${n(f.running)} of ${n(f.capacity)} running`;
+          ? t("Running flat out")
+          : t("All {n} running", { n: n(f.capacity) })
+        : t("{running} of {capacity} running", { running: n(f.running), capacity: n(f.capacity) });
   // A ring: what it is short of or backs up with, and that the ring stops itself.
   if (f.loop) {
     const dead = f.loop === "dead";
     if (f.resource)
-      rows.push({ label: dead ? "Short of" : "Backs up", value: f.resource, tone: "warn" });
+      rows.push({ label: t(dead ? "Short of" : "Backs up"), value: f.resource, tone: "warn" });
     for (const name of f.tied)
-      rows.push({ label: dead ? "Also short of" : "Also backs up", value: name, tone: "warn" });
+      rows.push({ label: t(dead ? "Also short of" : "Also backs up"), value: name, tone: "warn" });
     notes.push({
       text: dead
-        ? "This loop starves itself to a stop. Bring this input in from outside."
-        : "This loop clogs itself to a stop. A drawer for this output frees it.",
+        ? t("This loop starves itself to a stop. Bring this input in from outside.")
+        : t("This loop clogs itself to a stop. A drawer for this output frees it."),
       tone: "muted",
     });
     return { id: `${nodeId}|foot`, title, rows, notes };
   }
   switch (f.reason) {
     case "FULL":
-      notes.push({ text: "Nothing around it would use more.", tone: "muted" });
+      notes.push({ text: t("Nothing around it would use more."), tone: "muted" });
       break;
     case "BOTTLENECK":
       if (f.wants !== undefined) {
-        rows.push({ label: "Wants", value: `×${n(f.wants)}`, tone: "red" });
+        rows.push({ label: t("Wants"), value: `×${n(f.wants)}`, tone: "red" });
         notes.push({
-          text: `${n(f.wants - f.capacity)} more here would let the line run faster.`,
+          text: t("{n} more here would let the line run faster.", { n: n(f.wants - f.capacity) }),
           tone: "red",
         });
       }
       break;
     case "STARVED":
-      if (f.resource) rows.push({ label: "Short of", value: f.resource, tone: "warn" });
-      for (const name of f.tied) rows.push({ label: "Also short of", value: name, tone: "warn" });
-      for (const name of f.upstream) rows.push({ label: "Full upstream", value: name });
+      if (f.resource) rows.push({ label: t("Short of"), value: f.resource, tone: "warn" });
+      for (const name of f.tied) rows.push({ label: t("Also short of"), value: name, tone: "warn" });
+      for (const name of f.upstream) rows.push({ label: t("Full upstream"), value: name });
       notes.push({
         text:
           f.upstream.length > 0
-            ? "Build more upstream first."
-            : "More of this input would let it run faster.",
+            ? t("Build more upstream first.")
+            : t("More of this input would let it run faster."),
         tone: "muted",
       });
       break;
     case "CLOGGED":
-      if (f.resource) rows.push({ label: "Backs up", value: f.resource, tone: "warn" });
-      for (const name of f.tied) rows.push({ label: "Also backs up", value: name, tone: "warn" });
+      if (f.resource) rows.push({ label: t("Backs up"), value: f.resource, tone: "warn" });
+      for (const name of f.tied) rows.push({ label: t("Also backs up"), value: name, tone: "warn" });
       notes.push({
-        text: "What takes it is full. Add machines after it or a drawer.",
+        text: t("What takes it is full. Add machines after it or a drawer."),
         tone: "muted",
       });
       break;
     case "UNUSED":
-      if (f.resource) rows.push({ label: "Nothing takes", value: f.resource, tone: "warn" });
-      notes.push({ text: "Wire its output or give it a rate.", tone: "muted" });
+      if (f.resource) rows.push({ label: t("Nothing takes"), value: f.resource, tone: "warn" });
+      notes.push({ text: t("Wire its output or give it a rate."), tone: "muted" });
       break;
     case "LIMITED":
-      notes.push({ text: "Another count or rate in the plan holds it back.", tone: "muted" });
+      notes.push({ text: t("Another count or rate in the plan holds it back."), tone: "muted" });
       break;
     default:
-      notes.push({ text: "Why it runs less was not worked out in time.", tone: "muted" });
+      notes.push({ text: t("Why it runs less was not worked out in time."), tone: "muted" });
   }
   return { id: `${nodeId}|foot`, title, rows, notes };
 }
@@ -339,13 +342,13 @@ export function stripTip(
   needK?: number,
 ): TipSpec {
   const rows: NonNullable<TipSpec["rows"]> = [
-    { label: chip.reading ? "Reads" : "Set to", value: chip.value },
+    { label: t(chip.reading ? "Reads" : "Set to"), value: chip.value },
   ];
   if (control?.id === "heatingCoil" && needK !== undefined)
-    rows.push({ label: "Recipe needs", value: `${needK} K` });
+    rows.push({ label: t("Recipe needs"), value: `${needK} K` });
   const notes: NonNullable<TipSpec["notes"]> = [];
-  if (chip.warn) notes.push({ text: "Too cold for this recipe: it cannot run.", tone: "red" });
-  notes.push({ text: "Pinned to the card: unpin it in the settings.", tone: "muted" });
+  if (chip.warn) notes.push({ text: t("Too cold for this recipe: it cannot run."), tone: "red" });
+  notes.push({ text: t("Pinned to the card: unpin it in the settings."), tone: "muted" });
   return {
     id: `${nodeId}|setting|${chip.id}`,
     title: chip.label,
@@ -354,9 +357,9 @@ export function stripTip(
     actions: chip.reading
       ? []
       : [
-          { input: "left", label: "Choose" },
-          { input: "right", label: "Step back" },
-          { input: "wheel", label: "Step" },
+          { input: "left", label: t("Choose") },
+          { input: "right", label: t("Step back") },
+          { input: "wheel", label: t("Step") },
         ],
   };
 }
@@ -365,13 +368,13 @@ export function stripTip(
 export function gearTip(nodeId: string, coilTooCold: boolean): TipSpec {
   return {
     id: `${nodeId}|gear`,
-    title: "Machine settings",
+    title: t("Machine settings"),
     notes: [
-      { text: "Pin a setting there to show it on the card.", tone: "muted" },
+      { text: t("Pin a setting there to show it on the card."), tone: "muted" },
       ...(coilTooCold
-        ? [{ text: "The coil is too cold for this recipe: it cannot run.", tone: "red" as const }]
+        ? [{ text: t("The coil is too cold for this recipe: it cannot run."), tone: "red" as const }]
         : []),
     ],
-    actions: [{ input: "left", label: "Open" }],
+    actions: [{ input: "left", label: t("Open") }],
   };
 }

@@ -45,6 +45,7 @@ import { TaskBoard, TaskLinkIndexController } from "./tasks/TaskBoard";
 import { AddToTaskMenu } from "./tasks/AddToTask";
 import { BoardToolbar } from "./chrome/BoardToolbar";
 import { isLiveConfigured } from "@/lib/live/live-config";
+import { t, useT } from "@/lib/i18n";
 import { BlueprintSaveDialog } from "./BlueprintSaveDialog";
 import { PowerSourceOverlay } from "./PowerSourceOverlay";
 import { FactoryFlow } from "./flow/FactoryFlow";
@@ -157,7 +158,7 @@ export function FactoryPlannerApp() {
           refreshProjectRecipes(refreshed, migration);
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Dataset load failed.";
+        const message = error instanceof Error ? error.message : t("Dataset load failed.");
         setDatasetError(message);
       }
     },
@@ -186,7 +187,7 @@ export function FactoryPlannerApp() {
             }
           } catch (error) {
             console.error(
-              error instanceof Error ? error.message : "Importing the shared setup failed.",
+              error instanceof Error ? error.message : t("Importing the shared setup failed."),
             );
           }
           // A copied plan's link (#p=...) opens as a new tab of its own.
@@ -270,7 +271,7 @@ export function FactoryPlannerApp() {
           return;
         }
 
-        const message = error instanceof Error ? error.message : "Dataset manifest load failed.";
+        const message = error instanceof Error ? error.message : t("Dataset manifest load failed.");
         setDatasetError(message);
       }
     }
@@ -589,10 +590,11 @@ export function ColumnWorkspace({ workspace, onLoadDatasetVersion, header }: Wor
 
 /** The handle on a side column's board-side edge: drag to set its width, double-click for the default. */
 function SidePanelHandle({ panel, edge, fit }: { panel: SidePanel; edge: "left" | "right"; fit: PanelFitState }) {
+  const t = useT();
   const items = panel === "items";
   return (
     <PanelHandle
-      label={items ? "Resize the items list" : "Resize the overview"}
+      label={items ? t("Resize the items list") : t("Resize the overview")}
       edge={edge}
       getWidth={() => fit.widthOf(panel)}
       getLimits={() => fit.limitsOf(panel)}
@@ -672,14 +674,17 @@ const TASKS_ENABLED = isLiveConfigured();
  * edge, which fires by accident whenever the mouse crosses it.
  */
 function PanelRail({ side, label }: { side: "left" | "right"; label: "Items" | "Resources" }) {
+  const t = useT();
   // The flag follows what the column holds, not which side it sits on.
   const open = () => {
     writeWorkspaceView(label === "Items" ? { leftPanelOpen: true } : { rightPanelOpen: true });
     // A window narrow enough to have folded it keeps it open now.
     if (label === "Items") requestPanelOpen("items");
   };
+  // The label is a typed key for the logic above; its shown text is the translation.
+  const displayLabel = label === "Items" ? t("Items") : t("Resources");
   // The items column folds to the overview's own strip (the owner: both folded columns look and work the same).
-  if (label === "Items") return <ColumnStrip label="ITEMS" open="Open the items" side={side} onOpen={open} />;
+  if (label === "Items") return <ColumnStrip label={t("ITEMS")} open={t("Open the items")} side={side} onOpen={open} />;
 
   // One button, the whole rail: a bare chevron at the top and the name
   // running down it. No box, no tooltip; the rail is the thing you click.
@@ -687,7 +692,7 @@ function PanelRail({ side, label }: { side: "left" | "right"; label: "Items" | "
     <button
       type="button"
       onClick={open}
-      aria-label={`Show ${label}`}
+      aria-label={t("Show {label}", { label: displayLabel })}
       className={[
         "flex h-full w-full flex-col items-center gap-2 bg-surface pt-1.5 text-fg-muted transition-colors hover:bg-[#2a2d33]",
         side === "left" ? "border-r border-line" : "border-l border-line",
@@ -702,7 +707,7 @@ function PanelRail({ side, label }: { side: "left" | "right"; label: "Items" | "
         className="min-h-0 flex-1 text-[12px] font-semibold uppercase tracking-widest"
         style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
       >
-        <span className={side === "right" ? "rotate-180" : undefined}>{label}</span>
+        <span className={side === "right" ? "rotate-180" : undefined}>{displayLabel}</span>
       </span>
     </button>
   );

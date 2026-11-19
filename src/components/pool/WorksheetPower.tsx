@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import type { MachineListEntry } from "@/lib/model/machine-list";
 import { formatPoolPowerValue as formatPowerValue } from "./worksheet-format";
 import { powerDisplayFromEuT, powerDisplaySuffix, rateSuffixForKind } from "@/lib/model/rate-unit";
@@ -9,7 +10,7 @@ export function WorksheetPower({
   entries,
   id,
   compact = false,
-  title = "Power",
+  title = t("Power"),
 }: {
   entries: MachineListEntry[];
   id?: string;
@@ -28,18 +29,18 @@ export function WorksheetPower({
   ];
   const format = (value: number) => formatPowerValue(powerDisplayFromEuT(Math.abs(value)));
   const table = (
-    <table className="pool-summary-table pool-power-table" aria-label="Pool power totals">
+    <table className="pool-summary-table pool-power-table" aria-label={t("Pool power totals")}>
       <thead>
         <tr>
           <th>{!compact ? <h3 className="pool-overview-title">{title}</h3> : null}</th>
-          <th>Average</th>
-          <th>Peak</th>
+          <th>{t("Average")}</th>
+          <th>{t("Peak")}</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((row) => (
           <tr key={row.label}>
-            <th scope="row">{row.label}</th>
+            <th scope="row">{t(row.label)}</th>
             {[row.average, row.peak].map((value, index) => {
               const steam = "steam" in row && row.steam;
               const number = steam ? formatSlotRateBare(value, "fluid") : format(value);
@@ -65,7 +66,7 @@ export function WorksheetPower({
   );
   if (compact)
     return (
-      <section id={id} className="pool-compact-power" aria-label="Pool power summary">
+      <section id={id} className="pool-compact-power" aria-label={t("Pool power summary")}>
         <details
           onKeyDown={(event) => {
             if (event.key === "Escape") {
@@ -76,13 +77,13 @@ export function WorksheetPower({
         >
           <summary
             className="pool-power-headline"
-            title="Power breakdown"
-            aria-label={`Average power used ${format(rows[0].average)} ${powerDisplaySuffix()}, peak ${format(rows[0].peak)} ${powerDisplaySuffix()}; made ${format(rows[1].average)} ${powerDisplaySuffix()}`}
+            title={t("Power breakdown")}
+            aria-label={t("Average power used {avg} {unit}, peak {peak} {unit}; made {made} {unit}", { avg: format(rows[0].average), unit: powerDisplaySuffix(), peak: format(rows[0].peak), made: format(rows[1].average) })}
           >
             <Zap size={12} aria-hidden />
             <strong>{format(rows[0].average)}</strong>
             <small>{powerDisplaySuffix()}</small>
-            {rows[0].peak !== rows[0].average ? <small>peak {format(rows[0].peak)}</small> : null}
+            {rows[0].peak !== rows[0].average ? <small>{t("peak {value}", { value: format(rows[0].peak) })}</small> : null}
             {rows[1].average > 0 || rows[1].peak > 0 ? (
               <span className="pool-flow-output">
                 +{format(rows[1].average)}
@@ -92,7 +93,7 @@ export function WorksheetPower({
             {rows[3] ? (
               <span>
                 {formatSlotRateBare(rows[3].average, "fluid")}
-                <small>{rateSuffixForKind("fluid").trim()} steam</small>
+                <small>{t("{unit} steam", { unit: rateSuffixForKind("fluid").trim() })}</small>
               </span>
             ) : null}
           </summary>
@@ -101,7 +102,7 @@ export function WorksheetPower({
       </section>
     );
   return (
-    <section id={id} className="pool-sheet-power" aria-label="Pool power summary">
+    <section id={id} className="pool-sheet-power" aria-label={t("Pool power summary")}>
       <div className="pool-resources-scroll">{table}</div>
     </section>
   );

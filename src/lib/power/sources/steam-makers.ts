@@ -5,6 +5,7 @@
  * Exchangers convert hot fluids to steam by threshold: below it the Under
  * ratio and lower grade, at/above it the Over ratio and higher grade.
  */
+import { t } from "@/lib/i18n/core";
 import { findFuel, powerPlannerData, type PowerFuelEntry } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition, PowerSetting } from "../types";
 import { formatAmount, items, liters, stat } from "./helpers";
@@ -137,7 +138,7 @@ function buildBoiler(spec: BoilerSpec): PowerSourceDefinition {
           stat("Steam", `${formatAmount(steamPerTick)} L/t`),
           stat("Firebox", dual ? "Dual fuel: 100%" : "Single fuel: 80%"),
         ],
-        warnings: !liquid && !solid ? ["Pick a fuel to make steam."] : undefined,
+        warnings: !liquid && !solid ? [t("Pick a fuel to make steam.")] : undefined,
       };
     },
   };
@@ -223,7 +224,7 @@ function buildSmallBoiler(spec: SmallBoilerSpec): PowerSourceDefinition {
       const secondsPerItem = energyPerItem / spec.energyPerSecond;
       const warnings: string[] = [];
       if (!spec.automatable) {
-        warnings.push("GTNH turns small boiler automation off. Fuel goes in by hand.");
+        warnings.push(t("GTNH turns small boiler automation off. Fuel goes in by hand."));
       }
       return {
         euPerTick: 0,
@@ -404,11 +405,15 @@ const solarBoiler: PowerSourceDefinition = {
       const fallTicks = ((model.max - model.min) * SOLAR_CALCIFICATION_TICKS) / model.max;
       const minTicks = fallTicks + SOLAR_CALCIFICATION_TICKS;
       warnings.push(
-        `Regular water calcifies this boiler: full ${model.max} L/s for ${formatAmount(
-          SOLAR_CALCIFICATION_TICKS / TICKS_PER_HOUR,
-        )} hours of run time, then down to ${model.min} L/s by ${formatAmount(
-          minTicks / TICKS_PER_HOUR,
-        )} hours. Distilled water does not.`,
+        t(
+          "Regular water calcifies this boiler: full {max} L/s for {fullHours} hours of run time, then down to {min} L/s by {minHours} hours. Distilled water does not.",
+          {
+            max: model.max,
+            fullHours: formatAmount(SOLAR_CALCIFICATION_TICKS / TICKS_PER_HOUR),
+            min: model.min,
+            minHours: formatAmount(minTicks / TICKS_PER_HOUR),
+          },
+        ),
       );
     }
     return {
@@ -550,7 +555,9 @@ function buildExchanger(entry: (typeof powerPlannerData.heatExchangers)[number])
           stat("Threshold", `${formatAmount(threshold)} L/s`),
         ],
         warnings:
-          intake > cap ? [`Intake is capped at ${formatAmount(cap)} L/s for this fluid.`] : undefined,
+          intake > cap
+            ? [t("Intake is capped at {cap} L/s for this fluid.", { cap: formatAmount(cap) })]
+            : undefined,
       };
     },
   };

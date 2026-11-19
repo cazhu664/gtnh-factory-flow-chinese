@@ -28,6 +28,7 @@ import type {
 } from "@/store/factory-store";
 import type { Recipe, ResourceAmount } from "@/lib/model/types";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useT } from "@/lib/i18n";
 import {
   OPEN_SIDEBAR_TAB_EVENT,
   takePendingSearchFocus,
@@ -68,6 +69,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
   const itemsOnRight = useItemsOnRight();
   const isCompact = useIsCompactViewport();
   const boardCovered = useBoardCovered();
+  const t = useT();
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const selectedDatasetVersionId = useFactoryStore((state) => state.selectedDatasetVersionId);
@@ -499,7 +501,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
         return projectRecipe;
       }
       if (!selectedDatasetVersion) {
-        throw new Error("No dataset version is selected.");
+        throw new Error(t("No dataset version is selected."));
       }
 
       return getRecipeDatasetRecipe(
@@ -508,7 +510,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
         recipeId,
       );
     },
-    [datasetManifestUrl, projectRecipes, selectedDatasetVersion],
+    [datasetManifestUrl, projectRecipes, selectedDatasetVersion, t],
   );
 
   const handleAddRecipe = useCallback(
@@ -566,7 +568,10 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
           ) {
             failRecipeAdd(
               pendingId,
-              `No machine runs both ${recipeSummary.name} and what ${currentMachinePin.label} already has.`,
+              t("No machine runs both {name} and what {label} already has.", {
+                name: recipeSummary.name,
+                label: currentMachinePin.label,
+              }),
             );
             return;
           }
@@ -591,7 +596,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
       } catch (error) {
         failRecipeAdd(
           pendingId,
-          error instanceof Error ? error.message : "The recipe could not be loaded.",
+          error instanceof Error ? error.message : t("The recipe could not be loaded."),
         );
       }
     },
@@ -607,6 +612,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
       getFullRecipe,
       refactorNodeWithRecipe,
       resolveRecipeAdd,
+      t,
     ],
   );
 
@@ -772,7 +778,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
           setAvailableRecipeMaps([]);
           setRecipeMapIcons({});
           setRecipeMapCounts({});
-          setRecipeQueryError(error instanceof Error ? error.message : "Recipe query failed.");
+          setRecipeQueryError(error instanceof Error ? error.message : t("Recipe query failed."));
           setRecipeQueryLoading(false);
         });
     });
@@ -796,6 +802,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
     recipePage,
     selectedDatasetVersion,
     takesOp,
+    t,
   ]);
   // Until the open question's first page has an answer (or while a typed name
   // waits out its debounce) the page reads as loading: never "nothing matches"
@@ -826,10 +833,10 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
               leading={
                 /* Folds this column away (the overview's fold key, facing the board); on a phone it closes the drawer. */
                 <RailKey
-                  label="Hide the items column"
+                  label={t("Hide the items column")}
                   className="rail-key-fold"
                   onClick={() => writeWorkspaceView({ leftPanelOpen: false })}
-                  tip={() => ({ title: "Fold the items" })}
+                  tip={() => ({ title: t("Fold the items") })}
                 >
                   <FoldGlyph direction={itemsOnRight ? "right" : "left"} />
                 </RailKey>

@@ -4,6 +4,7 @@
  * research/railcraft-water-tank-and-boilers.md has the links). Both are
  * modelled at steady state: the tank as it fills, the boiler at full heat.
  */
+import { t } from "@/lib/i18n/core";
 import { powerPlannerData, type PowerFuelEntry } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition } from "../types";
 import { formatAmount, items, liters, stat } from "./helpers";
@@ -78,7 +79,7 @@ const waterTank: PowerSourceDefinition = {
         stat("Stores", `${formatAmount(WATER_TANK_CAPACITY)} L`),
         stat("Full in", perSecond > 0 ? duration(WATER_TANK_CAPACITY / perSecond) : "-"),
       ],
-      warnings: perSecond > 0 ? undefined : ["Makes nothing in the Nether."],
+      warnings: perSecond > 0 ? undefined : [t("Makes nothing in the Nether.")],
     };
   },
 };

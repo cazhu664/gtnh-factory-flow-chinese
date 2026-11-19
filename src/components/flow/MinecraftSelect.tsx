@@ -6,6 +6,7 @@ import { focusDropdownFilter } from "@/lib/dropdown-focus";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
+import { useT } from "@/lib/i18n";
 
 export interface MinecraftSelectOption {
   key: string;
@@ -47,6 +48,7 @@ export function MinecraftSelect({
   wideMenu?: boolean;
   tooltipContent?: ReactNode | (() => ReactNode);
 }) {
+  const t = useT();
   const [isOpen, setOpen] = useState(false);
   const [filter, setFilter] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -140,15 +142,15 @@ export function MinecraftSelect({
                     setOpen(false);
                   }
                 }}
-                placeholder="Filter..."
-                aria-label={ariaLabel ? `Filter ${ariaLabel}` : "Filter options"}
+                placeholder={t("Filter...")}
+                aria-label={ariaLabel ? t("Filter {label}", { label: ariaLabel }) : t("Filter options")}
                 className="h-6 w-full border border-[var(--mc-33)] bg-[var(--mc-93)] pl-6 pr-1.5 text-[12px] text-[var(--mc-ink)] placeholder:text-[var(--mc-ink)]/50 outline-none focus:border-cyan-700"
               />
             </label>
           ) : null}
           <div className="min-h-0 flex-1 overflow-y-auto">
             {shownOptions.length === 0 ? (
-              <p className="px-1.5 py-1 text-[12px] text-[var(--mc-ink)]/60">No matches.</p>
+              <p className="px-1.5 py-1 text-[12px] text-[var(--mc-ink)]/60">{t("No matches.")}</p>
             ) : (
               shownOptions.map((option) => {
                 const isSelected = option.key === value;

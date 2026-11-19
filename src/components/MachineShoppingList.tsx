@@ -23,6 +23,7 @@ import { useFactoryStore, useRateDisplayUnits } from "@/store/factory-store";
 import { getEnergyHatchType } from "@/lib/machines/energy-hatches";
 import { getHatchAmps } from "@/lib/solver/power";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
+import { useT } from "@/lib/i18n";
 
 /** A generator group's face in the list: the machine item the picker shows. */
 const powerIconCache = new Map<string, MachineHandlerIcon | undefined>();
@@ -54,6 +55,7 @@ const NEUTRAL_CHIP = {
 
 /** One row per board card, using its solved count in Solve and Pool. */
 export function MachineShoppingList() {
+  const t = useT();
   const [powerColumn, setPowerColumn] = useState<"peak" | "average">("peak");
   const project = useFactoryStore((state) => state.project);
   const checklistMode = useFactoryStore((state) => state.checklistMode);
@@ -111,12 +113,12 @@ export function MachineShoppingList() {
         {/* The sheet's head: the title on the left, the two column labels
             over their columns on the right. */}
         <div className="inspector-section-heading -mx-3">
-          <h2>Machines</h2>
+          <h2>{t("Machines")}</h2>
           <span className="inspector-count">{formatMachineListCount(totalMachines)}</span>
           <span
             className="inspector-rate-selector ml-auto flex justify-end gap-0.5"
             role="group"
-            aria-label="Machine power display"
+            aria-label={t("Machine power display")}
           >
             {(["peak", "average"] as const).map((value) => (
               <button
@@ -124,10 +126,10 @@ export function MachineShoppingList() {
                 type="button"
                 aria-pressed={powerColumn === value}
                 onClick={() => setPowerColumn(value)}
-                aria-label={value === "peak" ? "Show peak power" : "Show average power"}
+                aria-label={value === "peak" ? t("Show peak power") : t("Show average power")}
                 className="px-1 py-0.5"
               >
-                {value === "peak" ? "Peak" : "Average"}
+                {value === "peak" ? t("Peak") : t("Average")}
               </button>
             ))}
           </span>
@@ -137,14 +139,14 @@ export function MachineShoppingList() {
             a steam row whenever a steam machine does. */}
         {hasSteam ? (
           <TotalLine
-            label="Steam"
+            label={t("Steam")}
             peak={{ steamLs: totals.steamLs }}
             average={{ steamLs: totals.avgSteamLs }}
           />
         ) : null}
         {hasEu || hasMade ? (
           <TotalLine
-            label={hasMade ? "Used" : "Total"}
+            label={hasMade ? t("Used") : t("Total")}
             peak={{ euT: totals.euT }}
             average={{ euT: totals.avgEuT }}
           />
@@ -152,12 +154,12 @@ export function MachineShoppingList() {
         {hasMade ? (
           <>
             <TotalLine
-              label="Made"
+              label={t("Made")}
               peak={{ madeEuT: totals.madeEuT }}
               average={{ madeEuT: totals.avgMadeEuT }}
             />
             <TotalLine
-              label="Net"
+              label={t("Net")}
               peak={{ netEuT: totals.madeEuT - totals.euT }}
               average={{ netEuT: totals.avgMadeEuT - totals.avgEuT }}
             />
@@ -202,9 +204,9 @@ export function MachineShoppingList() {
                 isLast={index === cards.length - 1}
                 label={
                   entry.pressure === "high-pressure"
-                    ? "High pressure"
+                    ? t("High pressure")
                     : entry.pressure === "bronze"
-                      ? "Bronze"
+                      ? t("Bronze")
                       : undefined
                 }
                 count={entry.count}
@@ -362,6 +364,7 @@ function ListLine({
   onClick: () => void;
   checklist?: boolean;
 }) {
+  const t = useT();
   const stalled = state !== "ok";
   // A multiblock's supply is a number, not a tier, so its chip wears the
   // neutral plate; a singleblock's chip is its tier's colour.
@@ -407,16 +410,16 @@ function ListLine({
       <div className="w-max max-w-[280px]">
         {count !== undefined ? (
           <div className="text-[13px] font-semibold text-white">
-            {count}× {count === 1 ? "machine" : "machines"}
+            {count}× {count === 1 ? t("machine") : t("machines")}
           </div>
         ) : null}
         <div className="mt-0.5 flex items-center gap-1.5 text-[13px] font-semibold text-white">
           {chip.isMultiblock ? (
-            <span>Supplied {formatCompact(supplyEuT)} EU/t per machine</span>
+            <span>{t("Supplied {amount} EU/t per machine", { amount: formatCompact(supplyEuT) })}</span>
           ) : (
             <>
               {tierBadge}
-              <span>Per machine</span>
+              <span>{t("Per machine")}</span>
             </>
           )}
         </div>
@@ -429,10 +432,10 @@ function ListLine({
         {peakEuT !== undefined ? (
           <>
             <div className="text-[11px] leading-4 text-slate-300">
-              PEAK <span className="font-bold text-white">{formatPowerValue(powerDisplayFromEuT(peakEuT))} {powerDisplaySuffix()}</span>
+              {t("PEAK")} <span className="font-bold text-white">{formatPowerValue(powerDisplayFromEuT(peakEuT))} {powerDisplaySuffix()}</span>
             </div>
             <div className="text-[11px] leading-4 text-slate-300">
-              AVG{" "}
+              {t("AVG")}{" "}
               <span className="font-bold text-white">{formatPowerValue(powerDisplayFromEuT(averageEuT ?? 0))} {powerDisplaySuffix()}</span>
             </div>
           </>
@@ -449,14 +452,14 @@ function ListLine({
         checklist === undefined
           ? hatchStory
           : checklist
-            ? "Completed — click to restore"
-            : "Click to mark these machines complete"
+            ? t("Completed — click to restore")
+            : t("Click to mark these machines complete")
       }
     >
       <button
         type="button"
         data-machine-node-id={nodeId}
-        aria-label={nodeId ? `${formatMachineListCount(count ?? 0)}× ${rowName}` : undefined}
+        aria-label={nodeId ? t("{count}× {name}", { count: formatMachineListCount(count ?? 0), name: rowName ?? "" }) : undefined}
         onClick={onClick}
         aria-pressed={checklist}
         data-checklist-done={checklist}
@@ -535,7 +538,7 @@ function ListLine({
             <span className="flex items-baseline gap-1">
               {stalled ? (
                 <span className={[COLUMN_CLASS, "font-bold text-red-400"].join(" ")}>
-                  {state === "under-powered" ? "LOW!" : "TIER!"}
+                  {state === "under-powered" ? t("LOW!") : t("TIER!")}
                 </span>
               ) : (
                 <FigureCell figure={peak} className="text-[13px]" />

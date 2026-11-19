@@ -1,5 +1,6 @@
 import { getPoolGroupResources } from "@/lib/solver/pool-mode";
 import { describe, expect, it } from "vitest";
+import { setLocale } from "@/lib/i18n";
 import { PROJECT_SCHEMA_VERSION, type FactoryProject } from "@/lib/model/types";
 import { calculateThroughput } from "@/lib/solver/throughput";
 import { buildMachineList } from "@/lib/model/machine-list";
@@ -84,6 +85,18 @@ describe("Pool worksheet books", () => {
     expect(groups[0].sections[0].nonConsumed[0].displayName).toBe("Circuit 1");
     expect(JSON.stringify(project)).toBe(before);
     expect(filterWorksheetGroups(groups, "foil")[0].sections).toHaveLength(2);
+  });
+
+  it("finds a row by the Chinese label a player can see", () => {
+    const project = worksheetFixture();
+    const groups = buildWorksheetGroups(project, calculateThroughput(project, { generatedAt: "fixed" }));
+    setLocale("zh");
+    try {
+      expect(filterWorksheetGroups(groups, "铜箔")).toHaveLength(1);
+      expect(filterWorksheetGroups(groups, "铜锭")).toHaveLength(1);
+    } finally {
+      setLocale("en");
+    }
   });
 
   it("keeps duplicate cards and disabled cards separately", () => {

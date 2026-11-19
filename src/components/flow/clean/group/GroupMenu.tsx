@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FactoryPocket } from "@/lib/model/types";
 import { playSfx } from "@/lib/sound/sfx";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import { BoardMenu, MenuLine, MenuRow } from "../menus/BoardMenu";
 import { NOTE_COLOR_MENU } from "../note/note-model";
 import { GT_NODE_COLORS } from "../../node-colors";
@@ -15,6 +16,7 @@ import { requestGroupRename } from "./group-rename";
  * Ungroup (keeps contents), and in red Delete group and contents. The mod's twin is `ui/group/GroupCard.openMenu`.
  */
 export function GroupMenu({ pocket, x, y, onClose }: { pocket: FactoryPocket; x: number; y: number; onClose: () => void }) {
+  const t = useT();
   const [view, setView] = useState<"main" | "colour">("main");
   const store = () => useFactoryStore.getState();
   const run = (action: () => void) => () => {
@@ -24,7 +26,7 @@ export function GroupMenu({ pocket, x, y, onClose }: { pocket: FactoryPocket; x:
   if (view === "colour") {
     const current = groupColorTag(pocket);
     return (
-      <BoardMenu x={x} y={y} label="Group colour" title="Colour" onClose={onClose}>
+      <BoardMenu x={x} y={y} label={t("Group colour")} title={t("Colour")} onClose={onClose}>
         {NOTE_COLOR_MENU.map(([tag, name]) => (
           <MenuRow
             key={tag}
@@ -41,16 +43,16 @@ export function GroupMenu({ pocket, x, y, onClose }: { pocket: FactoryPocket; x:
     );
   }
   return (
-    <BoardMenu x={x} y={y} label="Group" onClose={onClose}>
-      <MenuRow label="Rename" onClick={run(() => requestGroupRename(pocket.id))} />
+    <BoardMenu x={x} y={y} label={t("Group")} onClose={onClose}>
+      <MenuRow label={t("Rename")} onClick={run(() => requestGroupRename(pocket.id))} />
       {pocket.expanded ? (
-        <MenuRow label="Collapse" onClick={run(() => store().minimizePocket(pocket.id))} />
+        <MenuRow label={t("Collapse")} onClick={run(() => store().minimizePocket(pocket.id))} />
       ) : (
-        <MenuRow label="Expand" onClick={run(() => store().expandPocket(pocket.id))} />
+        <MenuRow label={t("Expand")} onClick={run(() => store().expandPocket(pocket.id))} />
       )}
-      <MenuRow label="Colour..." onClick={() => setView("colour")} />
+      <MenuRow label={t("Colour...")} onClick={() => setView("colour")} />
       <MenuRow
-        label="Ungroup (keeps contents)"
+        label={t("Ungroup (keeps contents)")}
         onClick={run(() => {
           playSfx("board.sweep", 0.8, 0.9);
           store().dissolvePocket(pocket.id);
@@ -58,7 +60,7 @@ export function GroupMenu({ pocket, x, y, onClose }: { pocket: FactoryPocket; x:
       />
       <MenuLine />
       <MenuRow
-        label="Delete group and contents"
+        label={t("Delete group and contents")}
         danger
         onClick={run(() => store().deleteBoardSelection({ nodeIds: [pocket.id] }))}
       />

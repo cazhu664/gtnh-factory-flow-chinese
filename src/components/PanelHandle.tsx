@@ -5,6 +5,7 @@ import "./panel-handle.css";
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { tipAttrs } from "@/components/flow/clean/interaction";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 
 /** A key press moves the edge this far (shell px); with Shift, more. */
 const KEY_STEP = 16;
@@ -38,6 +39,7 @@ export interface PanelHandleProps {
  * grid and saves the last, so nothing re-renders while the pointer moves and the board is not rebuilt.
  */
 export function PanelHandle({ label, edge, getWidth, getLimits, onStart, onDrag, onCommit, onReset, onEnd }: PanelHandleProps) {
+  const t = useT();
   const drag = useRef<{ startX: number; startWidth: number; width: number; min: number; max: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   // Dragging toward the board makes its column narrower.
@@ -122,7 +124,7 @@ export function PanelHandle({ label, edge, getWidth, getLimits, onStart, onDrag,
         onReset();
       }}
       onKeyDown={onKeyDown}
-      {...tipAttrs({ id: `panel-handle|${label}`, title: label, sub: "Drag to resize, double-click for the default" })}
+      {...tipAttrs({ id: `panel-handle|${label}`, title: label, sub: t("Drag to resize, double-click for the default") })}
     />
   );
 }

@@ -7,6 +7,7 @@ import type {
 } from "./types";
 import { getCropsNhStats } from "./passive-production";
 import { isFreeRecipeInput } from "./free-input";
+import { datasetNameLabel } from "../i18n/dataset-names";
 
 export function makeResourceKey(kind: ResourceKind, resourceId: string): ResourceKey {
   return `${kind}:${resourceId}` as ResourceKey;
@@ -43,7 +44,15 @@ function isWildcardChoiceResource(resource: Pick<ResourceAmount, "id" | "display
   );
 }
 
-export function resourceLabel(resource: Pick<ResourceAmount, "id" | "displayName"> & Partial<Pick<ResourceAmount, "alternatives">>): string {
+/**
+ * The name the dataset itself carries, in English, before any translation. The
+ * game logic below (cells named after their fluid, oredict words) reads names
+ * and must keep seeing this one; only `resourceLabel` hands the player a
+ * translated name.
+ */
+function resourceNameEnglish(
+  resource: Pick<ResourceAmount, "id" | "displayName"> & Partial<Pick<ResourceAmount, "alternatives">>,
+): string {
   if (isOreDictionaryResource(resource)) {
     const group = resource.id.slice("oredict:".length);
     const woodNames: Record<string, string> = {
@@ -59,6 +68,11 @@ export function resourceLabel(resource: Pick<ResourceAmount, "id" | "displayName
   }
 
   return resource.id;
+}
+
+/** The resource's name as a player reads it: the dataset name, in 中文 when known. */
+export function resourceLabel(resource: Pick<ResourceAmount, "id" | "displayName"> & Partial<Pick<ResourceAmount, "alternatives">>): string {
+  return datasetNameLabel(resourceNameEnglish(resource));
 }
 
 export function formatRate(value: number, digits = 2): string {
@@ -314,7 +328,7 @@ export function isFluidEquivalentToFilledCell(
   }
 
   const normalizedFluidName = normalizeResourceName(fluidName);
-  const normalizedFluidDisplayName = normalizeResourceName(resourceLabel(fluid));
+  const normalizedFluidDisplayName = normalizeResourceName(resourceNameEnglish(fluid));
 
   return (
     normalizeFluidId(fluidName) === fluid.id ||
@@ -326,7 +340,7 @@ export function isFluidEquivalentToFilledCell(
 function getFilledCellFluidName(
   resource: Pick<ResourceAmount, "displayName" | "id">,
 ): string | undefined {
-  const label = resourceLabel(resource).trim();
+  const label = resourceNameEnglish(resource).trim();
   const match = label.match(/^(.+?)\s+Cell$/i);
   if (!match) {
     return undefined;

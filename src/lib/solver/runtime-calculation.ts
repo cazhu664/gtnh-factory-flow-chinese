@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n/core";
 import {
   getRecipeMaximumVoltageTier,
   getRunVoltageTier,
@@ -122,7 +123,9 @@ export function runtimeCalculationWarning(
   if (selectRuntimeCalculationVariant(recipe, node)) {
     return undefined;
   }
-  return `${recipe.name} has no matching GTNH runtime calculation for this machine configuration.`;
+  return t("{recipe} has no matching GTNH runtime calculation for this machine configuration.", {
+    recipe: recipe.name,
+  });
 }
 
 export function resolveRuntimeTier(

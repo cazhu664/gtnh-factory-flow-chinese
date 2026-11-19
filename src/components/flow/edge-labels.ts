@@ -1,4 +1,5 @@
 import { formatCompact } from "@/lib/model";
+import { t } from "@/lib/i18n";
 import {
   rateMultiplierForKind,
   rateSuffixForKind,
@@ -138,7 +139,7 @@ export function describeEdgeRate(data: EdgeLabelInput | undefined): string {
 
   // Dead simple for barrels: they take whatever arrives, end of story.
   if (data.isStorageTarget) {
-    return `Flows into storage at ${withUnit(flowing, unit)}.`;
+    return t("Flows into storage at {rate}.", { rate: withUnit(flowing, unit) });
   }
 
   const need = nameplate !== undefined && nameplate > 1e-6 ? nameplate : flowing;
@@ -152,19 +153,30 @@ export function describeEdgeRate(data: EdgeLabelInput | undefined): string {
     const canDeliver = ratio * need;
     // "need" here is this line's share after pooling: what it carries plus its
     // part of whatever the machine still lacks with every line delivering.
-    return `This line's share of the machine's need is ${withUnit(need, unit)} but its source can only deliver ${withUnit(canDeliver, unit)}. It takes ${formatEdgeValue(1 / Math.max(ratio, 1e-6))}× the current supply to fill it.`;
+    return t(
+      "This line's share of the machine's need is {need} but its source can only deliver {canDeliver}. It takes {factor}× the current supply to fill it.",
+      {
+        need: withUnit(need, unit),
+        canDeliver: withUnit(canDeliver, unit),
+        factor: formatEdgeValue(1 / Math.max(ratio, 1e-6)),
+      },
+    );
   }
 
   if (ratio !== undefined && ratio > 1 + 1e-6) {
     const canDeliver = ratio * need;
-    return `The maker can send ${withUnit(canDeliver, unit)} but only ${withUnit(need, unit)} is needed. ${withUnit(canDeliver - need, unit)} is spare.`;
+    return t("The maker can send {canDeliver} but only {need} is needed. {spare} is spare.", {
+      canDeliver: withUnit(canDeliver, unit),
+      need: withUnit(need, unit),
+      spare: withUnit(canDeliver - need, unit),
+    });
   }
 
   if (ratio !== undefined) {
-    return `The maker sends exactly the ${withUnit(need, unit)} that is needed.`;
+    return t("The maker sends exactly the {need} that is needed.", { need: withUnit(need, unit) });
   }
 
-  return `Carrying ${withUnit(flowing, unit)}.`;
+  return t("Carrying {rate}.", { rate: withUnit(flowing, unit) });
 }
 
 /**

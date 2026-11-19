@@ -20,6 +20,7 @@ import { addArrowAt, addBoxAt, addStickyNoteAt } from "./clean/note/note-actions
 import { isLiveConfigured } from "@/lib/live/live-config";
 import { cardsForTask, selectedTaskCards } from "@/lib/tasks/make-task";
 import { openAddToTask } from "@/components/tasks/AddToTask";
+import { useT } from "@/lib/i18n";
 
 /** Task boards come with live plans: no Add to a task row without them. */
 const TASKS_ENABLED = isLiveConfigured();
@@ -66,6 +67,7 @@ export function BoardContextMenu({
 }) {
   const [picking, setPicking] = useState(false);
   const [background, setBackground] = useState(false);
+  const t = useT();
   const boardView = useBoardView();
   const annotation = useFactoryStore((state) =>
     target.kind === "annotation" ? state.project.annotations?.find((entry) => entry.id === target.id) : undefined,
@@ -158,7 +160,7 @@ export function BoardContextMenu({
 
   if (background) {
     return (
-      <BoardMenu x={target.x} y={target.y} label="Background menu" title="BACKGROUND" onClose={onClose}>
+      <BoardMenu x={target.x} y={target.y} label={t("Background menu")} title="BACKGROUND" onClose={onClose}>
         {CANVAS_THEMES.map((theme) => (
           <MenuRow
             key={theme.id}
@@ -182,10 +184,10 @@ export function BoardContextMenu({
   }
 
   return (
-    <BoardMenu x={target.x} y={target.y} label="Board menu" onClose={onClose}>
+    <BoardMenu x={target.x} y={target.y} label={t("Board menu")} onClose={onClose}>
       {target.kind === "pane" && TASKS_ENABLED && selectedTaskCards().length > 0 ? (
         <MenuRow
-          label="Add to a task"
+          label={t("Add to a task")}
           onClick={() => {
             onClose();
             void openAddToTask(selectedTaskCards(), { left: target.x, top: target.y, bottom: target.y });
@@ -194,14 +196,14 @@ export function BoardContextMenu({
       ) : null}
       {target.kind === "pane" && planMode ? (
         <>
-          <MenuRow label="Add sticky note" onClick={run(() => addStickyNoteAt(target.flow))} />
-          <MenuRow label="Add box" onClick={run(() => addBoxAt(target.flow))} />
-          <MenuRow label="Add arrow" onClick={run(() => addArrowAt(target.flow))} />
+          <MenuRow label={t("Add sticky note")} onClick={run(() => addStickyNoteAt(target.flow))} />
+          <MenuRow label={t("Add box")} onClick={run(() => addBoxAt(target.flow))} />
+          <MenuRow label={t("Add arrow")} onClick={run(() => addArrowAt(target.flow))} />
           <MenuLine />
         </>
       ) : null}
-      {target.kind === "pane" ? <MenuRow label="New product drawer" onClick={() => setPicking(true)} /> : null}
-      {target.kind === "pane" ? <MenuRow label="Background" onClick={() => setBackground(true)} /> : null}
+      {target.kind === "pane" ? <MenuRow label={t("New product drawer")} onClick={() => setPicking(true)} /> : null}
+      {target.kind === "pane" ? <MenuRow label={t("Background")} onClick={() => setBackground(true)} /> : null}
       {target.kind === "node" ? (
         <CardRows
           nodeId={target.id}
@@ -217,15 +219,15 @@ export function BoardContextMenu({
       ) : null}
       {target.kind === "storage" ? (
         <>
-          <MenuRow label="Clone drawer" onClick={run(() => store().duplicateStorage(target.id))} />
+          <MenuRow label={t("Clone drawer")} onClick={run(() => store().duplicateStorage(target.id))} />
           <MenuLine />
-          <MenuRow label="Delete drawer" danger onClick={run(() => store().deleteStorage(target.id))} />
+          <MenuRow label={t("Delete drawer")} danger onClick={run(() => store().deleteStorage(target.id))} />
         </>
       ) : null}
       {target.kind === "edge" ? (
         <>
           <MenuRow
-            label="Add a drawer here"
+            label={t("Add a drawer here")}
             disabled={!target.resource}
             onClick={run(() => {
               if (target.resource) {
@@ -235,7 +237,7 @@ export function BoardContextMenu({
           />
           <MenuLine />
           <MenuRow
-            label={target.ids.length > 1 ? "Delete wires" : "Delete wire"}
+            label={target.ids.length > 1 ? t("Delete wires") : t("Delete wire")}
             danger
             onClick={run(() => store().deleteEdge(target.ids))}
           />

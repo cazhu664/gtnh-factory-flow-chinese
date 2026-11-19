@@ -14,6 +14,7 @@ import { useFactoryStore } from "@/store/factory-store";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
 import { RecipeTooltip } from "./RecipeTooltip";
 import { buildRatePlateTooltip } from "./storage-tooltip-data";
+import { useT } from "@/lib/i18n";
 
 /**
  * A rate rule and your rate, the way a source or product drawer sets them in
@@ -314,6 +315,7 @@ function clippingBox(element: HTMLElement): { top: number; bottom: number } {
 
 /** The rule button and, while open, its list of four. */
 export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; variant?: RateRuleVariant }) {
+  const t = useT();
   const rootRef = useRef<HTMLSpanElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [button, setButton] = useState<HTMLButtonElement | null>(null);
@@ -359,7 +361,7 @@ export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; va
         disabled={locked}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`${rule.name ? `Rule for ${rule.name}` : "Rule"}: ${RULE_NAME[shownMode]}. Click to choose.`}
+        aria-label={t("{rule}: {name}. Click to choose.", { rule: rule.name ? t("Rule for {name}", { name: rule.name }) : t("Rule"), name: t(RULE_NAME[shownMode]) })}
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
@@ -379,14 +381,14 @@ export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; va
         }}
       >
         <b className="storage-rule-mark">{RULE_MARK[shownMode]}</b>
-        {table ? <span className="storage-rule-word">{RULE_NAME[shownMode]}</span> : null}
+        {table ? <span className="storage-rule-word">{t(RULE_NAME[shownMode])}</span> : null}
         <ChevronDown aria-hidden />
       </button>
       {open ? (
         <div
           ref={listRef}
           role="listbox"
-          aria-label="Rule"
+          aria-label={t("Rule")}
           data-tooltip-stop
           className={`storage-rule-list nodrag nowheel ${table ? "storage-rule-list--table" : ""} ${up ? "storage-rule-list--up" : ""}`}
           onPointerDown={(event) => event.stopPropagation()}
@@ -404,7 +406,7 @@ export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; va
               }}
             >
               <b>{RULE_MARK[step]}</b>
-              {RULE_NAME[step]}
+              {t(RULE_NAME[step])}
             </button>
           ))}
         </div>
@@ -416,6 +418,7 @@ export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; va
 /** Your rate in its sunken box: click to type, scroll to step, middle click
  * to clear. */
 export function RateBox({ rule }: { rule: RateRule }) {
+  const t = useT();
   const [box, setBox] = useState<HTMLButtonElement | null>(null);
   const { storage, result, kind, any, target, input, signed, ask, locked, editing } = rule;
   // Native and non-passive, so Ctrl-scroll steps the rate instead of
@@ -450,8 +453,8 @@ export function RateBox({ rule }: { rule: RateRule }) {
         onMouseDown={middleDownKeepsFocus}
         onAuxClick={rule.clear}
         inputMode={signed ? "text" : "decimal"}
-        placeholder={rule.flowing > 0 ? `${signed && input ? "-" : ""}${draftFor(rule.flowing, kind)}` : "rate"}
-        aria-label="Your rate"
+        placeholder={rule.flowing > 0 ? `${signed && input ? "-" : ""}${draftFor(rule.flowing, kind)}` : t("rate")}
+        aria-label={t("Your rate")}
         className="storage-rate-field storage-rate-field--editing nodrag"
       />
     );
@@ -475,9 +478,9 @@ export function RateBox({ rule }: { rule: RateRule }) {
         }}
         onMouseDown={middleDownKeepsFocus}
         onAuxClick={rule.clear}
-        aria-label={any ? "Your rate: none. Click to type one." : `Your rate: ${shown} ${unit}. Click to change it.`}
+        aria-label={any ? t("Your rate: none. Click to type one.") : t("Your rate: {shown} {unit}. Click to change it.", { shown, unit })}
       >
-        <span className="storage-rate-field-number">{any ? "rate?" : shown}</span>
+        <span className="storage-rate-field-number">{any ? t("rate?") : shown}</span>
         {any ? null : <span className="storage-rate-field-unit">{unit}</span>}
       </button>
     </MinecraftTooltip>

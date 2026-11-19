@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { datasetNameLabel, t } from "@/lib/i18n";
 import type { FactoryNode, MachineConfigTierOption, Recipe } from "@/lib/model/types";
 import {
   GT_OVERCLOCK_TIERS,
@@ -60,7 +61,7 @@ import type { RecipeNodeData } from "../RecipeNode";
 import { CC, CC_GEOMETRY } from "./tokens";
 import { mixHex } from "./colors";
 import { UP_TO_COLOR } from "./up-to-reason";
-import { cardLoop, LOOP_WORD, type LoopTone } from "./loops";
+import { cardLoop, loopWord, type LoopTone } from "./loops";
 import { glanceBar, type GlanceBar } from "./glance";
 import { isPinned, pinMachineKey, settingControls } from "./menus/settings-model";
 import { mcTextWidth, measureClean, measureRowFigure, measureRowName, useFontEpoch } from "./text-measure";
@@ -381,7 +382,9 @@ export function buildPortView(
     chance !== undefined && chance < 1 ? `${Math.round(chance * 10000) / 100}%` : undefined;
   const consumeChance = (port.resource as { consumeChance?: number } | undefined)?.consumeChance;
   const consumeText =
-    consumeChance !== undefined && consumeChance < 1 ? `used up ${Math.round(consumeChance * 10000) / 100}% of runs` : undefined;
+    consumeChance !== undefined && consumeChance < 1
+      ? t("used up {pct}% of runs", { pct: Math.round(consumeChance * 10000) / 100 })
+      : undefined;
   return {
     key: port.key,
     nodeId,
@@ -392,9 +395,9 @@ export function buildPortView(
     unit,
     name: port.displayName,
     title: chanceText
-      ? `${port.displayName} (${chanceText} chance)`
+      ? t("{name} ({chance} chance)", { name: port.displayName, chance: chanceText })
       : consumeText
-        ? `${port.displayName} (${consumeText})`
+        ? t("{name} ({consume})", { name: port.displayName, consume: consumeText })
         : port.displayName,
     zero: !(shown > 0),
     gold: node.portRates?.[port.handleId] !== undefined,
@@ -565,16 +568,16 @@ export function buildCountView(
     ruleFixed: opts.ruleFixed === true,
     set,
     setText,
-    box: pinned ? setText : "Set",
+    box: pinned ? setText : t("Set"),
     prompt: !pinned && unset,
     zero: state.upTo ? state.upTo.reached <= 0.0000005 : !pinned && needed <= 0.0000005,
     title:
       opts.title ??
       (rule === "upTo"
-        ? "Runs as many as the plan lets it. Never more than you set."
+        ? t("Runs as many as the plan lets it. Never more than you set.")
         : rule === "exact"
-          ? "Runs exactly this many. A gap shows as a forced flow."
-          : "How many of this machine the plan needs."),
+          ? t("Runs exactly this many. A gap shows as a forced flow.")
+          : t("How many of this machine the plan needs.")),
   };
 }
 
@@ -743,8 +746,8 @@ export function buildFootView(
           : undefined;
       })
       .filter((name): name is string => name !== undefined);
-    const upstream = (upTo.upstream ?? []).map((id) => cardName(id) ?? "a card");
-    const word = loop ? LOOP_WORD[loop] : (reason ?? "");
+    const upstream = (upTo.upstream ?? []).map((id) => cardName(id) ?? t("a card"));
+    const word = loop ? loopWord(loop) : (reason ?? "");
     const room =
       FOOT_TEXT -
       (word ? measureClean(word, FOOT_SIZE) + FOOT_GAP : 0) -
@@ -752,25 +755,29 @@ export function buildFootView(
       FOOT_GAP;
     const lines: string[] =
       reason === "FULL"
-        ? ["nothing wants more"]
+        ? [t("nothing wants more")]
         : reason === "BOTTLENECK"
           ? wants !== undefined
-            ? [`the line wants ${fmt(wants)}`, `wants ${fmt(wants)}`]
-            : ["the line wants more"]
+            ? [t("the line wants {n}", { n: fmt(wants) }), t("wants {n}", { n: fmt(wants) })]
+            : [t("the line wants more")]
           : reason === "STARVED"
             ? resource
-              ? [`short of ${resource}`, "short of an input"]
-              : ["short of an input"]
+              ? [t("short of {name}", { name: resource }), t("short of an input")]
+              : [t("short of an input")]
             : reason === "CLOGGED" || loop === "clog"
               ? resource
-                ? [`${resource} has nowhere to go`, `nowhere for ${resource}`, "an output backs up"]
-                : ["an output backs up"]
+                ? [
+                    t("{name} has nowhere to go", { name: resource }),
+                    t("nowhere for {name}", { name: resource }),
+                    t("an output backs up"),
+                  ]
+                : [t("an output backs up")]
               : reason === "UNUSED"
                 ? resource
-                  ? [`nothing takes ${resource}`, "nothing takes it"]
-                  : ["nothing takes it"]
+                  ? [t("nothing takes {name}", { name: resource }), t("nothing takes it")]
+                  : [t("nothing takes it")]
                 : reason === "LIMITED"
-                  ? ["the plan holds it back", "held back"]
+                  ? [t("the plan holds it back"), t("held back")]
                   : [];
     return {
       tone: loop ? LOOP_FOOT_TONE[loop] : reason ? FOOT_TONE[reason] : "plain",
@@ -799,16 +806,27 @@ export function buildFootView(
     const first = forced[0]!;
     const rate = `${first.forced!.number}${first.forced!.unit ? ` ${first.forced!.unit}` : ""}`;
     const set = count.set ?? 0;
-    const keep = set === 1 ? "to keep it running" : `to keep all ${fmt(set)} running`;
-    const word = "FORCED IN";
+    const keep =
+      set === 1
+        ? t("to keep it running")
+        : t("to keep all {n} running", { n: fmt(set) });
+    const word = t("FORCED IN");
     const room = FOOT_TEXT - measureClean(word, FOOT_SIZE) - FOOT_GAP;
     const lines =
       forced.length === 1
-        ? [`${rate} of ${first.name} ${keep}`, `${rate} of ${first.name}`, rate]
+        ? [
+            t("{rate} of {name} {keep}", { rate, name: first.name, keep }),
+            t("{rate} of {name}", { rate, name: first.name }),
+            rate,
+          ]
         : [
-            `${rate} of ${first.name} and ${forced.length - 1} more`,
-            `${first.name} and ${forced.length - 1} more`,
-            `${forced.length} inputs`,
+            t("{rate} of {name} and {count} more", {
+              rate,
+              name: first.name,
+              count: forced.length - 1,
+            }),
+            t("{name} and {count} more", { name: first.name, count: forced.length - 1 }),
+            t("{count} inputs", { count: forced.length }),
           ];
     return {
       tone: "forced",
@@ -1005,7 +1023,7 @@ export function useCleanCardModel(
   const { selectedMachineHandler, machineHandlers, tierControl, powerReport, steamReport } =
     derived;
   const { machineIcon, art } = cardPicture(recipe, projectNode, derived, machineIcons, mapIcons);
-  const name = machineIcon?.displayName ?? selectedMachineHandler.label;
+  const name = datasetNameLabel(machineIcon?.displayName ?? selectedMachineHandler.label);
 
   const hasPicker = machineHandlers.length > 1;
   const tierLabel = powerReport?.isMultiblock ? powerReport.tier : tierControl?.current;
@@ -1044,24 +1062,27 @@ export function useCleanCardModel(
     const stalled = powerReport.state !== "ok";
     power = {
       number: stalled
-        ? "TIER!"
+        ? t("TIER!")
         : formatPowerValue(
             powerDisplayFromEuT(powerReport.drawEuT * machines * drawScale, powerReport.tier),
           ),
       unit: stalled ? "" : powerDisplaySuffix(powerReport.tier),
-      name: "Power",
+      name: t("Power"),
       stalled,
       title: stalled
-        ? (powerReport.recipeGateReason ?? "This machine's tier is too low to run the recipe.")
-        : `${powerReport.tier} machine, ${formatCompact(powerReport.amps)}A`,
+        ? (powerReport.recipeGateReason ?? t("This machine's tier is too low to run the recipe."))
+        : t("{tier} machine, {amps}A", {
+            tier: powerReport.tier,
+            amps: formatCompact(powerReport.amps),
+          }),
     };
   } else if (steamReport) {
     power = {
       number: formatCompact(steamReport.drawSteamPerTick * 20 * machines * drawScale),
       unit: "L/s",
-      name: steamReport.highPressure ? "HP steam" : "Steam",
+      name: steamReport.highPressure ? t("HP steam") : t("Steam"),
       stalled: false,
-      title: "Steam this machine burns",
+      title: t("Steam this machine burns"),
     };
   }
 
@@ -1083,17 +1104,17 @@ export function useCleanCardModel(
       value: control.value,
       icon: control.icon,
       warn: control.warn || undefined,
-      title: `${control.label}: ${control.value}`,
+      title: t("{label}: {value}", { label: control.label, value: control.value }),
     });
   }
   const parallels = powerReport?.parallels ?? steamReport?.parallels ?? derived.parallel;
   if (parallels > 1) {
     rawChips.push({
       id: "parallel",
-      label: "Parallel",
+      label: t("Parallel"),
       value: `×${formatCompact(parallels)}`,
       reading: true,
-      title: "Operations at once. Set by the machine and its configuration.",
+      title: t("Operations at once. Set by the machine and its configuration."),
     });
   }
   const strip = layoutStrip(rawChips);
@@ -1126,8 +1147,8 @@ export function useCleanCardModel(
           label: tierLabel,
           fixed: tierControl?.fixed === true,
           title: tierControl?.fixed
-            ? "Fixed by the reactor mark"
-            : `Tier ${tierLabel}. Click up, right click down.`,
+            ? t("Fixed by the reactor mark")
+            : t("Tier {tier}. Click up, right click down.", { tier: tierLabel }),
         }
       : undefined,
     amps:

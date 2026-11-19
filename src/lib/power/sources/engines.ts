@@ -5,6 +5,7 @@
  * (fuel x2, output x3, oxygen 40 L/s) and MTEUniversalChemicalFuelEngine
  * (eff = 1.5 e^(-C/ratio)).
  */
+import { t } from "@/lib/i18n/core";
 import { findFuel, fuelOptions, powerPlannerData } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition } from "../types";
 import { formatAmount, items, liters, percent, stat } from "./helpers";
@@ -130,7 +131,12 @@ function buildEngine(spec: EngineSpec): PowerSourceDefinition {
         outputs: [],
         stats: [stat("EU per L", formatAmount(effectiveEu))],
         warnings: blocked
-          ? [`${fuel.name} is over ${spec.unboostedFuelCap} EU/L and needs the oxygen boost.`]
+          ? [
+              t("{name} is over {cap} EU/L and needs the oxygen boost.", {
+                name: fuel.name,
+                cap: spec.unboostedFuelCap ?? 0,
+              }),
+            ]
           : undefined,
       };
     },
@@ -375,7 +381,11 @@ const largeNeutralizationEngine: PowerSourceDefinition = {
       ],
       warnings:
         netAtFull > 0
-          ? ["Residue builds faster than it decays even at a full tank. The engine will explode."]
+          ? [
+              t(
+                "Residue builds faster than it decays even at a full tank. The engine will explode.",
+              ),
+            ]
           : undefined,
     };
   },

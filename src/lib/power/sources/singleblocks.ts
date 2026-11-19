@@ -10,6 +10,7 @@
  * A fuel too thin for its tank, or an item too small for its tier, derates
  * the output instead of running at V.
  */
+import { t } from "@/lib/i18n/core";
 import {
   findFuel,
   fuelOptions,
@@ -257,7 +258,7 @@ function fluidModel(
       inputs: [],
       outputs: [],
       stats,
-      warnings: ["Makes 0 EU per L at this tier, so the generator will not burn it."],
+      warnings: [t("Makes 0 EU per L at this tier, so the generator will not burn it.")],
     };
   }
   const packet = voltage + ampLoss;
@@ -277,7 +278,10 @@ function fluidModel(
     outputs: [],
     stats,
     warnings: [
-      `Burns at most ${formatAmount(tankLiters)} L per 10 ticks (the tank), so it runs at ${eu(euPerTick)} EU/t, not ${eu(voltage)}.`,
+      t(
+        "Burns at most {tank} L per 10 ticks (the tank), so it runs at {run} EU/t, not {voltage}.",
+        { tank: formatAmount(tankLiters), run: eu(euPerTick), voltage: eu(voltage) },
+      ),
     ],
   };
 }
@@ -311,7 +315,10 @@ function itemModel(
     ],
     warnings: capped
       ? [
-          `Burns at most 1 item per 10 ticks, so it runs at ${eu(euPerTick)} EU/t, not ${eu(voltage)}.`,
+          t("Burns at most 1 item per 10 ticks, so it runs at {run} EU/t, not {voltage}.", {
+            run: eu(euPerTick),
+            voltage: eu(voltage),
+          }),
         ]
       : undefined,
   };

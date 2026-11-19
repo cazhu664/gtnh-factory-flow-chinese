@@ -7,6 +7,7 @@ import { RULE_MARK, RULE_NAME, trimFlow } from "../../rate-rule";
 import type { DrawerKind } from "../tokens";
 import { mcTextWidth, measureRowFigure, measureRowName } from "../text-measure";
 import type { TipSpec } from "../interaction/tip-spec";
+import { t } from "@/lib/i18n";
 
 /**
  * The clean drawer as plain data: every string final, nothing measured from the DOM.
@@ -16,8 +17,12 @@ import type { TipSpec } from "../interaction/tip-spec";
  */
 
 /** The menu's last row for a product, and for trash: the mod's words (`DrawerCard.TO_TRASH`, `TO_PRODUCT`). */
-export const TO_TRASH = "Void it (trash)";
-export const TO_PRODUCT = "Keep it (product)";
+export function toTrash(): string {
+  return t("Void it (trash)");
+}
+export function toProduct(): string {
+  return t("Keep it (product)");
+}
 
 /** The words column of the drawer: 76 px at the row's 14 px figure and 9 px name. */
 const WORDS = 76;
@@ -130,12 +135,18 @@ export interface DrawerViewInput {
   spill?: number;
 }
 
-const KIND_NAME: Record<DrawerKind, string> = {
-  source: "Source",
-  product: "Product",
-  trash: "Trash",
-  buffer: "Buffer",
-};
+function kindName(kind: DrawerKind): string {
+  switch (kind) {
+    case "source":
+      return t("Source");
+    case "product":
+      return t("Product");
+    case "trash":
+      return t("Trash");
+    case "buffer":
+      return t("Buffer");
+  }
+}
 
 /** What a buffer passes: what its makers put in, which is what its users take out. */
 export function bufferThroughput(result: Pick<StorageThroughputResult, "producedPerSecond"> | undefined): number {
@@ -143,16 +154,16 @@ export function bufferThroughput(result: Pick<StorageThroughputResult, "produced
 }
 
 function ruleMeaning(kind: DrawerKind, rule: TargetMode): string {
-  const flow = kind === "source" ? "draws from it" : "puts in it";
+  const flow = kind === "source" ? t("draws from it") : t("puts in it");
   switch (rule) {
     case "ignore":
-      return `No target: the plan ${flow} whatever it needs.`;
+      return t("No target: the plan {flow} whatever it needs.", { flow });
     case "at-least":
-      return `The plan ${flow} at least the rate.`;
+      return t("The plan {flow} at least the rate.", { flow });
     case "exact":
-      return `The plan ${flow} exactly the rate.`;
+      return t("The plan {flow} exactly the rate.", { flow });
     case "at-most":
-      return `The plan ${flow} no more than the rate.`;
+      return t("The plan {flow} no more than the rate.", { flow });
   }
 }
 
@@ -192,44 +203,45 @@ export function buildDrawerView(input: DrawerViewInput): CleanDrawerView {
   const tone: ProgressTone = isUnmet ? "bad" : rule === "at-most" ? "calm" : "ok";
   const sign = zero || kind === "buffer" ? "" : kind === "source" ? "-" : "+";
   const reaches = isUnmet ? `${formatRateField(net, resourceKind)} ${unitLabel}` : undefined;
-  const flowWord = kind === "source" ? "Supplies" : kind === "buffer" ? "Passes" : "Takes";
+  const flowWord = kind === "source" ? t("Supplies") : kind === "buffer" ? t("Passes") : t("Takes");
 
   // The mod's tips (`DrawerCard.tip`), word for word.
   const ruleTip: TipSpec =
     kind === "trash"
       ? {
           id: `${storage.id}|rule`,
-          title: "Trash",
+          title: t("Trash"),
           notes: [
             {
-              text: "It voids what comes in: it leaves the plan without being one of its outputs.",
+              text: t("It voids what comes in: it leaves the plan without being one of its outputs."),
               tone: "muted",
             },
           ],
-          actions: [{ input: "left", label: "Keep it instead" }],
+          actions: [{ input: "left", label: t("Keep it instead") }],
         }
       : {
           id: `${storage.id}|rule`,
-          title: "Rule",
-          sub: RULE_NAME[rule],
+          title: t("Rule"),
+          sub: t(RULE_NAME[rule]),
           notes: [{ text: ruleMeaning(kind, rule), tone: "muted" }],
           actions: [
-            { input: "left", label: "Pick" },
-            { input: "wheel", label: "Next" },
-            { input: "middle", label: "Clear" },
+            { input: "left", label: t("Pick") },
+            { input: "wheel", label: t("Next") },
+            { input: "middle", label: t("Clear") },
           ],
         };
   const rateRows: NonNullable<TipSpec["rows"]> = [];
-  if (hasTarget) rateRows.push({ label: RULE_NAME[rule], value: `${targetParts!.number} ${unitLabel}` });
-  if (isUnmet) rateRows.push({ label: "Reaches", value: reaches!, tone: "red" });
+  if (hasTarget)
+    rateRows.push({ label: t(RULE_NAME[rule]), value: `${targetParts!.number} ${unitLabel}` });
+  if (isUnmet) rateRows.push({ label: t("Reaches"), value: reaches!, tone: "red" });
   const rateTip: TipSpec = {
     id: `${storage.id}|rate`,
-    title: hasTarget ? "Target rate" : "No rate yet",
+    title: hasTarget ? t("Target rate") : t("No rate yet"),
     rows: rateRows,
     actions: [
-      { input: "left", label: "Type (2.5k, 1/3)" },
-      { input: "wheel", label: "+1, Ctrl 10, Shift 100" },
-      { input: "middle", label: "Clear" },
+      { input: "left", label: t("Type (2.5k, 1/3)") },
+      { input: "wheel", label: t("+1, Ctrl 10, Shift 100") },
+      { input: "middle", label: t("Clear") },
     ],
   };
   // A buffer never dumps: what its makers make beyond what its users take is forced out at the makers (their Forced
@@ -237,22 +249,27 @@ export function buildDrawerView(input: DrawerViewInput): CleanDrawerView {
   const spilling = kind === "buffer" && spill !== undefined && spill > 0.000005;
   const spillText = spilling ? formatRateField(spill!, resourceKind) : undefined;
   const bodyNotes: NonNullable<TipSpec["notes"]> = [];
-  if (kind === "buffer") bodyNotes.push({ text: "Its makers put in what its users take out.", tone: "muted" });
-  if (!linked) bodyNotes.push({ text: "Unconnected", tone: "warn" });
+  if (kind === "buffer")
+    bodyNotes.push({ text: t("Its makers put in what its users take out."), tone: "muted" });
+  if (!linked) bodyNotes.push({ text: t("Unconnected"), tone: "warn" });
   if (isUnmet && hasTarget) {
     bodyNotes.push({
-      text: `Reaches only ${reaches} of its ${targetParts!.number} ${unitLabel} target`,
+      text: t("Reaches only {reaches} of its {number} {unit} target", {
+        reaches: reaches!,
+        number: targetParts!.number,
+        unit: unitLabel,
+      }),
       tone: "red",
     });
   }
   const bodyTip: TipSpec = {
     id: `${storage.id}|body`,
     title: label,
-    sub: KIND_NAME[kind],
+    sub: kindName(kind),
     rows: [{ label: flowWord, value: `${number} ${unitLabel}` }],
     notes: bodyNotes,
     actions: [
-      { input: "drag", label: "Wire to a card" },
+      { input: "drag", label: t("Wire to a card") },
       { input: "key", label: "R, U" },
     ],
   };
@@ -272,7 +289,7 @@ export function buildDrawerView(input: DrawerViewInput): CleanDrawerView {
     rule,
     ruleMark: kind === "trash" ? "×" : RULE_MARK[rule],
     target: targetParts,
-    boxText: kind === "trash" ? "Voided" : "Set", // the mod says "Set", pulsing gold while nothing is set
+    boxText: kind === "trash" ? t("Voided") : t("Set"), // the mod says "Set", pulsing gold while nothing is set
     prompt,
     unmet: isUnmet,
     reaches,
@@ -285,9 +302,9 @@ export function buildDrawerView(input: DrawerViewInput): CleanDrawerView {
       : {
           flip: {
             id: `${storage.id}|flip`,
-            title: kind === "source" ? "Make it an output" : "Make it an input",
-            notes: [{ text: "Its wires come off.", tone: "muted" as const }],
-            actions: [{ input: "left" as const, label: "Switch" }],
+            title: kind === "source" ? t("Make it an output") : t("Make it an input"),
+            notes: [{ text: t("Its wires come off."), tone: "muted" as const }],
+            actions: [{ input: "left" as const, label: t("Switch") }],
           },
         }),
     ...(spilling
@@ -297,11 +314,14 @@ export function buildDrawerView(input: DrawerViewInput): CleanDrawerView {
             unit,
             tip: {
               id: `${storage.id}|spill`,
-              title: "Forced out",
-              rows: [{ label: "At its makers", value: `${spillText} ${unitLabel}` }],
+              title: t("Forced out"),
+              rows: [{ label: t("At its makers"), value: `${spillText} ${unitLabel}` }],
               notes: [
                 {
-                  text: `Its makers make ${spillText} ${unitLabel} more than its users take. They force it out themselves; this adds it up.`,
+                  text: t(
+                    "Its makers make {amount} {unit} more than its users take. They force it out themselves; this adds it up.",
+                    { amount: spillText!, unit: unitLabel },
+                  ),
                   tone: "muted",
                 },
               ],
@@ -313,16 +333,16 @@ export function buildDrawerView(input: DrawerViewInput): CleanDrawerView {
       bar: {
         id: `${storage.id}|bar`,
         title: label,
-        sub: KIND_NAME[kind],
+        sub: kindName(kind),
         actions: [
-          { input: "drag", label: "Move" },
-          { input: "left", label: "Select" },
+          { input: "drag", label: t("Move") },
+          { input: "left", label: t("Select") },
         ],
       },
       del: {
         id: `${storage.id}|del`,
-        title: "Delete this drawer",
-        actions: [{ input: "left", label: "Delete" }],
+        title: t("Delete this drawer"),
+        actions: [{ input: "left", label: t("Delete") }],
       },
       rule: ruleTip,
       rate: rateTip,

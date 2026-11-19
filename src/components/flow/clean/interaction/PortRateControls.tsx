@@ -12,6 +12,7 @@ import { openBoxTip, openKeyTip } from "./tips";
 import { tipAttrs } from "./tip-spec";
 import { playEditSfx } from "@/lib/sound/sfx";
 import { wheelChangesValues } from "@/lib/device-settings";
+import { useT } from "@/lib/i18n";
 
 function locked(): boolean {
   const state = useFactoryStore.getState();
@@ -42,6 +43,7 @@ export function PortRateControls({
   unset: boolean;
   wasClick: (event: MouseEvent) => boolean;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<string>();
   const cancelled = useRef(false);
   const kind = p.port.kind;
@@ -116,7 +118,7 @@ export function PortRateControls({
         data-wheel-value=""
         data-side={p.side}
         data-mode={pinned ? "exact" : "any"}
-        aria-label={pinned ? "Rate set: exactly" : "Rate: any"}
+        aria-label={pinned ? t("Rate set: exactly") : t("Rate: any")}
         {...tipAttrs(openKeyTip(p, pinned))}
         onClick={(event) => {
           event.stopPropagation();
@@ -153,7 +155,7 @@ export function PortRateControls({
           <input
             autoFocus
             value={draft}
-            aria-label={`Rate of ${p.name}`}
+            aria-label={t("Rate of {name}", { name: p.name })}
             className="nodrag"
             onChange={(event) => setDraft(event.target.value)}
             onBlur={commit}
@@ -172,7 +174,7 @@ export function PortRateControls({
         ) : pinned ? (
           formatSlotRateBare(p.rate!, kind)
         ) : (
-          "Set"
+          t("Set")
         )}
       </div>
     </>

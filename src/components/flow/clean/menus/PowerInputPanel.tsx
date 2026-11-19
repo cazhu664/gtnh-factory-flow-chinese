@@ -6,6 +6,7 @@ import { forwardRef, useMemo, type CSSProperties } from "react";
 import { formatCompact } from "@/lib/model";
 import { applyRecipeInputOverrides } from "@/lib/model";
 import { useFactoryStore } from "@/store/factory-store";
+import { t, useT } from "@/lib/i18n";
 import { tierChipColors } from "../tokens";
 import { powerFacts, type PowerFacts } from "./power-facts";
 
@@ -26,9 +27,12 @@ function Tag({ tier }: { tier: string }) {
 }
 
 function overclockText(facts: PowerFacts): string {
-  if (facts.overclocks === 0) return "none";
+  if (facts.overclocks === 0) return t("none");
   if (facts.perfect === 0) return String(facts.overclocks);
-  return `${facts.perfect} perfect, ${facts.overclocks - facts.perfect}`;
+  return t("{perfect} perfect, {rest}", {
+    perfect: facts.perfect,
+    rest: facts.overclocks - facts.perfect,
+  });
 }
 
 function Box({ label, unit, before, after }: { label: string; unit: string; before: string; after: string }) {
@@ -77,20 +81,21 @@ function Scale({ facts }: { facts: PowerFacts }) {
 }
 
 export function PowerFactsPanel({ facts }: { facts: PowerFacts }) {
+  const t = useT();
   const { now, next } = facts;
   const hatchAmps = facts.amps === 1 ? 1 : 2;
   const hatches = facts.amps / hatchAmps;
   const stats: Array<[string, string]> = [
-    ["Overclocks", overclockText(facts)],
-    ["Parallels", String(now.parallels)],
-    ["Time / recipe", seconds(now.duration)],
-    ["Recipes / second", compact(now.runsPerSecond)],
-    ["EU / recipe", compact(now.eut * now.duration)],
-    ["Draw", `${compact(now.eut)} EU/t`],
+    [t("Overclocks"), overclockText(facts)],
+    [t("Parallels"), String(now.parallels)],
+    [t("Time / recipe"), seconds(now.duration)],
+    [t("Recipes / second"), compact(now.runsPerSecond)],
+    [t("EU / recipe"), compact(now.eut * now.duration)],
+    [t("Draw"), `${compact(now.eut)} EU/t`],
   ];
   return (
     <div className="pw" data-power-panel="">
-      <div className="pw-title">Power input</div>
+      <div className="pw-title">{t("Power input")}</div>
       <div className="pw-line">
         <span>
           {compact(facts.amps)}A ×<Tag tier={facts.tier} />= {compact(facts.volt * facts.amps)} EU/t
@@ -98,8 +103,8 @@ export function PowerFactsPanel({ facts }: { facts: PowerFacts }) {
         <span>
           {compact(hatches)}
           <Tag tier={facts.tier} />
-          {facts.amps <= hatchAmps ? "hatch" : "hatches"}
-          <span className="pw-subtle">({hatchAmps}A each)</span>
+          {facts.amps <= hatchAmps ? t("hatch") : t("hatches")}
+          <span className="pw-subtle">{t("({amps}A each)", { amps: hatchAmps })}</span>
         </span>
       </div>
       <div className="pw-rule" />
@@ -115,47 +120,48 @@ export function PowerFactsPanel({ facts }: { facts: PowerFacts }) {
       {next && facts.nextAmps !== undefined ? (
         <>
           <div className="pw-line">
-            <span>Next improvement</span>
+            <span>{t("Next improvement")}</span>
             <span>
               +{amps(facts.nextAmps - facts.amps)}
               <Tag tier={facts.tier} />
             </span>
           </div>
           <div className="pw-boxes">
-            <Box label="Output" unit="recipes/s" before={compact(now.runsPerSecond)} after={compact(next.runsPerSecond)} />
-            <Box label="Time" unit="per recipe" before={seconds(now.duration)} after={seconds(next.duration)} />
-            <Box label="Draw" unit="EU/t" before={compact(now.eut)} after={compact(next.eut)} />
+            <Box label={t("Output")} unit="recipes/s" before={compact(now.runsPerSecond)} after={compact(next.runsPerSecond)} />
+            <Box label={t("Time")} unit={t("per recipe")} before={seconds(now.duration)} after={seconds(next.duration)} />
+            <Box label={t("Draw")} unit="EU/t" before={compact(now.eut)} after={compact(next.eut)} />
           </div>
           <Scale facts={facts} />
         </>
       ) : (
         <div className="pw-line">
-          <span>Next improvement</span>
-          <span className="pw-subtle">none: more amps buy nothing</span>
+          <span>{t("Next improvement")}</span>
+          <span className="pw-subtle">{t("none: more amps buy nothing")}</span>
         </div>
       )}
       <div className="pw-rule" />
       <div className="pw-line">
-        <span className="pw-subtle">Demand for this card</span>
+        <span className="pw-subtle">{t("Demand for this card")}</span>
         <span>{compact(facts.demand)} EU/t</span>
       </div>
-      <div className="pw-subtle">{facts.shared ? "All recipes, across the required machines." : "Across the required machines."}</div>
+      <div className="pw-subtle">{facts.shared ? t("All recipes, across the required machines.") : t("Across the required machines.")}</div>
     </div>
   );
 }
 
 /** What the mouse does on the amps and tier chips; the section for the chip under the mouse is marked. */
 export function PowerGuide({ part }: { part?: "amps" | "tier" | "power" }) {
+  const t = useT();
   const amp: Array<[string, string]> = [
-    ["Type amps", "Click"],
-    ["-1", "Right click"],
-    ["+1 / -1", "Wheel"],
-    ["+10 / -10", "Ctrl+Wheel"],
-    ["×4 or ÷4", "Shift+Wheel"],
+    [t("Type amps"), t("Click")],
+    [t("-1"), t("Right click")],
+    [t("+1 / -1"), t("Wheel")],
+    [t("+10 / -10"), t("Ctrl+Wheel")],
+    [t("×4 or ÷4"), t("Shift+Wheel")],
   ];
   const tier: Array<[string, string]> = [
-    ["Up", "Click, wheel up"],
-    ["Down", "Right click, wheel down"],
+    [t("Up"), t("Click, wheel up")],
+    [t("Down"), t("Right click, wheel down")],
   ];
   const section = (title: string, rows: Array<[string, string]>, on: boolean) => (
     <div className="pw-guide-sec" data-on={on ? "" : undefined}>
@@ -170,8 +176,8 @@ export function PowerGuide({ part }: { part?: "amps" | "tier" | "power" }) {
   );
   return (
     <div className="pw pw-guide" data-power-guide="">
-      {section("Amps", amp, part === "amps")}
-      {section("Tier", tier, part === "tier")}
+      {section(t("Amps"), amp, part === "amps")}
+      {section(t("Tier"), tier, part === "tier")}
     </div>
   );
 }

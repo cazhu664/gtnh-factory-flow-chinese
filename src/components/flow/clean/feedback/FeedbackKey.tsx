@@ -2,17 +2,19 @@
 
 import { Bug } from "lucide-react";
 import { openFeedback } from "./feedback-store";
+import { useT } from "@/lib/i18n";
 
 /**
  * The top bar's red bug key (the mod's Feedback key). The chrome places it; it only opens the box
  * (FeedbackHost shows it).
  */
 export function FeedbackKey({ className = "" }: { className?: string }) {
+  const t = useT();
   return (
     <button
       type="button"
-      aria-label="Send feedback"
-      title="Send feedback: a bug, an idea, or a question"
+      aria-label={t("Send feedback")}
+      title={t("Send feedback: a bug, an idea, or a question")}
       className={`fb-topkey ${className}`}
       onClick={openFeedback}
     >

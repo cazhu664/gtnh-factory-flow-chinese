@@ -4,6 +4,7 @@ import { useFactoryStore } from "@/store/factory-store";
 import { BoardMenu, MenuLine, MenuRow } from "./BoardMenu";
 import { useCardRecipeRows } from "./card-recipe-rows";
 import type { MenuAnchor } from "./MenuPortal";
+import { useT } from "@/lib/i18n";
 
 /**
  * A card's rows, in the mod's order (RecipeCard.openActions): "Clone node", "Add another recipe" (the search pinned
@@ -26,6 +27,7 @@ export function CardRows({
   onAddToTask?: () => void;
   close: () => void;
 }) {
+  const t = useT();
   const recipeRows = useCardRecipeRows(nodeId);
   const run = (action: () => void) => () => {
     close();
@@ -33,22 +35,22 @@ export function CardRows({
   };
   return (
     <>
-      <MenuRow label="Clone node" onClick={run(onClone)} />
+      <MenuRow label={t("Clone node")} onClick={run(onClone)} />
       {recipeRows.addRecipe ? (
         <MenuRow
-          label="Add another recipe"
+          label={t("Add another recipe")}
           onClick={run(() => useFactoryStore.getState().browseMachineRecipes(nodeId))}
         />
       ) : null}
       {recipeRows.replace ? (
         <MenuRow
-          label="Replace the recipe"
+          label={t("Replace the recipe")}
           onClick={run(() => useFactoryStore.getState().beginRecipeRefactor(nodeId))}
         />
       ) : null}
-      {onAddToTask ? <MenuRow label="Add to a task" onClick={run(onAddToTask)} /> : null}
+      {onAddToTask ? <MenuRow label={t("Add to a task")} onClick={run(onAddToTask)} /> : null}
       <MenuLine />
-      <MenuRow label="Delete node" danger onClick={run(onDelete)} />
+      <MenuRow label={t("Delete node")} danger onClick={run(onDelete)} />
     </>
   );
 }
@@ -69,8 +71,9 @@ export function CardActionsMenu({
   onDelete: () => void;
   onAddToTask?: () => void;
 }) {
+  const t = useT();
   return (
-    <BoardMenu x={anchor.left} y={anchor.bottom + 2} label="Card actions" onClose={onClose}>
+    <BoardMenu x={anchor.left} y={anchor.bottom + 2} label={t("Card actions")} onClose={onClose}>
       <CardRows
         nodeId={nodeId}
         onClone={onClone}

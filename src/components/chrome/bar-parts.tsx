@@ -12,7 +12,7 @@ import { stepSaving, topBarStep, type TopBarStep } from "./top-bar-fold";
 export function BarKey({
   id,
   label,
-  width,
+  minWidth,
   tip,
   tipSub,
   icon,
@@ -29,8 +29,12 @@ export function BarKey({
 }: {
   id: string;
   label?: string;
-  /** The key's width in the mod's GUI pixels: its widest label's width in the game's font, plus 12 (the mod's `fit`). */
-  width?: number;
+  /**
+   * The key's least width in the mod's GUI pixels: its widest label's width in the game's font, plus 12 (the mod's
+   * `fit`). A minimum, not a fixed width: a label that needs more room (a longer language than the English the number
+   * was measured against) grows the key instead of being cut off.
+   */
+  minWidth?: number;
   tip: string;
   tipSub?: string;
   icon?: boolean;
@@ -62,7 +66,7 @@ export function BarKey({
       data-open={open ? "" : undefined}
       data-glyph={glyph}
       {...(menuAnchor ? { [MENU_ANCHOR_ATTR]: "" } : {})}
-      style={width ? { width } : undefined}
+      style={minWidth ? { minWidth } : undefined}
       onMouseDown={(event) => event.preventDefault()}
       onClick={(event) => {
         if (off) return;

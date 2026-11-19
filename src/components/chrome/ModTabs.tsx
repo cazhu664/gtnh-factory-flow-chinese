@@ -10,6 +10,7 @@ import { leaveLibrary, openLibrary } from "@/lib/library/library-tab";
 import { leaveWelcomeTab } from "@/lib/welcome/welcome-tab";
 import { playBoardSound } from "@/lib/board-sounds";
 import { playSfx } from "@/lib/sound/sfx";
+import { useT } from "@/lib/i18n";
 import { useDesignStore } from "@/store/design-store";
 import { useFactoryStore } from "@/store/factory-store";
 import { useSolvingBooks } from "@/components/flow/use-solving-books";
@@ -86,6 +87,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
   const designs = openDesigns(allDesigns);
   const linkedPostId = useFactoryStore((state) => state.project.metadata?.communityPlanId);
   const solving = useSolvingBooks();
+  const t = useT();
 
   const [menu, setMenu] = useState<TabMenu>();
   const [renaming, setRenaming] = useState<string>();
@@ -326,7 +328,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
     if (m.kind === "plus") {
       return [
         {
-          label: "New plan",
+          label: t("New plan"),
           onSelect: () => {
             playSfx("ui.page");
             leaveWelcomeTab();
@@ -338,8 +340,8 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
         ...(isLiveConfigured()
           ? [
               {
-                label: "New task board",
-                detail: "a plan of tasks",
+                label: t("New task board"),
+                detail: t("a plan of tasks"),
                 onSelect: () => {
                   playSfx("ui.page");
                   leaveWelcomeTab();
@@ -349,21 +351,21 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
               },
             ]
           : []),
-        { label: "Open a plan...", detail: "My plans", onSelect: () => openLibrary({ kind: "all" }) },
-        { label: "Open plan file...", detail: ".json", onSelect: () => document.querySelector<HTMLInputElement>("[data-plan-file-input]")?.click() },
-        { label: "Paste plan", detail: "a plan link, code or file", onSelect: onPaste },
-        { label: "Browse Community", detail: "public plans", onSelect: () => openLibrary({ kind: "public" }) },
+        { label: t("Open a plan..."), detail: t("My plans"), onSelect: () => openLibrary({ kind: "all" }) },
+        { label: t("Open plan file..."), detail: ".json", onSelect: () => document.querySelector<HTMLInputElement>("[data-plan-file-input]")?.click() },
+        { label: t("Paste plan"), detail: t("a plan link, code or file"), onSelect: onPaste },
+        { label: t("Browse Community"), detail: t("public plans"), onSelect: () => openLibrary({ kind: "public" }) },
       ];
     }
     if (m.kind === "delete") {
       return [
-        { label: "Delete it", tone: "red", onSelect: () => void removeDesign(m.id) },
-        { label: "Keep it", onSelect: () => undefined },
+        { label: t("Delete it"), tone: "red", onSelect: () => void removeDesign(m.id) },
+        { label: t("Keep it"), onSelect: () => undefined },
       ];
     }
     const rows: MenuEntry[] = [
-      { label: "Rename", onSelect: () => setRenaming(m.id) },
-      { label: "Copy plan code", detail: "to paste or share", onSelect: () => void copyCode(m.id) },
+      { label: t("Rename"), onSelect: () => setRenaming(m.id) },
+      { label: t("Copy plan code"), detail: t("to paste or share"), onSelect: () => void copyCode(m.id) },
       ...libraryRows(
         Boolean(m.id === activeDesignId ? linkedPostId : designs.find((design) => design.id === m.id)?.communityPlanId),
         (mode) => {
@@ -377,10 +379,10 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
     ];
     if (canClose) {
       rows.push(
-        { label: "Close tab", detail: "kept in My plans", onSelect: () => void close(m.id) },
+        { label: t("Close tab"), detail: t("kept in My plans"), onSelect: () => void close(m.id) },
         {
-          label: "Close other tabs",
-          detail: "kept in My plans",
+          label: t("Close other tabs"),
+          detail: t("kept in My plans"),
           onSelect: () =>
             void closeDesigns(
               designs.filter((design) => design.id !== m.id).map((design) => design.id),
@@ -390,7 +392,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
       );
     }
     rows.push({
-      label: "Delete plan",
+      label: t("Delete plan"),
       tone: "red",
       onSelect: () => setMenu({ kind: "delete", id: m.id, name: m.name, anchor: m.anchor }),
     });
@@ -405,7 +407,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
           className="mt-strip"
           onScroll={syncFade}
           role="tablist"
-          aria-label="Open plans"
+          aria-label={t("Open plans")}
           onKeyDown={(event) => {
             if (event.target instanceof HTMLInputElement) return;
             const tabs = [...event.currentTarget.querySelectorAll<HTMLElement>(".mt-tab")];
@@ -464,19 +466,19 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
                 {...tipAttrs({
                   id: `tab|public:${view.id}`,
                   title: view.name,
-                  sub: "Shared plan: view only. Middle-click to close",
+                  sub: t("Shared plan: view only. Middle-click to close"),
                 })}
               >
                 <span className="mt-name">{view.name}</span>
                 <span
                   className="mt-close"
                   role="button"
-                  aria-label="Close public setup view"
+                  aria-label={t("Close public setup view")}
                   onClick={(event) => {
                     event.stopPropagation();
                     void useDesignStore.getState().closePublicView(view.id);
                   }}
-                  {...tipAttrs({ id: `tab|public-close:${view.id}`, title: "Close tab" })}
+                  {...tipAttrs({ id: `tab|public-close:${view.id}`, title: t("Close tab") })}
                 >
                   <CloseGlyph />
                 </span>
@@ -528,7 +530,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
                   : tipAttrs({
                       id: `tab|${design.id}`,
                       title: design.name,
-                      sub: "Middle-click to close, right-click for more",
+                      sub: t("Middle-click to close, right-click for more"),
                     }))}
               >
                 {isRenaming ? (
@@ -545,17 +547,17 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
                     <span className="mt-name">{design.name}</span>
                   </>
                 )}
-                {active && solving ? <span className="mt-solving" aria-label="Still working out this plan's numbers" /> : null}
+                {active && solving ? <span className="mt-solving" aria-label={t("Still working out this plan's numbers")} /> : null}
                 {canClose && !isRenaming ? (
                   <span
                     className="mt-close"
                     role="button"
-                    aria-label={`Close ${design.name}`}
+                    aria-label={t("Close {name}", { name: design.name })}
                     onClick={(event) => {
                       event.stopPropagation();
                       void close(design.id);
                     }}
-                    {...tipAttrs({ id: `tab|close:${design.id}`, title: "Close tab (the plan is kept in My plans)" })}
+                    {...tipAttrs({ id: `tab|close:${design.id}`, title: t("Close tab (the plan is kept in My plans)") })}
                   >
                     <CloseGlyph />
                   </span>
@@ -570,7 +572,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
       <div
         className="mt-plus"
         role="button"
-        aria-label="New plan"
+        aria-label={t("New plan")}
         aria-haspopup="menu"
         aria-expanded={menu?.kind === "plus"}
         tabIndex={0}
@@ -582,7 +584,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
           const anchor = chromeAnchorOf(event.currentTarget);
           setMenu((current) => (current?.kind === "plus" ? undefined : { kind: "plus", anchor }));
         }}
-        {...tipAttrs({ id: "tab|plus", title: "New plan, or open an existing one" })}
+        {...tipAttrs({ id: "tab|plus", title: t("New plan, or open an existing one") })}
       >
         +
       </div>
@@ -591,7 +593,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
         accept="application/json,.json"
         className="hidden"
         data-plan-file-input=""
-        aria-label="Open plan file"
+        aria-label={t("Open plan file")}
         onChange={(event) => {
           const file = event.target.files?.[0];
           event.target.value = "";
@@ -599,7 +601,7 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
           leaveWelcomeTab();
           leaveLibrary();
           openPlanFile(file).catch((error) =>
-            flashNotice("warn", error instanceof Error ? error.message : "That plan file could not be opened."),
+            flashNotice("warn", error instanceof Error ? error.message : t("That plan file could not be opened.")),
           );
         }}
       />
@@ -607,8 +609,8 @@ export function ModTabs({ onPaste, onShare }: ModTabsActions) {
         <ChromeMenu
           anchor={menu.anchor}
           entries={entries(menu)}
-          label={menu.kind === "plus" ? "New plan" : `Plan options for ${menu.name}`}
-          title={menu.kind === "delete" ? `Delete '${menu.name}' for good?` : undefined}
+          label={menu.kind === "plus" ? t("New plan") : t("Plan options for {name}", { name: menu.name })}
+          title={menu.kind === "delete" ? t("Delete '{name}' for good?", { name: menu.name }) : undefined}
           minWidth={menu.kind === "plus" ? 190 : menu.kind === "delete" ? 150 : 170}
           onClose={closeMenu}
         />
@@ -633,6 +635,7 @@ function CloseGlyph() {
 function RenameField({ initial, onDone }: { initial: string; onDone: (name: string) => void }) {
   const [value, setValue] = useState(initial);
   const doneRef = useRef(false);
+  const t = useT();
   const finish = (commit: boolean) => {
     if (doneRef.current) return;
     doneRef.current = true;
@@ -642,7 +645,7 @@ function RenameField({ initial, onDone }: { initial: string; onDone: (name: stri
     <input
       autoFocus
       className="mt-rename"
-      aria-label="Plan name"
+      aria-label={t("Plan name")}
       value={value}
       onFocus={(event) => event.currentTarget.select()}
       onChange={(event) => setValue(event.target.value)}

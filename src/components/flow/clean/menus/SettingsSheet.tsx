@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { wheelChangesValues } from "@/lib/device-settings";
 import type { FormulaLine, FormulaTerm } from "@/lib/machines/formula-lines";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import { ArtBox } from "./ArtBox";
 import { MenuPortal, anchorOf, type MenuAnchor } from "./MenuPortal";
 import { OptionListMenu } from "./OptionListMenu";
@@ -38,8 +39,6 @@ const KNOB_COLORS: Record<string, string> = {
   bioVatShutter: "#e0a060",
 };
 
-const NONE = "No settings for this machine.";
-
 /** The game's font has no floor brackets or minus sign: written out, as the mod does. */
 const glyphs = (text: string) => text.replace(/−/g, "-").replace(/⌊/g, "floor(").replace(/⌋/g, ")").replace(/⌈/g, "ceil(").replace(/⌉/g, ")");
 
@@ -50,9 +49,10 @@ function Term({ term }: { term: FormulaTerm }) {
 }
 
 function FormulaRows({ lines }: { lines: FormulaLine[] }) {
+  const t = useT();
   return (
     <>
-      <div className="cs-title">Formulas</div>
+      <div className="cs-title">{t("Formulas")}</div>
       {lines.map((entry, index) => (
         <div key={`${index}:${entry.label}`} className="cs-f">
           <span className="cs-f-label">{entry.label}</span>
@@ -98,6 +98,7 @@ export function SettingsSheet({
   numbers?: NumberSetting[];
   onClose: () => void;
 }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const locked = useFactoryStore((state) => state.isReadOnly || state.checklistMode);
   const updateNode = useFactoryStore((state) => state.updateNode);
@@ -136,12 +137,12 @@ export function SettingsSheet({
 
   return (
     <>
-      <MenuPortal anchor={anchor} width={wide ? (none ? 597 : 813) : 330} maxHeight={660} label="Machine settings" onClose={onClose} keepOpenOn="[data-cc-sheet]">
+      <MenuPortal anchor={anchor} width={wide ? (none ? 597 : 813) : 330} maxHeight={660} label={t("Machine settings")} onClose={onClose} keepOpenOn="[data-cc-sheet]">
         <div ref={sheetRef} className="cs-body" data-cc-sheet="" style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ display: "flex", alignItems: "stretch", minHeight: 0, overflowY: "auto" }}>
             <div className="cs-col" style={{ flex: wide ? "0 0 auto" : "1 1 auto", minWidth: wide ? (none ? 220 : 250) : 0 }}>
-              <div className="cs-title">Settings</div>
-              {none ? <div className="cs-none">{NONE}</div> : null}
+              <div className="cs-title">{t("Settings")}</div>
+              {none ? <div className="cs-none">{t("No settings for this machine.")}</div> : null}
               {numbers.map((setting) => {
                 const pinned = isPinned(project, machine, setting);
                 return (
@@ -163,7 +164,7 @@ export function SettingsSheet({
                       className="cs-pin"
                       data-on={pinned ? "" : undefined}
                       aria-pressed={pinned}
-                      aria-label={pinned ? `Unpin ${setting.label} from the card` : `Pin ${setting.label} to the card`}
+                      aria-label={pinned ? t("Unpin {label} from the card", { label: setting.label }) : t("Pin {label} to the card", { label: setting.label })}
                       onClick={() => togglePin(setting.id)}
                     >
                       <PinGlyph />
@@ -224,7 +225,7 @@ export function SettingsSheet({
                       className="cs-pin"
                       data-on={pinned ? "" : undefined}
                       aria-pressed={pinned}
-                      aria-label={pinned ? `Unpin ${control.label} from the card` : `Pin ${control.label} to the card`}
+                      aria-label={pinned ? t("Unpin {label} from the card", { label: control.label }) : t("Pin {label} to the card", { label: control.label })}
                       onClick={() => togglePin(control.id)}
                     >
                       <PinGlyph />
@@ -254,7 +255,7 @@ export function SettingsSheet({
           </div>
           {none ? null : (
             <div className="cs-foot">
-              Pinned settings show on the card. Click, right-click or scroll to change.
+              {t("Pinned settings show on the card. Click, right-click or scroll to change.")}
             </div>
           )}
         </div>

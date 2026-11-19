@@ -4,6 +4,7 @@ import { productionGroupDescendants } from "@/lib/model/production-groups";
 import type { getPoolGroupResources } from "@/lib/solver/pool-mode";
 import type { ResourceAmount, ProductionGroup } from "@/lib/model/types";
 import type { FactoryNode, FactoryProject, Recipe, ThroughputResult } from "@/lib/model/types";
+import { datasetRecipeLabel } from "@/lib/i18n";
 import {
   applyRecipeInputOverrides,
   applyMachineHandlerToRecipe,
@@ -65,6 +66,14 @@ export type WorksheetSection = WorksheetGroup["sections"][number];
 export function filterWorksheetGroups(groups: WorksheetGroup[], query: string) {
   const needle = query.trim().toLowerCase();
   if (!needle) return groups;
+  // Match the shown name as well as the dataset name, so a player typing the
+  // Chinese label they can see finds the row.
+  const matches = (text: string | undefined) => {
+    if (!text) return false;
+    const lower = text.toLowerCase();
+    const shown = datasetRecipeLabel(text).toLowerCase();
+    return lower.includes(needle) || shown.includes(needle);
+  };
   // Keep a shared machine together: filtering must never make one recipe's
   // fraction appear to be its machine's entire requirement.
   return groups.filter((group) =>
@@ -76,7 +85,7 @@ export function filterWorksheetGroups(groups: WorksheetGroup[], query: string) {
         ...[...section.ports.inputs, ...section.ports.outputs].map((port) => port.displayName),
         ...section.nonConsumed.map((input) => input.displayName ?? input.id),
       ]),
-    ].some((text) => text?.toLowerCase().includes(needle)),
+    ].some(matches),
   );
 }
 

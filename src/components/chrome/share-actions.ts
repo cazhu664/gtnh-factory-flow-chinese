@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { flashNotice } from "@/components/flow/clean/rail/NoticeBar";
 import { copyToClipboard } from "@/lib/clipboard";
+import { t } from "@/lib/i18n";
 import { encodePlanCode, planCodeLink } from "@/lib/import-export/plan-code";
 import type { FactoryProject } from "@/lib/model/types";
 import {
@@ -18,10 +19,10 @@ export async function copyPlanLink(project: FactoryProject): Promise<void> {
   try {
     const code = await encodePlanCode(project);
     const copied = await copyToClipboard(planCodeLink(code, window.location.origin));
-    flashNotice(copied ? "info" : "warn", copied ? "Copied the plan link." : "Couldn't copy the plan link.");
+    flashNotice(copied ? "info" : "warn", copied ? t("Copied the plan link.") : t("Couldn't copy the plan link."));
   } catch (error) {
     console.error(error);
-    flashNotice("warn", "Couldn't copy the plan link.");
+    flashNotice("warn", t("Couldn't copy the plan link."));
   }
 }
 
@@ -29,10 +30,10 @@ export async function copyPlanLink(project: FactoryProject): Promise<void> {
 export async function copyPlanCode(project: FactoryProject): Promise<void> {
   try {
     const copied = await copyToClipboard(await encodePlanCode(project));
-    flashNotice(copied ? "info" : "warn", copied ? "Copied the plan code." : "Couldn't copy the plan code.");
+    flashNotice(copied ? "info" : "warn", copied ? t("Copied the plan code.") : t("Couldn't copy the plan code."));
   } catch (error) {
     console.error(error);
-    flashNotice("warn", "Couldn't copy the plan code.");
+    flashNotice("warn", t("Couldn't copy the plan code."));
   }
 }
 
@@ -46,19 +47,19 @@ export async function openInMod(project: FactoryProject, game?: ModGame): Promis
     code = await encodePlanCode(project);
   } catch (error) {
     console.error(error);
-    flashNotice("warn", "Couldn't write the plan out.");
+    flashNotice("warn", t("Couldn't write the plan out."));
     return false;
   }
-  if (await sendPlanToMod(code, project.name || "Untitled plan", game)) {
-    flashNotice("info", "Sent to the game. Open it there.");
+  if (await sendPlanToMod(code, project.name || t("Untitled plan"), game)) {
+    flashNotice("info", t("Sent to the game. Open it there."));
     return true;
   }
   const copied = await copyToClipboard(code);
   flashNotice(
     "warn",
     copied
-      ? "Couldn't reach the game. The plan code is copied: paste it in the planner's + tab."
-      : "Couldn't reach the game. Use Copy plan code and paste it in the planner's + tab.",
+      ? t("Couldn't reach the game. The plan code is copied: paste it in the planner's + tab.")
+      : t("Couldn't reach the game. Use Copy plan code and paste it in the planner's + tab."),
   );
   return false;
 }
@@ -105,16 +106,16 @@ export function useModReach(active: boolean): ModReach {
 export function openInModRow(reach: ModReach, project: () => FactoryProject): MenuEntry {
   if (reach.kind === "blocked") {
     return {
-      label: "Open in the game",
-      tip: "Your browser keeps this page from the game. This copies the plan code for the planner's + tab.",
+      label: t("Open in the game"),
+      tip: t("Your browser keeps this page from the game. This copies the plan code for the planner's + tab."),
       onSelect: () => void copyCodeForMod(project()),
     };
   }
   const ready = reach.kind === "found" || reach.kind === "asks";
   return {
-    label: "Open in the game",
+    label: t("Open in the game"),
     disabled: !ready,
-    tip: ready ? "Send this plan to the game. It asks before it opens it." : "Start the game with GTNH Planner installed",
+    tip: ready ? t("Send this plan to the game. It asks before it opens it.") : t("Start the game with GTNH Planner installed"),
     onSelect: () => void openInMod(project(), reach.kind === "found" ? reach.game : undefined),
   };
 }
@@ -126,11 +127,11 @@ async function copyCodeForMod(project: FactoryProject): Promise<void> {
     flashNotice(
       copied ? "info" : "warn",
       copied
-        ? "The plan code is copied. Paste it in the planner's + tab."
-        : "Couldn't copy the plan code. Use Copy plan code and paste it in the planner's + tab.",
+        ? t("The plan code is copied. Paste it in the planner's + tab.")
+        : t("Couldn't copy the plan code. Use Copy plan code and paste it in the planner's + tab."),
     );
   } catch (error) {
     console.error(error);
-    flashNotice("warn", "Couldn't write the plan out.");
+    flashNotice("warn", t("Couldn't write the plan out."));
   }
 }

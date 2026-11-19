@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Copy, Menu, Plus, RefreshCw, Skull, Trash2 } from "lucide-react";
 import { MenuShell } from "./EnergyHatchMenu";
+import { useT } from "@/lib/i18n";
 export function CardActionsMenu({
   onDelete,
   onClone,
@@ -16,11 +17,12 @@ export function CardActionsMenu({
   /** An Extreme Entity Crusher swaps the spawner in its controller slot. */
   onChangeMob?: () => void;
 }) {
+  const t = useT();
   const [anchor, setAnchor] = useState<{ x: number; top: number; bottom: number; hangsFrom?: Element }>();
   return (
     <div className="relative">
       <button
-        aria-label="Card actions"
+        aria-label={t("Card actions")}
         aria-haspopup="menu"
         aria-expanded={!!anchor}
         data-hatch-menu-anchor
@@ -40,7 +42,7 @@ export function CardActionsMenu({
         <MenuShell anchor={anchor} align="left" width={224} maxHeight={240} onClose={() => setAnchor(undefined)}>
           <div
             role="menu"
-            aria-label="Card actions"
+            aria-label={t("Card actions")}
             className="text-[13px] leading-[18px]"
             onKeyDown={(e) => {
               if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
@@ -60,13 +62,13 @@ export function CardActionsMenu({
             }}
           >
             {[
-              ...(onChangeMob ? [{ label: "Change mob", icon: Skull, run: onChangeMob }] : []),
-              { label: "Clone node", icon: Copy, run: onClone },
-              { label: "Replace the recipe", icon: RefreshCw, run: onRefactor },
+              ...(onChangeMob ? [{ label: t("Change mob"), icon: Skull, run: onChangeMob }] : []),
+              { label: t("Clone node"), icon: Copy, run: onClone },
+              { label: t("Replace the recipe"), icon: RefreshCw, run: onRefactor },
               ...(onAddRecipe
-                ? [{ label: "Add another recipe", icon: Plus, run: onAddRecipe }]
+                ? [{ label: t("Add another recipe"), icon: Plus, run: onAddRecipe }]
                 : []),
-              { label: "Delete node", icon: Trash2, run: onDelete },
+              { label: t("Delete node"), icon: Trash2, run: onDelete },
             ].map(({ label, icon: Icon, run }, index) => (
               <button
                 key={label}

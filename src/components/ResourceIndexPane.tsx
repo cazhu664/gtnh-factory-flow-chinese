@@ -23,6 +23,7 @@ import {
   type SearchPhase,
 } from "@/lib/search";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT, type TranslateParams } from "@/lib/i18n";
 import { POWER_EU_CLAUSE_ID } from "@/lib/power/power-search";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { isEchoOfTouch } from "@/lib/pointer-kind";
@@ -73,6 +74,7 @@ export function ResourceIndexPane({
   );
   const dataset = useFactoryStore((state) => state.dataset);
   const isDatasetLoading = useFactoryStore((state) => state.isDatasetLoading);
+  const t = useT();
   const recipeSearch = search;
   const setRecipeSearch = onSearchChange;
   const isSearchFlashing = searchFlashing;
@@ -112,7 +114,7 @@ export function ResourceIndexPane({
   });
   const powerRow =
     !onBoard && resourceFilter === "all" && resourcePage === 0
-      ? powerSearchRow(debouncedRecipeSearch)
+      ? powerSearchRow(debouncedRecipeSearch, t)
       : undefined;
   const displayedResources = onBoard
     ? boardResults.resources
@@ -247,7 +249,7 @@ export function ResourceIndexPane({
         }
         setResourceResults([]);
         setResourceTotal(0);
-        setResourceQueryError(error instanceof Error ? error.message : "Resource query failed.");
+        setResourceQueryError(error instanceof Error ? error.message : t("Resource query failed."));
         setResourceQueryLoading(false);
       });
 
@@ -266,6 +268,7 @@ export function ResourceIndexPane({
     resourcePageSize,
     resourceSort,
     selectedDatasetVersion,
+    t,
   ]);
 
   // A filter or search change can empty the selected mod's scope; drop a stale pick.
@@ -320,7 +323,7 @@ export function ResourceIndexPane({
             <span className="nei-pager-count nei-text"> </span>
           </div>
           <div className="nei-empty">
-            {isDatasetLoading ? "Loading recipe index..." : "Recipe index is not loaded yet."}
+            {isDatasetLoading ? t("Loading recipe index...") : t("Recipe index is not loaded yet.")}
           </div>
           <div className="min-h-0 flex-1" />
         </>
@@ -333,11 +336,11 @@ export function ResourceIndexPane({
           error={resourceQueryError}
           emptyLabel={
             onBoard
-              ? "Nothing placed on the board yet."
+              ? t("Nothing placed on the board yet.")
               : resourceFilter === "plants"
-                ? "No crop grows that."
+                ? t("No crop grows that.")
                 : resourceFilter === "bees"
-                  ? "No bee makes that."
+                  ? t("No bee makes that.")
                   : undefined
           }
           activeResource={activeResource}
@@ -355,10 +358,12 @@ export function ResourceIndexPane({
       {displayedOutcome.phase !== "exact" ? (
         <p className="nei-note">
           {displayedOutcome.phase === "corrected"
-            ? `Showing results for ${displayedOutcome.corrections
-                .map((correction) => correction.to)
-                .join(", ")}`
-            : "No item has all those words. Showing the closest."}
+            ? t("Showing results for {names}", {
+                names: displayedOutcome.corrections
+                  .map((correction) => correction.to)
+                  .join(", "),
+              })
+            : t("No item has all those words. Showing the closest.")}
         </p>
       ) : null}
 
@@ -447,13 +452,16 @@ function resourceFilterSource(filter: ResourceFilterMode): "plants" | "bees" | u
  * tooltip lines and the recipe count in grey, the mod's name last in blue
  * italics.
  */
-function resourceTooltipLines(resource: IndexedResource): McTipLine[] {
+function resourceTooltipLines(
+  resource: IndexedResource,
+  t: (key: string, params?: TranslateParams) => string,
+): McTipLine[] {
   const power = resource.id === POWER_EU_CLAUSE_ID;
   return itemTipLines({
-    name: power ? "Power (EU/t)" : resourceLabel(resource),
+    name: power ? t("Power (EU/t)") : resourceLabel(resource),
     id: power ? "" : resource.id,
     tooltip: resource.tooltip,
-    extra: resource.recipeCount > 0 ? [`${resource.recipeCount} recipes`] : undefined,
+    extra: resource.recipeCount > 0 ? [t("{count} recipes", { count: resource.recipeCount })] : undefined,
   });
 }
 
@@ -474,7 +482,10 @@ function getResourceModLabel(resource: { id: string; kind: string }): string {
  * (EU) first. Left click asks who makes it (generators), right click who
  * takes it, as for any item.
  */
-function powerSearchRow(query: string): IndexedResource | undefined {
+function powerSearchRow(
+  query: string,
+  t: (key: string, params?: TranslateParams) => string,
+): IndexedResource | undefined {
   const trimmed = query.trim().toLowerCase();
   if (trimmed.length < 2) {
     return undefined;
@@ -485,7 +496,7 @@ function powerSearchRow(query: string): IndexedResource | undefined {
   return {
     kind: "fluid",
     id: POWER_EU_CLAUSE_ID,
-    displayName: "Power (EU)",
+    displayName: t("Power (EU)"),
     recipeCount: 0,
     dominantColor: "#d99a2b",
   } as IndexedResource;
@@ -724,6 +735,7 @@ function RecentResourceStrip({
 }) {
   const history = useFactoryStore((state) => state.recipeResourceHistory);
   const activeResource = useFactoryStore((state) => state.recipeBrowserResource);
+  const t = useT();
   const recent = useMemo(
     () => history.slice(0, RECENT_STRIP_LIMIT).map((resource) => ({ ...resource, recipeCount: 0 })),
     [history],
@@ -734,12 +746,12 @@ function RecentResourceStrip({
   }
 
   return (
-    <div className="nei-recent" aria-label="Recently viewed" role="listbox">
+    <div className="nei-recent" aria-label={t("Recently viewed")} role="listbox">
       <NeiSlots
         resources={recent}
         activeResource={activeResource}
         onBrowse={onBrowse}
-        hint="Recently viewed"
+        hint={t("Recently viewed")}
       />
     </div>
   );
@@ -774,6 +786,7 @@ function VirtualResourceResultList({
   trailing?: ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const t = useT();
   const { pageSize, gridColumns } = useResourcePageSize(containerRef, onPageSizeChange);
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   // NEI's page keys go round: back from the first page is the last.
@@ -793,7 +806,7 @@ function VirtualResourceResultList({
           className="nei-btn"
           onClick={handlePreviousPage}
           disabled={pageCount <= 1}
-          aria-label="Previous resource page"
+          aria-label={t("Previous resource page")}
         >
           <NeiArrow direction="left" />
         </button>
@@ -806,7 +819,7 @@ function VirtualResourceResultList({
           className="nei-btn"
           onClick={handleNextPage}
           disabled={pageCount <= 1}
-          aria-label="Next resource page"
+          aria-label={t("Next resource page")}
         >
           <NeiArrow direction="right" />
         </button>
@@ -817,7 +830,7 @@ function VirtualResourceResultList({
         ) : isLoading && resources.length === 0 ? (
           <ResourceResultSkeleton pageSize={pageSize} gridColumns={gridColumns} />
         ) : resources.length === 0 ? (
-          <div className="nei-empty">{emptyLabel ?? "No matching resource."}</div>
+          <div className="nei-empty">{emptyLabel ?? t("No matching resource.")}</div>
         ) : (
           <ResourceResultPage
             resources={resources}
@@ -858,12 +871,13 @@ function ResourceResultSkeleton({
   pageSize: number;
   gridColumns: number;
 }) {
+  const t = useT();
   const count = Math.max(3, Math.min(pageSize, 200));
   return (
     <div
       className="nei-grid"
       style={{ gridTemplateColumns: `repeat(${gridColumns}, var(--nei-cell, ${NEI_SLOT}px))` }}
-      aria-label="Loading resources"
+      aria-label={t("Loading resources")}
     >
       {Array.from({ length: count }, (_, index) => (
         <div key={index} className="nei-skel" />
@@ -889,6 +903,7 @@ function NeiSearchField({
   flashing: boolean;
   none: boolean;
 }) {
+  const t = useT();
   const [focused, setFocused] = useState(false);
   return (
     <label
@@ -915,8 +930,8 @@ function NeiSearchField({
             event.currentTarget.blur();
           }
         }}
-        placeholder="Search..."
-        aria-label="Search items and fluids"
+        placeholder={t("Search...")}
+        aria-label={t("Search items and fluids")}
         spellCheck={false}
         autoComplete="off"
         className="compact:!text-base"
@@ -937,20 +952,26 @@ function NeiListMenu({
   onFilter: (filter: ResourceFilterMode) => void;
   onSort: (sort: ResourceSortMode) => void;
 }) {
+  const t = useT();
   const [anchor, setAnchor] = useState<ChromeAnchor>();
   const close = useCallback(() => setAnchor(undefined), []);
   const changed = filter !== "all" || sort !== "popular";
-  const filterLabel = RESOURCE_FILTER_CHOICES.find((choice) => choice.mode === filter)?.title ?? filter;
-  const sortLabel = RESOURCE_SORT_CHOICES.find((choice) => choice.value === sort)?.label ?? sort;
+  const filterLabel = t(
+    RESOURCE_FILTER_CHOICES.find((choice) => choice.mode === filter)?.title ?? filter,
+  );
+  const sortLabel = t(RESOURCE_SORT_CHOICES.find((choice) => choice.value === sort)?.label ?? sort);
   return (
     <>
       <button
         type="button"
         className="nei-btn"
-        aria-label="Show and sort"
+        aria-label={t("Show and sort")}
         aria-haspopup="menu"
         aria-expanded={anchor !== undefined}
-        title={`Showing ${filterLabel.toLowerCase()}, ${sortLabel.toLowerCase()}`}
+        title={t("Showing {filter}, {sort}", {
+          filter: filterLabel.toLowerCase(),
+          sort: sortLabel.toLowerCase(),
+        })}
         data-on={changed ? "" : undefined}
         {...{ [MENU_ANCHOR_ATTR]: "" }}
         onClick={(event) => {
@@ -965,20 +986,20 @@ function NeiListMenu({
       {anchor ? (
         <ChromeMenu
           anchor={anchor}
-          label="Show and sort"
+          label={t("Show and sort")}
           align="right"
           zIndex={80}
           minWidth={170}
           entries={[
             ...RESOURCE_FILTER_CHOICES.map((choice, index) => ({
-              label: choice.menu,
-              detail: index === 0 ? "Show" : undefined,
+              label: t(choice.menu),
+              detail: index === 0 ? t("Show") : undefined,
               current: filter === choice.mode,
               onSelect: () => onFilter(choice.mode),
             })),
             ...RESOURCE_SORT_CHOICES.map((choice, index) => ({
-              label: choice.label,
-              detail: index === 0 ? "Sort" : undefined,
+              label: t(choice.label),
+              detail: index === 0 ? t("Sort") : undefined,
               ruleAbove: index === 0,
               current: sort === choice.value,
               onSelect: () => onSort(choice.value),
@@ -1067,6 +1088,7 @@ function ResourceResultPage({
   onBrowseResource: (resource: IndexedResource, mode: "recipes" | "uses") => void;
 }) {
   const [, startBrowseTransition] = useTransition();
+  const t = useT();
 
   const browse = useCallback(
     (resource: IndexedResource, mode: "recipes" | "uses") => {
@@ -1082,7 +1104,7 @@ function ResourceResultPage({
         gridTemplateColumns: `repeat(${gridColumns}, var(--nei-cell, ${NEI_SLOT}px))`,
         opacity: isRefreshing ? 0.6 : undefined,
       }}
-      aria-label="Resource results"
+      aria-label={t("Resource results")}
       role="listbox"
     >
       <NeiSlots resources={resources} activeResource={activeResource} onBrowse={browse} />
@@ -1109,6 +1131,7 @@ function NeiSlots({
   hint?: string;
 }) {
   const rowBrowse = useResourceBrowseMenu(onBrowse);
+  const t = useT();
   // The hovered slot by its place and item: a page that changes under a still
   // pointer (typing, paging with the wheel) leaves no tooltip, and no R or U,
   // for an item no longer there.
@@ -1144,10 +1167,10 @@ function NeiSlots({
   };
   const tipLines = useMemo(() => {
     if (!hovered) return undefined;
-    const lines = resourceTooltipLines(hovered);
+    const lines = resourceTooltipLines(hovered, t);
     if (hint) lines.splice(1, 0, { text: hint, tone: "hint" });
     return lines;
-  }, [hovered, hint]);
+  }, [hovered, hint, t]);
 
   return (
     <>
@@ -1187,7 +1210,7 @@ function NeiSlots({
             onDragEnd={() => {
               dragging.current = false;
             }}
-            aria-label={resource.id === POWER_EU_CLAUSE_ID ? "Power (EU/t)" : resourceLabel(resource)}
+            aria-label={resource.id === POWER_EU_CLAUSE_ID ? t("Power (EU/t)") : resourceLabel(resource)}
             role="option"
             aria-selected={active}
           >

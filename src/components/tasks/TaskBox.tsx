@@ -25,6 +25,7 @@ import { machineArtPixels } from "@/components/flow/MachinePicker";
 import { useMachineHandlerIcons } from "@/components/flow/machine-icons";
 import { tipAttrs } from "@/components/flow/clean/interaction";
 import { getPowerMachineIcon } from "@/lib/power/planner-data";
+import { useT } from "@/lib/i18n";
 import { useCommunityUser } from "@/components/community/auth";
 import type { PlanPicture, PlanTask, PlanTaskItem, PlanTaskLink } from "@/lib/model/types";
 import { PLAN_TASK_LIMITS } from "@/lib/model/schemas";
@@ -86,6 +87,8 @@ const ROW_DRAG_SLOP = 6;
 /** The words "That task already waits on this one." stay this long. */
 const REFUSED_MS = 4000;
 
+type Translate = ReturnType<typeof useT>;
+
 /** A thing as the box shows it: the item it is (a loose card's is made up, never in the plan), and its kind. */
 interface Shown {
   item: PlanTaskItem;
@@ -129,13 +132,15 @@ function useBoxSize(): { w: number; h: number; rect?: DOMRect } {
 }
 
 export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void }) {
+  const t = useT();
   const editTasks = useFactoryStore((state) => state.editTasks);
   const isReadOnly = useFactoryStore((state) => state.isReadOnly);
   const project = useFactoryStore((state) => state.project);
-  const boardName = useDesignStore((state) => {
+  const designName = useDesignStore((state) => {
     const design = state.designs.find((entry) => entry.id === state.activeDesignId);
-    return design?.name?.trim() ? design.name : "Task board";
+    return design?.name?.trim() ? design.name : "";
   });
+  const boardName = designName || t("Task board");
   const ownPlan = useDesignStore((state) => {
     const design = state.designs.find((entry) => entry.id === state.activeDesignId);
     return design ? planLinkId(design, myAccountId()) : "";
@@ -221,15 +226,15 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
   const show = async (link: PlanTaskLink) => {
     setGone(undefined);
     const result = await openTaskLink(link);
-    if (result === "plan-gone") setGone("That plan is gone");
-    else if (result === "card-gone") setGone("That card is gone");
+    if (result === "plan-gone") setGone(t("That plan is gone"));
+    else if (result === "card-gone") setGone(t("That card is gone"));
   };
 
   const toggle = (thing: Shown) => {
     if (isReadOnly) return;
     if (thing.loose && thing.link) {
       // A card an older task linked becomes a thing of its own to be ticked.
-      const words = linkWords(states[linkKey(thing.link)]);
+      const words = linkWords(t, states[linkKey(thing.link)]);
       editTasks((plan) =>
         addThing(plan, task.id, { kind: "machine", text: words, link: thing.link, done: true }),
       );
@@ -273,24 +278,24 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
   const thingMenu = (thing: Shown, anchor: ChromeAnchor, rewrite: () => void) => {
     const entries: MenuEntry[] = [];
     if (thing.kind === "machine" && thing.link)
-      entries.push({ label: "Show on its plan", onSelect: () => act(thing) });
+      entries.push({ label: t("Show on its plan"), onSelect: () => act(thing) });
     else if (thing.kind === "location")
-      entries.push({ label: "Copy where it is", onSelect: () => copyPlace(thing) });
+      entries.push({ label: t("Copy where it is"), onSelect: () => copyPlace(thing) });
     else if (thing.kind === "picture")
-      entries.push({ label: "See it big", onSelect: () => act(thing) });
-    else entries.push({ label: "Change the words", disabled: isReadOnly, onSelect: rewrite });
+      entries.push({ label: t("See it big"), onSelect: () => act(thing) });
+    else entries.push({ label: t("Change the words"), disabled: isReadOnly, onSelect: rewrite });
     entries.push({
-      label: thing.item.done ? "Mark not done" : "Mark done",
+      label: thing.item.done ? t("Mark not done") : t("Mark done"),
       disabled: isReadOnly,
       onSelect: () => toggle(thing),
     });
     entries.push({
-      label: "Take it off the task",
+      label: t("Take it off the task"),
       tone: "red",
       disabled: isReadOnly,
       onSelect: () => takeOff(thing),
     });
-    setMenu({ entries, anchor, label: "Thing" });
+    setMenu({ entries, anchor, label: t("Thing") });
   };
 
   const post = () => {
@@ -321,19 +326,19 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
 
   function askDelete(anchor: ChromeAnchor) {
     setMenu({
-      title: "Delete this task for good?",
-      label: "Delete task",
+      title: t("Delete this task for good?"),
+      label: t("Delete task"),
       anchor,
       entries: [
         {
-          label: "Delete it",
+          label: t("Delete it"),
           tone: "red",
           onSelect: () => {
             onClose();
             editTasks((plan) => deleteTask(plan, task.id));
           },
         },
-        { label: "Keep it", onSelect: () => {} },
+        { label: t("Keep it"), onSelect: () => {} },
       ],
     });
   }
@@ -352,7 +357,7 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
         <div
           className="tbx"
           role="dialog"
-          aria-label={`Task: ${task.title}`}
+          aria-label={t("Task: {title}", { title: task.title })}
           data-task-panel={task.id}
           data-wide={wide ? "" : undefined}
           style={{
@@ -367,13 +372,13 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
             <span className="tbx-where">
               {boardName}
               <i>/</i>
-              {TASK_STATUS_LABEL[task.status]}
+              {t(TASK_STATUS_LABEL[task.status])}
             </span>
             <button
               type="button"
               className="tbx-close"
-              aria-label="Close the task"
-              {...tipAttrs({ id: "task-box|close", title: "Close (Esc)" })}
+              aria-label={t("Close the task")}
+              {...tipAttrs({ id: "task-box|close", title: t("Close (Esc)") })}
               onClick={onClose}
             >
               <svg
@@ -392,10 +397,10 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
             <div className="tbx-main">
               <TitleField task={task} readOnly={isReadOnly} />
               {wide ? null : <div className="tbx-side-under">{side}</div>}
-              <div className="tbx-label">Notes</div>
+              <div className="tbx-label">{t("Notes")}</div>
               <NotesField task={task} readOnly={isReadOnly} />
               <div className="tbx-label tbx-things-head" data-task-things-head="">
-                Things
+                {t("Things")}
                 {things.length > 0 ? (
                   <>
                     <i>
@@ -424,26 +429,27 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
                 }
               />
               {things.length === 0 ? (
-                <p className="tbx-faint tbx-nothing">Nothing on it yet.</p>
+                <p className="tbx-faint tbx-nothing">{t("Nothing on it yet.")}</p>
               ) : null}
               {gone ? (
                 <p className="tbx-gone" role="status" data-task-link-gone="">
                   {gone}
                 </p>
               ) : null}
-              <p className="tbx-faint tbx-hint">Add machines from a card&apos;s menu.</p>
+              <p className="tbx-faint tbx-hint">{t("Add machines from a card's menu.")}</p>
               <div className="tbx-label tbx-comments-head" data-task-comments="">
-                Comments{comments.length > 0 ? <i>{comments.length}</i> : null}
+                {t("Comments")}
+                {comments.length > 0 ? <i>{comments.length}</i> : null}
               </div>
               {comments.length === 0 ? (
-                <p className="tbx-faint tbx-nothing">No comments yet.</p>
+                <p className="tbx-faint tbx-nothing">{t("No comments yet.")}</p>
               ) : null}
               {comments.map((entry) => (
                 <div key={entry.id} className="tbx-comment" data-task-comment="">
                   <TaskFace id={entry.by} name={entry.byName || nameOf(entry.by)} />
                   <div className="tbx-comment-body">
                     <div className="tbx-comment-head">
-                      <span>{entry.byName || "Someone"}</span>
+                      <span>{entry.byName || t("Someone")}</span>
                       <i>{agoText(entry.at)}</i>
                       {(entry.by === author.id || entry.by === "local") && !isReadOnly ? (
                         <button
@@ -451,11 +457,11 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
                           className="tbx-comment-delete"
                           {...tipAttrs({
                             id: `task-box|comment|${entry.id}`,
-                            title: "Delete your comment",
+                            title: t("Delete your comment"),
                           })}
                           onClick={() => editTasks((plan) => deleteTaskComment(plan, entry.id))}
                         >
-                          Delete
+                          {t("Delete")}
                         </button>
                       ) : null}
                     </div>
@@ -474,10 +480,10 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
                   type="button"
                   className="tb-key tbx-post"
                   data-any={comment.trim() ? "" : undefined}
-                  {...tipAttrs({ id: "task-box|post", title: "Add your comment" })}
+                  {...tipAttrs({ id: "task-box|post", title: t("Add your comment") })}
                   onClick={post}
                 >
-                  Comment
+                  {t("Comment")}
                 </button>
                 {wide ? (
                   <button
@@ -486,11 +492,11 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
                     data-tone="red"
                     {...tipAttrs({
                       id: "task-box|delete",
-                      title: "Delete this task with its things and comments",
+                      title: t("Delete this task with its things and comments"),
                     })}
                     onClick={(event) => askDelete(chromeAnchorOf(event.currentTarget))}
                   >
-                    Delete task
+                    {t("Delete task")}
                   </button>
                 ) : null}
               </>
@@ -517,8 +523,8 @@ export function TaskBox({ task, onClose }: { task: PlanTask; onClose: () => void
 }
 
 /** A machine thing's words when its card is here: its card's machine. */
-function linkWords(state: LinkState | undefined): string {
-  return state?.label ?? "A machine";
+function linkWords(t: Translate, state: LinkState | undefined): string {
+  return state?.label ?? t("A machine");
 }
 
 // ---------------------------------------------------------------------------
@@ -540,6 +546,7 @@ function useGrow(
 }
 
 function TitleField({ task, readOnly }: { task: PlanTask; readOnly: boolean }) {
+  const t = useT();
   const editTasks = useFactoryStore((state) => state.editTasks);
   const [draft, setDraft] = useState<string>();
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -553,8 +560,8 @@ function TitleField({ task, readOnly }: { task: PlanTask; readOnly: boolean }) {
       rows={1}
       maxLength={PLAN_TASK_LIMITS.titleLength}
       readOnly={readOnly}
-      placeholder="Name this task"
-      aria-label="Task title"
+      placeholder={t("Name this task")}
+      aria-label={t("Task title")}
       spellCheck={false}
       onChange={(event) => setDraft(event.target.value.replace(/\n/g, " "))}
       onKeyDown={(event) => {
@@ -575,6 +582,7 @@ function TitleField({ task, readOnly }: { task: PlanTask; readOnly: boolean }) {
 }
 
 function NotesField({ task, readOnly }: { task: PlanTask; readOnly: boolean }) {
+  const t = useT();
   const editTasks = useFactoryStore((state) => state.editTasks);
   const [draft, setDraft] = useState<string>();
   const timer = useRef<number | undefined>(undefined);
@@ -593,8 +601,8 @@ function NotesField({ task, readOnly }: { task: PlanTask; readOnly: boolean }) {
       value={value}
       maxLength={PLAN_TASK_LIMITS.textLength}
       readOnly={readOnly}
-      placeholder="Add notes"
-      aria-label="Task notes"
+      placeholder={t("Add notes")}
+      aria-label={t("Task notes")}
       onChange={(event) => {
         const text = event.target.value;
         setDraft(text);
@@ -620,6 +628,7 @@ function CommentField({
   onPost: () => void;
   mainW: number;
 }) {
+  const t = useT();
   const ref = useRef<HTMLTextAreaElement>(null);
   useGrow(ref, value, 22, 52);
   return (
@@ -629,8 +638,8 @@ function CommentField({
       style={{ width: mainW - 62 - 6 }}
       value={value}
       maxLength={PLAN_TASK_LIMITS.commentTextLength}
-      placeholder="Write a comment"
-      aria-label="New comment"
+      placeholder={t("Write a comment")}
+      aria-label={t("New comment")}
       onChange={(event) => onChange(event.target.value)}
       onKeyDown={(event) => {
         if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
@@ -755,26 +764,31 @@ function ThingList({
 }
 
 /** "120 64 -30", or the label with the block under it, and the dimension: a spot's words and its line. */
-function placeLines(item: PlanTaskItem): { words: string; parts: string[] } {
+function placeLines(t: Translate, item: PlanTaskItem): { words: string; parts: string[] } {
   const place = item.place!;
   const at = `${place.x} ${place.y} ${place.z}`;
   const parts: string[] = [];
   if (place.label) parts.push(at);
-  parts.push(place.dimName || `Dimension ${place.dim}`);
+  parts.push(place.dimName || t("Dimension {dim}", { dim: place.dim }));
   return { words: place.label || at, parts };
 }
 
 function machineLines(
+  t: Translate,
   thing: Shown,
   state: LinkState | undefined,
 ): { words: string; parts: string[]; gone: boolean } {
-  const words = thing.item.text || state?.label || "A machine";
+  const words = thing.item.text || state?.label || t("A machine");
   if (!state) return { words, parts: [], gone: false };
-  if (state.state === "plan") return { words, parts: ["Its plan is gone"], gone: true };
+  if (state.state === "plan") return { words, parts: [t("Its plan is gone")], gone: true };
   if (state.state === "card")
-    return { words, parts: [`Its card is gone from ${state.planName ?? "its plan"}`], gone: true };
-  if (state.state === "away") return { words, parts: ["On a plan shared with you"], gone: false };
-  return { words, parts: [`On ${state.planName ?? "its plan"}`], gone: false };
+    return {
+      words,
+      parts: [t("Its card is gone from {plan}", { plan: state.planName ?? t("its plan") })],
+      gone: true,
+    };
+  if (state.state === "away") return { words, parts: [t("On a plan shared with you")], gone: false };
+  return { words, parts: [t("On {plan}", { plan: state.planName ?? t("its plan") })], gone: false };
 }
 
 function ThingRow({
@@ -804,19 +818,20 @@ function ThingRow({
   onMenu: (anchor: ChromeAnchor) => void;
   onRewrite: (text: string) => void;
 }) {
+  const t = useT();
   const { item, kind } = thing;
   let words = item.text;
   let parts: string[] = [];
   let gone = false;
   let picture: ReactNode = null;
   if (kind === "machine") {
-    const lines = machineLines(thing, state);
+    const lines = machineLines(t, thing, state);
     words = lines.words;
     parts = lines.parts;
     gone = lines.gone;
     picture = <MachinePicture state={state} />;
   } else if (kind === "location") {
-    const lines = placeLines(item);
+    const lines = placeLines(t, item);
     words = lines.words;
     parts = lines.parts;
     picture = (
@@ -825,19 +840,19 @@ function ThingRow({
       </span>
     );
   } else if (kind === "picture") {
-    words = "Screenshot";
+    words = t("Screenshot");
     const ago = agoText(item.picture?.takenAt);
-    parts = ago ? [`Taken ${ago}`] : [];
+    parts = ago ? [t("Taken {ago}", { ago })] : [];
     picture = <img className="tbx-thumb" src={item.picture!.thumb} alt="" draggable={false} />;
   }
   const tip =
     kind === "machine"
-      ? { action: "Show it on its plan", title: words }
+      ? { action: t("Show it on its plan"), title: words }
       : kind === "location"
-        ? { action: "Copy where it is", title: words }
+        ? { action: t("Copy where it is"), title: words }
         : kind === "picture"
-          ? { action: "See it big", title: "Screenshot" }
-          : { action: "Change the words", title: words };
+          ? { action: t("See it big"), title: t("Screenshot") }
+          : { action: t("Change the words"), title: words };
   const anchorOf = (event: React.MouseEvent) => ({
     left: event.clientX,
     top: event.clientY,
@@ -867,8 +882,8 @@ function ThingRow({
         title: tip.title,
         actions: [
           ...(gone ? [] : [{ input: "left" as const, label: tip.action }]),
-          ...(thing.loose ? [] : [{ input: "drag" as const, label: "Move it" }]),
-          { input: "right" as const, label: "More" },
+          ...(thing.loose ? [] : [{ input: "drag" as const, label: t("Move it") }]),
+          { input: "right" as const, label: t("More") },
         ],
       })}
     >
@@ -876,12 +891,12 @@ function ThingRow({
         type="button"
         role="checkbox"
         aria-checked={item.done}
-        aria-label={`Done: ${words}`}
+        aria-label={t("Done: {words}", { words })}
         className="tbx-box"
         disabled={readOnly}
         {...tipAttrs({
           id: `task-thing|box|${item.id}`,
-          title: item.done ? "Not done after all" : "Tick it off",
+          title: item.done ? t("Not done after all") : t("Tick it off"),
         })}
         onClick={onToggle}
       >
@@ -906,7 +921,7 @@ function ThingRow({
             autoFocus
             defaultValue={item.text}
             maxLength={PLAN_TASK_LIMITS.itemTextLength}
-            aria-label="Change the words"
+            aria-label={t("Change the words")}
             onBlur={(event) => onRewrite(event.currentTarget.value.trim())}
             onKeyDown={(event) => {
               if (event.key === "Enter") event.currentTarget.blur();
@@ -931,8 +946,8 @@ function ThingRow({
         <button
           type="button"
           className="tb-key tbx-show"
-          aria-label="Show it on its plan"
-          {...tipAttrs({ id: `task-thing|show|${item.id}`, title: "Show it on its plan" })}
+          aria-label={t("Show it on its plan")}
+          {...tipAttrs({ id: `task-thing|show|${item.id}`, title: t("Show it on its plan") })}
           onClick={onAct}
         >
           <PixelIcon name="card" style={{ color: "#22d3ee" }} />
@@ -942,23 +957,23 @@ function ThingRow({
         <button
           type="button"
           className="tb-key tbx-show"
-          aria-label="Copy where it is"
+          aria-label={t("Copy where it is")}
           {...tipAttrs({
             id: `task-thing|copy|${item.id}`,
-            title: "Copy where it is",
-            sub: "Its x y z, to paste in the game",
+            title: t("Copy where it is"),
+            sub: t("Its x y z, to paste in the game"),
           })}
           onClick={onCopy}
         >
-          Copy
+          {t("Copy")}
         </button>
       ) : null}
       {readOnly ? null : (
         <button
           type="button"
           className="tbx-off"
-          aria-label={`Take it off the task: ${words}`}
-          {...tipAttrs({ id: `task-thing|off|${item.id}`, title: "Take it off the task" })}
+          aria-label={t("Take it off the task: {words}", { words })}
+          {...tipAttrs({ id: `task-thing|off|${item.id}`, title: t("Take it off the task") })}
           onClick={onTakeOff}
         >
           <Cross />
@@ -1026,8 +1041,11 @@ function PictureView({
   rect: DOMRect | undefined;
   onClose: () => void;
 }) {
+  const t = useT();
   const ago = agoText(picture.takenAt);
-  const said = `${ago ? `Taken ${ago}` : "Screenshot"}. The full shot is on the computer that took it`;
+  const said = t("{taken}. The full shot is on the computer that took it", {
+    taken: ago ? t("Taken {ago}", { ago }) : t("Screenshot"),
+  });
   return (
     <div className="tbp-layer" data-task-picture="" onMouseDown={onClose}>
       <div
@@ -1039,10 +1057,10 @@ function PictureView({
         }
       >
         <div className="tbp">
-          <img src={picture.thumb} alt="Screenshot" draggable={false} />
+          <img src={picture.thumb} alt={t("Screenshot")} draggable={false} />
           <div className="tbp-caption">
             <span>{said}</span>
-            <i>Click to close</i>
+            <i>{t("Click to close")}</i>
           </div>
         </div>
       </div>
@@ -1080,6 +1098,7 @@ function SidePanel({
   onOpen: (id: string) => void;
   onDelete: (anchor: ChromeAnchor) => void;
 }) {
+  const t = useT();
   const editTasks = useFactoryStore((state) => state.editTasks);
   const isReadOnly = useFactoryStore((state) => state.isReadOnly);
   const project = useFactoryStore((state) => state.project);
@@ -1094,10 +1113,10 @@ function SidePanel({
 
   const pickStatus = (event: React.MouseEvent<HTMLElement>) =>
     onMenu({
-      label: "Status",
+      label: t("Status"),
       anchor: chromeAnchorOf(event.currentTarget),
       entries: TASK_STATUSES.map((status) => ({
-        label: TASK_STATUS_LABEL[status],
+        label: t(TASK_STATUS_LABEL[status]),
         dot: TASK_STATUS_COLOR[status],
         current: status === task.status,
         onSelect: () => editTasks((plan) => moveTaskTo(plan, task.id, status)),
@@ -1105,10 +1124,10 @@ function SidePanel({
     });
   const pickPriority = (event: React.MouseEvent<HTMLElement>) =>
     onMenu({
-      label: "Priority",
+      label: t("Priority"),
       anchor: chromeAnchorOf(event.currentTarget),
       entries: TASK_PRIORITIES.map((each) => ({
-        label: TASK_PRIORITY_LABEL[each],
+        label: t(TASK_PRIORITY_LABEL[each]),
         icon: <PriorityIcon priority={each} className="mm-prio" />,
         current: each === priority,
         onSelect: () => editTasks((plan) => updateTask(plan, task.id, { priority: each })),
@@ -1126,14 +1145,14 @@ function SidePanel({
       return;
     }
     onMenu({
-      label: "Who is on it",
-      title: "Who is on it",
+      label: t("Who is on it"),
+      title: t("Who is on it"),
       anchor: chromeAnchorOf(event.currentTarget),
       entries: people.map((person) => {
         const on = assignees.includes(person.id);
         return {
-          label: person.id === me.id ? "You" : person.username,
-          detail: on ? "On it" : "",
+          label: person.id === me.id ? t("You") : person.username,
+          detail: on ? t("On it") : "",
           current: on,
           onSelect: () =>
             editTasks((plan) =>
@@ -1152,22 +1171,22 @@ function SidePanel({
       (other) => other.id !== task.id && !(task.blockedBy ?? []).includes(other.id),
     );
     if (others.length === 0) {
-      onRefuse("There is no other task to wait on.");
+      onRefuse(t("There is no other task to wait on."));
       return;
     }
     onMenu({
-      label: "Waiting on",
-      title: "Waiting on",
+      label: t("Waiting on"),
+      title: t("Waiting on"),
       anchor: chromeAnchorOf(event.currentTarget),
       entries: others.map((other) => {
         const loops = wouldLoop(project, task.id, other.id);
         return {
           label: other.title,
           dot: TASK_STATUS_COLOR[other.status],
-          detail: loops ? "waits on this" : "",
+          detail: loops ? t("waits on this") : "",
           onSelect: () => {
             if (loops) {
-              onRefuse("That task already waits on this one.");
+              onRefuse(t("That task already waits on this one."));
               return;
             }
             editTasks((plan) => addBlocker(plan, task.id, other.id));
@@ -1184,11 +1203,11 @@ function SidePanel({
       data-task-status-picker=""
       disabled={isReadOnly}
       style={{ ["--pick" as string]: TASK_STATUS_COLOR[task.status] }}
-      {...tipAttrs({ id: "task-box|status", title: "Move it to another column" })}
+      {...tipAttrs({ id: "task-box|status", title: t("Move it to another column") })}
       onClick={pickStatus}
     >
       <StatusDot status={task.status} />
-      <span>{TASK_STATUS_LABEL[task.status]}</span>
+      <span>{t(TASK_STATUS_LABEL[task.status])}</span>
       <Caret />
     </button>
   );
@@ -1199,11 +1218,11 @@ function SidePanel({
       data-task-priority-picker=""
       disabled={isReadOnly}
       style={{ ["--pick" as string]: TASK_PRIORITY_COLOR[priority] }}
-      {...tipAttrs({ id: "task-box|priority", title: "How pressing it is" })}
+      {...tipAttrs({ id: "task-box|priority", title: t("How pressing it is") })}
       onClick={pickPriority}
     >
       <PriorityIcon priority={priority} />
-      <span>{TASK_PRIORITY_LABEL[priority]}</span>
+      <span>{t(TASK_PRIORITY_LABEL[priority])}</span>
       <Caret />
     </button>
   );
@@ -1213,7 +1232,7 @@ function SidePanel({
         assignees.map((id) => (
           <div key={id} className="tbx-person">
             <TaskFace id={id} name={id === me.id ? me.username : nameOf(id)} />
-            <span>{id === me.id || id === "local" ? "You" : (nameOf(id) ?? "Someone")}</span>
+            <span>{id === me.id || id === "local" ? t("You") : (nameOf(id) ?? t("Someone"))}</span>
           </div>
         ))
       ) : assignees.length > 0 ? (
@@ -1225,14 +1244,14 @@ function SidePanel({
       ) : null}
       {!user ? (
         <>
-          {assignees.length === 0 ? <p className="tbx-faint">No one yet.</p> : null}
+          {assignees.length === 0 ? <p className="tbx-faint">{t("No one yet.")}</p> : null}
           <button
             type="button"
             className="tbx-sign-in"
-            {...tipAttrs({ id: "task-box|sign-in", title: "Sign in to your account" })}
+            {...tipAttrs({ id: "task-box|sign-in", title: t("Sign in to your account") })}
             onClick={() => document.querySelector<HTMLElement>('[data-mb="account"]')?.click()}
           >
-            Sign in to assign
+            {t("Sign in to assign")}
           </button>
         </>
       ) : isReadOnly ? null : (
@@ -1241,11 +1260,11 @@ function SidePanel({
           className="tb-key tbx-assign"
           {...tipAttrs({
             id: "task-box|assign",
-            title: shared ? "Choose who is on it" : "Put yourself on it or take yourself off",
+            title: shared ? t("Choose who is on it") : t("Put yourself on it or take yourself off"),
           })}
           onClick={assign}
         >
-          {shared ? "Assign" : assignees.includes(me.id) ? "Unassign me" : "Assign me"}
+          {shared ? t("Assign") : assignees.includes(me.id) ? t("Unassign me") : t("Assign me")}
         </button>
       )}
     </div>
@@ -1256,7 +1275,7 @@ function SidePanel({
         <TaskLinkRow
           key={other.id}
           task={other}
-          tip="This task waits on it"
+          tip={t("This task waits on it")}
           onOpen={() => onOpen(other.id)}
           onRemove={
             isReadOnly
@@ -1269,11 +1288,11 @@ function SidePanel({
         <button
           type="button"
           className="tb-key tbx-add-blocker"
-          {...tipAttrs({ id: "task-box|add-blocker", title: "Add a task it waits on" })}
+          {...tipAttrs({ id: "task-box|add-blocker", title: t("Add a task it waits on") })}
           onClick={pickBlocker}
         >
           <PixelIcon name="plus" style={{ color: "#22d3ee" }} />
-          Add
+          {t("Add")}
         </button>
       )}
       {refused ? (
@@ -1285,32 +1304,32 @@ function SidePanel({
   );
   const unblocksField = (
     <div className="tbx-links" data-task-unblocks="">
-      {unblocks.length === 0 ? <p className="tbx-faint">Nothing waits on it.</p> : null}
+      {unblocks.length === 0 ? <p className="tbx-faint">{t("Nothing waits on it.")}</p> : null}
       {unblocks.map((other) => (
         <TaskLinkRow
           key={other.id}
           task={other}
-          tip="It waits on this task"
+          tip={t("It waits on this task")}
           onOpen={() => onOpen(other.id)}
         />
       ))}
     </div>
   );
-  const made = madeText(task, me.id, nameOf);
+  const made = madeText(t, task, me.id, nameOf);
 
   if (wide) {
     return (
       <div className="tbx-side" data-task-side="">
-        <Item name="Status">{statusPicker}</Item>
-        <Item name="Priority">{priorityPicker}</Item>
-        <Item name="People">{peopleField}</Item>
+        <Item name={t("Status")}>{statusPicker}</Item>
+        <Item name={t("Priority")}>{priorityPicker}</Item>
+        <Item name={t("People")}>{peopleField}</Item>
         <hr />
-        <Item name="Waiting on">{waitingOn}</Item>
-        <Item name="Unblocks">{unblocksField}</Item>
+        <Item name={t("Waiting on")}>{waitingOn}</Item>
+        <Item name={t("Unblocks")}>{unblocksField}</Item>
         <hr />
-        <Fact name="Board" value={boardName} />
-        <Fact name="Made" value={made} />
-        <Fact name="Time" value={inColumnShort(task)} />
+        <Fact name={t("Board")} value={boardName} />
+        <Fact name={t("Made")} value={made || t("Not known")} />
+        <Fact name={t("Time")} value={inColumnShort(task)} />
       </div>
     );
   }
@@ -1318,28 +1337,28 @@ function SidePanel({
     <div className="tbx-side" data-task-side="" data-narrow="">
       <div className="tbx-halves">
         <div>
-          <Item name="Status">{statusPicker}</Item>
-          <Item name="Priority">{priorityPicker}</Item>
+          <Item name={t("Status")}>{statusPicker}</Item>
+          <Item name={t("Priority")}>{priorityPicker}</Item>
         </div>
         <div>
-          <Item name="People">{peopleField}</Item>
+          <Item name={t("People")}>{peopleField}</Item>
         </div>
       </div>
       <hr />
       <div className="tbx-halves">
         <div>
-          <Item name="Waiting on">{waitingOn}</Item>
+          <Item name={t("Waiting on")}>{waitingOn}</Item>
         </div>
         <div>
-          <Item name="Unblocks">{unblocksField}</Item>
+          <Item name={t("Unblocks")}>{unblocksField}</Item>
         </div>
       </div>
       <hr />
       <div className="tbx-narrow-foot">
         <span className="tbx-parts">
           <span>{boardName}</span>
-          <span>{made === "Not known" ? inColumnShort(task) : `made by ${made}`}</span>
-          {made === "Not known" ? null : <span>{inColumnShort(task)}</span>}
+          <span>{made ? t("made by {made}", { made }) : inColumnShort(task)}</span>
+          {made ? <span>{inColumnShort(task)}</span> : null}
         </span>
         {isReadOnly ? null : (
           <button
@@ -1348,11 +1367,11 @@ function SidePanel({
             data-tone="red"
             {...tipAttrs({
               id: "task-box|delete",
-              title: "Delete this task with its things and comments",
+              title: t("Delete this task with its things and comments"),
             })}
             onClick={(event) => onDelete(chromeAnchorOf(event.currentTarget))}
           >
-            Delete task
+            {t("Delete task")}
           </button>
         )}
       </div>
@@ -1361,18 +1380,24 @@ function SidePanel({
 }
 
 /** "You, 3d ago", "ann, 5m ago": who made it and when; done tasks say when. */
-function madeText(task: PlanTask, me: string, nameOf: (id: string) => string | undefined): string {
+function madeText(
+  t: Translate,
+  task: PlanTask,
+  me: string,
+  nameOf: (id: string) => string | undefined,
+): string {
   const when = agoText(task.createdAt);
   const by =
     task.createdBy === me || task.createdBy === "local"
-      ? "You"
+      ? t("You")
       : task.createdBy
         ? nameOf(task.createdBy)
         : undefined;
   let text = by ?? "";
   if (when) text = text ? `${text}, ${when}` : when;
-  if (task.status === "done" && task.doneAt) text += `. Done ${agoText(task.doneAt)}`;
-  return text || "Not known";
+  if (task.status === "done" && task.doneAt)
+    text += t(". Done {ago}", { ago: agoText(task.doneAt) });
+  return text;
 }
 
 function Item({ name, children }: { name: string; children: ReactNode }) {
@@ -1421,6 +1446,7 @@ function TaskLinkRow({
   onOpen: () => void;
   onRemove?: () => void;
 }) {
+  const t = useT();
   return (
     <div
       className="tbx-link"
@@ -1431,8 +1457,8 @@ function TaskLinkRow({
       {...tipAttrs({
         id: `task-box|link|${task.id}|${tip}`,
         title: task.title,
-        sub: `${TASK_STATUS_LABEL[task.status]}. ${tip}`,
-        actions: [{ input: "left", label: "Open it" }],
+        sub: `${t(TASK_STATUS_LABEL[task.status])}. ${tip}`,
+        actions: [{ input: "left", label: t("Open it") }],
       })}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("button")) return;
@@ -1448,8 +1474,8 @@ function TaskLinkRow({
         <button
           type="button"
           className="tbx-off"
-          aria-label={`It waits on ${task.title} no more`}
-          {...tipAttrs({ id: `task-box|unblock|${task.id}`, title: "It waits on this no more" })}
+          aria-label={t("It waits on {title} no more", { title: task.title })}
+          {...tipAttrs({ id: `task-box|unblock|${task.id}`, title: t("It waits on this no more") })}
           onClick={onRemove}
         >
           <Cross />

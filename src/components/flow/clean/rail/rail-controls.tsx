@@ -5,6 +5,7 @@ import { parseRateInput } from "./rail-math";
 import { LIVE_TYPE_MS } from "../clean-model";
 import { tipProps, type TipContent } from "./rail-tip";
 import { playEditSfx, sfxClick, sfxTick } from "@/lib/sound/sfx";
+import { useT } from "@/lib/i18n";
 
 /**
  * The small controls every rail row shares: the rule key (`~ = >= <=`) and the
@@ -104,7 +105,7 @@ export function RuleKey({
 
 export function RateBox({
   text,
-  placeholder = "Set",
+  placeholder,
   gold,
   unmet,
   editing,
@@ -149,6 +150,7 @@ export function RateBox({
   label: string;
   width?: number;
 }) {
+  const t = useT();
   const style = width ? { width } : undefined;
   if (editing) {
     return (
@@ -197,7 +199,7 @@ export function RateBox({
         onMiddle();
       }}
     >
-      <span>{gold ? text : placeholder}</span>
+      <span>{gold ? text : (placeholder ?? t("Set"))}</span>
     </div>
   );
 }
@@ -224,6 +226,7 @@ function RateEditor({
   style?: { width: number };
   label: string;
 }) {
+  const t = useT();
   const [value, setValue] = useState(initial);
   const input = useRef<HTMLInputElement>(null);
   const done = useRef(false);
@@ -288,7 +291,7 @@ function RateEditor({
       ref={input}
       className="rail-box rail-box-edit"
       style={style}
-      aria-label={`${label} (type a number: 2.5k, 1M, 1/3)`}
+      aria-label={t("{label} (type a number: 2.5k, 1M, 1/3)", { label })}
       value={value}
       inputMode="decimal"
       spellCheck={false}

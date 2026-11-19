@@ -7,7 +7,7 @@
 import type { CSSProperties } from "react";
 import type { PlanUpTo } from "@/lib/solver/plan/types";
 import type { FootTone } from "./clean-model";
-import { LOOP_WORD, type LoopTone } from "./loops";
+import { loopWord, type LoopTone } from "./loops";
 import { artRatio } from "@/lib/power/structure-art-ratios";
 
 /** The bar a zoomed-out face draws: how full (0 to 1), in which tone, and the reason's word (empty for none). */
@@ -40,7 +40,7 @@ export function glanceBar(upTo: PlanUpTo | undefined, loop?: LoopTone): GlanceBa
       : undefined;
   const end = wants ?? capacity;
   const fill = end > 0 ? Math.min(1, Math.max(0, upTo.reached / end)) : 0;
-  if (loop) return { tone: loop === "dead" ? "starved" : "clogged", fill, word: LOOP_WORD[loop] };
+  if (loop) return { tone: loop === "dead" ? "starved" : "clogged", fill, word: loopWord(loop) };
   return { tone: upTo.reason ? TONE[upTo.reason] : "plain", fill, word: upTo.reason ?? "" };
 }
 

@@ -50,6 +50,7 @@ import {
   type SettingControl,
 } from "../menus/settings-model";
 import { SpecialSheet } from "./SpecialSheets";
+import { useT } from "@/lib/i18n";
 import { cloneWithSound } from "@/lib/sound/sfx";
 import { wheelChangesValues } from "@/lib/device-settings";
 import type { SpecialActions, SpecialContext, SpecialModel } from "./use-special";
@@ -101,6 +102,7 @@ function SectionRule({
   actions: SpecialActions;
   wasClick: (event: MouseEvent) => boolean;
 }) {
+  const t = useT();
   const rule = section.rule!;
   const key = (
     kind: "up" | "down" | "off",
@@ -144,8 +146,8 @@ function SectionRule({
           className="sp-circ"
           {...tipAttrs({
             id: `${view.nodeId}|circuit|${section.section}`,
-            title: "Programmed circuit",
-            notes: [{ text: "Not consumed.", tone: "muted" }],
+            title: t("Programmed circuit"),
+            notes: [{ text: t("Not consumed."), tone: "muted" }],
           })}
         >
           {rule.circuit.resource ? (
@@ -161,16 +163,16 @@ function SectionRule({
           ) : null}
         </span>
       ) : null}
-      {key("up", rule.canUp, "Move this recipe up", () => actions.moveSection(section.section, -1))}
-      {key("down", rule.canDown, "Move this recipe down", () =>
+      {key("up", rule.canUp, t("Move this recipe up"), () => actions.moveSection(section.section, -1))}
+      {key("down", rule.canDown, t("Move this recipe down"), () =>
         actions.moveSection(section.section, 1),
       )}
       {key(
         "off",
         true,
-        "Take this recipe off the machine",
+        t("Take this recipe off the machine"),
         () => actions.removeSection(section.section),
-        "Its wires are removed too.",
+        t("Its wires are removed too."),
       )}
     </div>
   );
@@ -178,6 +180,7 @@ function SectionRule({
 
 /** The two dashed boxes of a holder with nothing on it: a wire dropped on either makes the card take its resource. */
 function Sockets({ view }: { view: SpecialView }) {
+  const t = useT();
   const sockets = view.sockets!;
   const one = (side: "input" | "output", label: string, handle: string, hint: string) => (
     <div
@@ -193,8 +196,8 @@ function Sockets({ view }: { view: SpecialView }) {
           {
             text:
               side === "input"
-                ? "Wire a machine's output (or a tank) here."
-                : "Wire a machine's input (or a tank) here.",
+                ? t("Wire a machine's output (or a tank) here.")
+                : t("Wire a machine's input (or a tank) here."),
             tone: "muted",
           },
         ],
@@ -217,10 +220,10 @@ function Sockets({ view }: { view: SpecialView }) {
   return (
     <>
       <div className="sp-sockets" data-side="input" style={{ gridRow: 2 }}>
-        {one("input", sockets.take, sockets.takeHandle, "takes an output")}
+        {one("input", sockets.take, sockets.takeHandle, t("takes an output"))}
       </div>
       <div className="sp-sockets" data-side="output" style={{ gridRow: 2 }}>
-        {one("output", sockets.give, sockets.giveHandle, "feeds an input")}
+        {one("output", sockets.give, sockets.giveHandle, t("feeds an input"))}
       </div>
     </>
   );
@@ -245,10 +248,11 @@ function Rail({
   power?: React.ReactNode;
   shared: boolean;
 }) {
+  const t = useT();
   return (
     <div className="cc-rail" data-side={side} style={{ gridRow: row }} data-section={section}>
       {ports.length === 0 && shared ? (
-        <div className="sp-none">{side === "input" ? "No input" : "No output"}</div>
+        <div className="sp-none">{side === "input" ? t("No input") : t("No output")}</div>
       ) : null}
       {ports.map((p) => (
         <CleanPortRow key={p.key} p={p} wasClick={wasClick} unset={unset} />
@@ -275,6 +279,7 @@ function SpecialChipView({
   onOpen: (id: string, anchor: MenuAnchor) => void;
   wasClick: (event: MouseEvent) => boolean;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<string>();
   if (!chip.edit)
     return (
@@ -307,11 +312,11 @@ function SpecialChipView({
         id: `${nodeId}|setting|${chip.id}`,
         title: chip.label,
         // A worked-out number (a crop card's machines) explains itself in notes; a knob says what it is set to.
-        rows: edit.notes ? [] : [{ label: "Set to", value: chip.value }],
+        rows: edit.notes ? [] : [{ label: t("Set to"), value: chip.value }],
         notes: edit.notes?.map((text) => ({ text, tone: "muted" as const })),
         actions: [
-          { input: "left", label: "Type a value" },
-          { input: "wheel", label: "Step" },
+          { input: "left", label: t("Type a value") },
+          { input: "wheel", label: t("Step") },
         ],
       })}
       style={{ left: chip.x, top: chip.y, width: chip.width }}
@@ -369,6 +374,7 @@ export interface SpecialCardProps {
  */
 export function SpecialCard({ model, recipe, node }: SpecialCardProps) {
   const { view, actions, context } = model;
+  const t = useT();
   const { wasClick, onPointerDownCapture } = useClickSlop();
   const { zoomedOutNames: glanceNames, problemOutlines } = useDeviceSettings();
   // A task board somewhere on this device is about this card: a dot before the name, as on the plain card.
@@ -507,7 +513,7 @@ export function SpecialCard({ model, recipe, node }: SpecialCardProps) {
           className="cc-key"
           data-glyph="menu"
           data-hatch-menu-anchor=""
-          aria-label="Card actions"
+          aria-label={t("Card actions")}
           aria-haspopup="menu"
           aria-expanded={menu?.kind === "actions"}
           {...tipAttrs(menuTip(view.nodeId))}
@@ -519,7 +525,7 @@ export function SpecialCard({ model, recipe, node }: SpecialCardProps) {
           className="cc-key"
           data-glyph="gear"
           data-hatch-menu-anchor=""
-          aria-label="Machine settings"
+          aria-label={t("Machine settings")}
           aria-haspopup="menu"
           data-menu-anchor=""
           aria-expanded={sheetAnchor !== undefined}
@@ -538,14 +544,14 @@ export function SpecialCard({ model, recipe, node }: SpecialCardProps) {
             className="cc-key"
             data-glyph="sprout"
             data-crop-picker-toggle=""
-            aria-label="Pick a crop"
+            aria-label={t("Pick a crop")}
             aria-haspopup="dialog"
             aria-expanded={cropOpen}
             {...tipAttrs({
               id: `${view.nodeId}|crop`,
-              title: "Pick a crop",
-              notes: [{ text: "What this farm plants.", tone: "muted" }],
-              actions: [{ input: "left", label: "Pick another crop" }],
+              title: t("Pick a crop"),
+              notes: [{ text: t("What this farm plants."), tone: "muted" }],
+              actions: [{ input: "left", label: t("Pick another crop") }],
             })}
             onClick={(event) => {
               glyph(event);
@@ -572,7 +578,7 @@ export function SpecialCard({ model, recipe, node }: SpecialCardProps) {
           data-wheel-steps={view.hasPicker ? "" : undefined}
           data-wheel-value={view.hasPicker ? "" : undefined}
           data-menu-anchor=""
-          {...tipAttrs(specialNameTip(view, tipView, tipFacts))}
+          {...tipAttrs(specialNameTip(t, view, tipView, tipFacts))}
           onClick={
             view.hasPicker
               ? (event) => {
@@ -795,6 +801,7 @@ function SectionBlock({
   onPick: () => void;
 }) {
   void index;
+  const t = useT();
   return (
     <>
       {shared && section.rule ? (
@@ -815,8 +822,8 @@ function SectionBlock({
           style={{ gridRow: railRow }}
           {...tipAttrs({
             id: `${view.nodeId}|pick`,
-            title: "Pick a crop",
-            notes: [{ text: "Click to pick what this farm plants.", tone: "muted" }],
+            title: t("Pick a crop"),
+            notes: [{ text: t("Click to pick what this farm plants."), tone: "muted" }],
           })}
           onClick={(event) => {
             glyph(event);
@@ -824,7 +831,7 @@ function SectionBlock({
           }}
         >
           <span className="sp-pick-icon" />
-          Pick a crop
+          {t("Pick a crop")}
         </div>
       ) : null}
       {empty || pick ? null : (
@@ -886,21 +893,26 @@ function Picture({ view, context }: { view: SpecialView; context: SpecialContext
   return null;
 }
 
-function specialNameTip(view: SpecialView, tipView: CleanCardView, facts: CardTipFacts): TipSpec {
+function specialNameTip(
+  t: (key: string) => string,
+  view: SpecialView,
+  tipView: CleanCardView,
+  facts: CardTipFacts,
+): TipSpec {
   if ((view.kind === "shared" || view.kind === "crop") && view.count)
     return machineNameTip(tipView, facts);
   if (view.kind === "crop") {
     return {
       id: `${view.nodeId}|name`,
       title: view.name,
-      notes: [{ text: "Pick a crop to start producing.", tone: "muted" }],
+      notes: [{ text: t("Pick a crop to start producing."), tone: "muted" }],
     };
   }
   if (view.kind === "custom-rate") {
     return {
       id: `${view.nodeId}|name`,
       title: view.name,
-      notes: [{ text: "Wire any port to this and it adopts that resource.", tone: "muted" }],
+      notes: [{ text: t("Wire any port to this and it adopts that resource."), tone: "muted" }],
     };
   }
   if (view.kind === "tank") {
@@ -909,11 +921,13 @@ function specialNameTip(view: SpecialView, tipView: CleanCardView, facts: CardTi
       title: view.name,
       notes: [
         {
-          text: "Empties cells into their fluid, or fills them, free and at once. It keeps up with the plan.",
+          text: t(
+            "Empties cells into their fluid, or fills them, free and at once. It keeps up with the plan.",
+          ),
           tone: "muted",
         },
       ],
     };
   }
-  return { id: `${view.nodeId}|name`, title: view.name, sub: "Generator" };
+  return { id: `${view.nodeId}|name`, title: view.name, sub: t("Generator") };
 }

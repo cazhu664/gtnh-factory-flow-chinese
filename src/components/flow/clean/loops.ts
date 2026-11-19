@@ -6,6 +6,7 @@ import type { FactoryEdge } from "@/lib/model/types";
 import { sectionNodeId, splitSectionHandleId } from "@/lib/model/shared-machine";
 import { makePortKey } from "@/lib/solver/plan/port-key";
 import type { PlanUpToLoop } from "@/lib/solver/plan/types";
+import { t } from "@/lib/i18n";
 
 /** A ring's look on the board: a dead loop in STARVED's amber, a clog lock in CLOGGED's purple. */
 export type LoopTone = "dead" | "clog";
@@ -15,7 +16,9 @@ export function loopTone(loop: Pick<PlanUpToLoop, "kind">): LoopTone {
 }
 
 /** What a ring is called: its notice's tag, and the word on each of its cards' foot bars in place of the reason. */
-export const LOOP_WORD: Record<LoopTone, string> = { dead: "DEAD LOOP", clog: "CLOG LOCK" };
+export function loopWord(tone: LoopTone): string {
+  return tone === "dead" ? t("DEAD LOOP") : t("CLOG LOCK");
+}
 
 /** The ring a card is in (the first, when it is in several), as its tone. */
 export function cardLoop(
@@ -57,7 +60,7 @@ export function loopEdges(
 
 /** What a ring is: the tag its notice wears in front of its sentence, in the ring's tone and blinking. */
 export function loopTag(loop: Pick<PlanUpToLoop, "kind">): string {
-  return LOOP_WORD[loopTone(loop)];
+  return loopWord(loopTone(loop));
 }
 
 /**
@@ -67,6 +70,11 @@ export function loopTag(loop: Pick<PlanUpToLoop, "kind">): string {
  */
 export function loopSentence(loop: Pick<PlanUpToLoop, "kind">, cards: number): string {
   const dead = loop.kind === "DEAD_LOOP";
-  if (cards === 1) return `This machine ${dead ? "starves" : "clogs"} itself in a downward spiral.`;
-  return `These machines ${dead ? "starve" : "clog"} each other in a downward spiral.`;
+  if (cards === 1)
+    return dead
+      ? t("This machine starves itself in a downward spiral.")
+      : t("This machine clogs itself in a downward spiral.");
+  return dead
+    ? t("These machines starve each other in a downward spiral.")
+    : t("These machines clog each other in a downward spiral.");
 }

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useCommunityUser } from "@/components/community/auth";
 import { initialsOf, inkOn } from "@/components/live/LiveFaces";
 import { colorFor } from "@/lib/live/protocol";
+import { useT } from "@/lib/i18n";
 import { useLiveSession } from "@/store/live-session";
 import { BarKey } from "./bar-parts";
 import { ChromeMenu, chromeAnchorOf, type ChromeAnchor } from "./ChromeMenu";
@@ -20,6 +21,7 @@ import { SignInPanel } from "./SignInPanel";
 export function AccountKey({ pictures = false }: { pictures?: boolean }) {
   const { user, isLoading, signOut } = useCommunityUser();
   const me = useLiveSession((state) => state.me);
+  const t = useT();
   const [open, setOpen] = useState<{ kind: "form" | "menu"; anchor: ChromeAnchor }>();
   if (isLoading) {
     return null;
@@ -33,10 +35,10 @@ export function AccountKey({ pictures = false }: { pictures?: boolean }) {
       <>
         <BarKey
           id="account"
-          label={pictures ? undefined : "Sign in"}
+          label={pictures ? undefined : t("Sign in")}
           icon={pictures}
-          ariaLabel="Sign in"
-          tip="Sign in: your plans are kept in your account, and shared from it"
+          ariaLabel={t("Sign in")}
+          tip={t("Sign in: your plans are kept in your account, and shared from it")}
           open={open?.kind === "form"}
           onClick={(event) => toggle("form", event.currentTarget)}
           menuAnchor
@@ -54,9 +56,9 @@ export function AccountKey({ pictures = false }: { pictures?: boolean }) {
       <BarKey
         id="account"
         icon
-        ariaLabel={`Account: ${user.username}`}
-        tip={`Signed in as ${user.username}`}
-        tipSub="Sign out"
+        ariaLabel={t("Account: {name}", { name: user.username })}
+        tip={t("Signed in as {name}", { name: user.username })}
+        tipSub={t("Sign out")}
         open={open?.kind === "menu"}
         onClick={(event) => toggle("menu", event.currentTarget)}
         menuAnchor
@@ -68,12 +70,12 @@ export function AccountKey({ pictures = false }: { pictures?: boolean }) {
       {open?.kind === "menu" ? (
         <ChromeMenu
           anchor={open.anchor}
-          label="Account"
+          label={t("Account")}
           minWidth={110}
           align="right"
           entries={[
             { label: user.username, disabled: true, onSelect: () => undefined },
-            { label: "Sign out", ruleAbove: true, onSelect: () => void signOut() },
+            { label: t("Sign out"), ruleAbove: true, onSelect: () => void signOut() },
           ]}
           onClose={() => setOpen(undefined)}
         />

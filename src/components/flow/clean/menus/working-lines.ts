@@ -19,6 +19,7 @@ import {
 import { getEffectiveVoltageOrdinal } from "@/lib/solver/power";
 import { getNodePowerReport, hasPowerReport } from "@/lib/solver/power-report";
 import { prefersCuratedMachineMath } from "@/lib/solver/runtime-calculation";
+import { t } from "@/lib/i18n";
 
 /**
  * A GregTech card's working, as lines for its gear sheet (the mod's `machines/web/Working`): the supply, the coil's
@@ -45,7 +46,7 @@ function line(label: string, result: string, tone?: FormulaLine["tone"], ...math
 }
 
 function recipesLine(parallels: number, durationTicks: number): FormulaLine {
-  return line("recipes", `${n((parallels * 20) / durationTicks)}/s`, undefined, `${n(parallels)} · 20 / ${ticks(durationTicks)}`);
+  return line(t("recipes"), `${n((parallels * 20) / durationTicks)}/s`, undefined, `${n(parallels)} · 20 / ${ticks(durationTicks)}`);
 }
 
 export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
@@ -62,10 +63,10 @@ export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
   const pool = report.poolEuT;
 
   if (report.isMultiblock) {
-    out.push(line("supply", `${n(pool)} EU/t`, undefined, knob(n(voltage), TIER_KNOB), " V · ", knob(n(amps), AMPS_KNOB), " A"));
+    out.push(line(t("supply"), `${n(pool)} EU/t`, undefined, knob(n(voltage), TIER_KNOB), " V · ", knob(n(amps), AMPS_KNOB), " A"));
   } else {
     out.push(
-      line("supply", `${n(pool)} EU/t`, undefined, knob(tier, TIER_KNOB), ` machine${amps !== 1 ? ` · ${n(amps)} A` : ""}`),
+      line(t("supply"), `${n(pool)} EU/t`, undefined, knob(tier, TIER_KNOB), ` ${t("machine")}${amps !== 1 ? ` · ${n(amps)} A` : ""}`),
     );
   }
 
@@ -74,17 +75,17 @@ export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
   const steps = s.overclockSteps;
   if (!prefersCuratedMachineMath(e)) {
     // The game's own overclock calculator gave these: plain steps.
-    out.push(line("overclocks", steps === 0 ? "none" : String(steps)));
+    out.push(line(t("overclocks"), steps === 0 ? t("none") : String(steps)));
     const halved = Math.max(1, Math.floor(baseTicks / 2 ** steps));
     out.push(
       halved === s.durationTicks && steps > 0
-        ? line("time", ticks(s.durationTicks), undefined, `${n(baseTicks)} / 2`, sup(steps))
-        : line("time", ticks(s.durationTicks)),
+        ? line(t("time"), ticks(s.durationTicks), undefined, `${n(baseTicks)} / 2`, sup(steps))
+        : line(t("time"), ticks(s.durationTicks)),
     );
     out.push(
       base * 4 ** steps === Math.abs(s.eut) && steps > 0
-        ? line("draw", `${n(Math.abs(s.eut))} EU/t`, undefined, `${n(base)} · 4`, sup(steps))
-        : line("draw", `${n(Math.abs(s.eut))} EU/t`),
+        ? line(t("draw"), `${n(Math.abs(s.eut))} EU/t`, undefined, `${n(base)} · 4`, sup(steps))
+        : line(t("draw"), `${n(Math.abs(s.eut))} EU/t`),
     );
     out.push(recipesLine(Math.max(1, report.parallels), s.durationTicks));
     return out;
@@ -103,7 +104,7 @@ export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
     const terms: FormulaTerm[] = [knob(n(coilHeat), COIL_KNOB)];
     if (bonus) terms.push(` + 100·${Math.max(0, ordinal - 2)}`);
     terms.push(` − ${n(special)}`);
-    out.push(line("heat", `${n(excess)} K over`, machineHeat >= special ? "good" : "bad", ...terms));
+    out.push(line(t("heat"), t("{n} K over", { n: n(excess) }), machineHeat >= special ? "good" : "bad", ...terms));
   }
 
   // Discount: the machine's share of the recipe's power, and the coil's 5% per 900 K.
@@ -117,7 +118,7 @@ export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
       if (terms.length > 0) terms.push(" · ");
       terms.push("0.95", sup(Math.round(Math.log(heatDiscount) / Math.log(0.95))));
     }
-    out.push(line("discount", `${n(eutMultiplier * heatDiscount * 100)}% power`, undefined, ...terms));
+    out.push(line(t("discount"), t("{pct}% power", { pct: n(eutMultiplier * heatDiscount * 100) }), undefined, ...terms));
   }
 
   // Parallels: as many as the structure offers and the supply pays for, before any overclock.
@@ -125,7 +126,7 @@ export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
   const parallels = Math.max(1, report.parallels);
   const single = Math.ceil(base * eutMultiplier * heatDiscount);
   if (structural > 1 || parallels > 1) {
-    out.push(line("parallels", n(parallels), undefined, `min(${n(structural)}, ⌊${n(pool)} / ${n(single)}⌋)`));
+    out.push(line(t("parallels"), n(parallels), undefined, `min(${n(structural)}, ⌊${n(pool)} / ${n(single)}⌋)`));
   }
 
   // Overclocks: whole fours of the supply over the draw, a draw under 32 EU/t billed as 32.
@@ -134,8 +135,8 @@ export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
   const normal = s.overclockSteps - perfect;
   out.push(
     line(
-      "overclocks",
-      s.overclockSteps === 0 ? "none" : s.overclockSteps + (perfect > 0 ? ` (${perfect} perfect)` : ""),
+      t("overclocks"),
+      s.overclockSteps === 0 ? t("none") : s.overclockSteps + (perfect > 0 ? t(" ({n} perfect)", { n: perfect }) : ""),
       undefined,
       `⌊log4(${n(pool)} / ${n(draw)})⌋`,
     ),
@@ -148,7 +149,7 @@ export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
   const durationMultiplier = getMachineDurationMultiplier(e, node);
   if (durationMultiplier !== 1) time.push(` · ${n(durationMultiplier)}`);
   out.push(
-    time.length === 1 ? line("time", ticks(s.durationTicks)) : line("time", ticks(s.durationTicks), undefined, ...time),
+    time.length === 1 ? line(t("time"), ticks(s.durationTicks)) : line(t("time"), ticks(s.durationTicks), undefined, ...time),
   );
 
   // Power: the recipe's draw, discounted, times the steps' factor, for each parallel.
@@ -157,7 +158,7 @@ export function workingLines(recipe: Recipe, node: FactoryNode): FormulaLine[] {
   if (perfect > 0) power.push(` · ${n(s.perfectEuFactor)}`, sup(perfect));
   if (normal > 0) power.push(" · 4", sup(normal));
   if (parallels > 1) power.push(` · ${n(parallels)}`);
-  out.push(line("draw", `${n(Math.abs(s.eut) * parallels)} EU/t`, report.state !== "ok" ? "bad" : undefined, ...power));
+  out.push(line(t("draw"), `${n(Math.abs(s.eut) * parallels)} EU/t`, report.state !== "ok" ? "bad" : undefined, ...power));
   out.push(recipesLine(parallels, s.durationTicks));
   return out;
 }

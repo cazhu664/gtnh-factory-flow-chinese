@@ -14,6 +14,7 @@ import { capturePoolWorksheet } from "../export/capture-pool-worksheet";
 import { formatRatioShare, getProjectRatioBranches } from "@/lib/model/storage-ratios";
 import { labelRatioArrows, layoutRatioLabels, type RatioWireLabel } from "./ratio-label-layout";
 import { RatioWireLabel as RatioWireLabelControl } from "./RatioWireLabel";
+import { useT } from "@/lib/i18n";
 
 import {
   BaseEdge,
@@ -2039,6 +2040,7 @@ interface ResolvedResourceHandle {
 }
 
 export function FactoryFlow() {
+  const t = useT();
   const isReadOnly = useFactoryStore((state) => state.isReadOnly);
   const project = useFactoryStore((state) => state.project);
   const result = useFactoryStore((state) => state.lastResult);
@@ -4252,13 +4254,13 @@ export function FactoryFlow() {
         spawnSide,
         spawnHandleId,
       );
-      voidDropReason = "Drawer already exists";
+      voidDropReason = t("Drawer already exists");
       // POOL MODE: no sources (the pool feeds every input), and ONE product
       // drawer per resource - a second would only be the same ask twice.
       if (project.poolMode) {
         if (spawnSide === "input") {
           voidDropWillSpawn = false;
-          voidDropReason = "Pool mode feeds inputs by itself";
+          voidDropReason = t("Pool mode feeds inputs by itself");
         } else if (
           (project.storages ?? []).some(
             (storage) =>
@@ -4268,7 +4270,7 @@ export function FactoryFlow() {
           )
         ) {
           voidDropWillSpawn = false;
-          voidDropReason = "You already have a product drawer for this";
+          voidDropReason = t("You already have a product drawer for this");
         }
       }
       voidDropGhostStorage = {
@@ -4301,7 +4303,7 @@ export function FactoryFlow() {
     if (dropFitFrameRef.current === undefined && draggedResourceRef.current) {
       dropFitFrameRef.current = requestAnimationFrame(paintNewlyMounted);
     }
-  }, [project]);
+  }, [project, t]);
 
   // A pointer that comes up without React Flow reporting a connect end (an
   // aborted gesture, a drag off the window) must not leave the board washed.
@@ -4691,7 +4693,7 @@ export function FactoryFlow() {
             }
           }
         } catch (error) {
-          failure = error instanceof Error ? error.message : "Worksheet image export failed.";
+          failure = error instanceof Error ? error.message : t("Worksheet image export failed.");
         } finally {
           dispatchImageExportComplete(requestId, capture, failure);
         }
@@ -4837,7 +4839,7 @@ export function FactoryFlow() {
 
         const imageBlob = await toBlob(viewportElement, { ...options, pixelRatio });
         if (!imageBlob) {
-          failure = "The render came back empty.";
+          failure = t("The render came back empty.");
           return;
         }
 
@@ -4852,7 +4854,7 @@ export function FactoryFlow() {
         const pngBlob = await embedProjectJsonInPng(imageBlob, projectJson, background);
         downloadBlob(pngBlob, `${fileName}.png`);
       } catch (error) {
-        failure = error instanceof Error ? error.message : "Plan image export failed.";
+        failure = error instanceof Error ? error.message : t("Plan image export failed.");
         console.error(failure);
       } finally {
         writeBoardMotion(savedMotion);
@@ -4866,7 +4868,7 @@ export function FactoryFlow() {
         dispatchImageExportComplete(requestId, capture, failure);
       }
     },
-    [flowNodes, canvasTheme.base],
+    [flowNodes, canvasTheme.base, t],
   );
 
   const exportFlowImage = useCallback(
@@ -5513,7 +5515,7 @@ export function FactoryFlow() {
       return;
     }
     arrangeRunningRef.current = true;
-    setArrangeProgress({ seq: 0, step: 0, stage: "Reading the board", done: 0, total: 1 });
+    setArrangeProgress({ seq: 0, step: 0, stage: t("Reading the board"), done: 0, total: 1 });
     const state = useFactoryStore.getState();
     // Unless Keep boards is on, every board is dissolved first (members
     // surface where the frame stood) and the arrange lays out one flat set
@@ -5577,7 +5579,7 @@ export function FactoryFlow() {
       removeBoards: dumpBoards ? (state.project.pockets ?? []).map((pocket) => pocket.id) : undefined,
     });
     useFactoryStore.getState().frameBoardNodes();
-  }, []);
+  }, [t]);
 
   // The top bar's Arrange and Fit keys (src/components/chrome) call these, and
   // its Arrange label follows the arrange's progress.
@@ -6259,10 +6261,10 @@ export function FactoryFlow() {
           size: { width, height },
         });
       } catch (error) {
-        window.alert(error instanceof Error ? error.message : "Image upload failed.");
+        window.alert(error instanceof Error ? error.message : t("Image upload failed."));
       }
     },
-    [activeColorTag, addAnnotation],
+    [activeColorTag, addAnnotation, t],
   );
 
   // Ctrl+V with a picture on the OS clipboard drops it on the board. Real
@@ -6765,7 +6767,7 @@ export function FactoryFlow() {
           data-timelapse-chip
           className="absolute bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded border border-line-strong bg-surface/90 px-2.5 py-1.5 text-xs text-fg-muted shadow-lg"
         >
-          <span>Build timelapse</span>
+          <span>{t("Build timelapse")}</span>
           <button
             type="button"
             onClick={() => stopBoardTimelapse()}
@@ -6785,7 +6787,7 @@ export function FactoryFlow() {
           ].join(" ")}
         >
           {overwritePicking.create ? (
-            <>Pick a pocket on the board. It lands on your shelf. Esc cancels.</>
+            <>{t("Pick a pocket on the board. It lands on your shelf. Esc cancels.")}</>
           ) : (
             <>
               Pick a pocket on the board. It becomes &ldquo;{overwritePicking.name}&rdquo;. Esc
@@ -6850,6 +6852,7 @@ const UnwiredNotice = memo(function UnwiredNotice({
 }: {
   onShow: (nodeIds: string[]) => void;
 }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const lastResult = useFactoryStore((state) => state.lastResult);
   const unwired = useMemo(
@@ -6863,7 +6866,7 @@ const UnwiredNotice = memo(function UnwiredNotice({
 
   return (
     <div className="unwired-notice nodrag pointer-events-auto flex max-w-[min(calc(92*var(--ui-vw)),560px)] flex-wrap items-center justify-center gap-x-2 gap-y-1.5 border-2 border-[#c8d2e0] bg-[#2b3038] px-2 py-1.5 font-mono text-[12px] text-[#e8ecf2] shadow-[inset_2px_2px_0_#5d6877,inset_-2px_-2px_0_#171a1f,4px_4px_0_rgba(0,0,0,0.35)]">
-      <span className="shrink-0 font-bold tracking-[0.5px] text-[#eef2f8]">NOT WIRED UP</span>
+      <span className="shrink-0 font-bold tracking-[0.5px] text-[#eef2f8]">{t("NOT WIRED UP")}</span>
       {/* One line, always: the cards explain themselves. */}
       <span className="text-[#c2cad6]">
         {unwired.length === 1
@@ -6875,7 +6878,7 @@ const UnwiredNotice = memo(function UnwiredNotice({
         onClick={() => onShow(unwired)}
         className="shrink-0 border border-[#c8d2e0] bg-[#454f5e] px-2 py-0.5 font-bold text-[#ffffff] hover:bg-[#566275]"
       >
-        Show me
+        {t("Show me")}
       </button>
     </div>
   );
@@ -6893,6 +6896,7 @@ const DeathSpiralNotice = memo(function DeathSpiralNotice({
 }: {
   onShow: (nodeIds: string[]) => void;
 }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const lastResult = useFactoryStore((state) => state.lastResult);
   const [dismissedId, setDismissedId] = useState<string | undefined>(undefined);
@@ -6909,7 +6913,7 @@ const DeathSpiralNotice = memo(function DeathSpiralNotice({
 
   return (
     <div className="nodrag pointer-events-auto flex max-w-[min(calc(92*var(--ui-vw)),560px)] flex-wrap items-center justify-center gap-x-2 gap-y-1.5 border-2 border-[#c34c4c] bg-[#2b1c1c] px-2 py-1.5 font-mono text-[12px] text-[#f2e4e4] shadow-[inset_2px_2px_0_#7a3636,inset_-2px_-2px_0_#1a1010,4px_4px_0_rgba(0,0,0,0.35)]">
-      <span className="shrink-0 font-bold tracking-[0.5px] text-[#ff9c9c]">DEAD LOOP</span>
+      <span className="shrink-0 font-bold tracking-[0.5px] text-[#ff9c9c]">{t("DEAD LOOP")}</span>
       <span className="text-[#e6d2d2]">{story.short}</span>
       {spirals.length > 1 ? (
         <span className="shrink-0 text-[#b89a9a]">
@@ -6921,13 +6925,13 @@ const DeathSpiralNotice = memo(function DeathSpiralNotice({
         onClick={() => onShow(spiral.machineIds)}
         className="shrink-0 border border-[#c34c4c] bg-[#4a2424] px-2 py-0.5 font-bold text-[#ffd0d0] hover:bg-[#63302f]"
       >
-        Show me
+        {t("Show me")}
       </button>
       <button
         type="button"
         onClick={() => setDismissedId(spiral.id)}
         title="Dismiss"
-        aria-label="Dismiss this notice"
+        aria-label={t("Dismiss this notice")}
         className="flex h-5 w-5 shrink-0 items-center justify-center border border-[#7a3636] text-[#e0b3b3] hover:bg-[#4a2424]"
       >
         ×
@@ -6946,6 +6950,7 @@ const ClogLockNotice = memo(function ClogLockNotice({
 }: {
   onShow: (nodeIds: string[]) => void;
 }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const lastResult = useFactoryStore((state) => state.lastResult);
   const [dismissedId, setDismissedId] = useState<string | undefined>(undefined);
@@ -6968,7 +6973,7 @@ const ClogLockNotice = memo(function ClogLockNotice({
 
   return (
     <div className="nodrag pointer-events-auto flex max-w-[min(calc(92*var(--ui-vw)),560px)] flex-wrap items-center justify-center gap-x-2 gap-y-1.5 border-2 border-[#4c7ec3] bg-[#1a222b] px-2 py-1.5 font-mono text-[12px] text-[#e4ecf2] shadow-[inset_2px_2px_0_#365d7a,inset_-2px_-2px_0_#10161a,4px_4px_0_rgba(0,0,0,0.35)]">
-      <span className="shrink-0 font-bold tracking-[0.5px] text-[#9cc9ff]">CLOG LOCK</span>
+      <span className="shrink-0 font-bold tracking-[0.5px] text-[#9cc9ff]">{t("CLOG LOCK")}</span>
       <span className="text-[#d2e0e6]">{story.short}</span>
       {locks.length > 1 ? (
         <span className="shrink-0 text-[#9aaab8]">
@@ -6983,13 +6988,13 @@ const ClogLockNotice = memo(function ClogLockNotice({
         }}
         className="shrink-0 border border-[#4c7ec3] bg-[#24384a] px-2 py-0.5 font-bold text-[#d0e6ff] hover:bg-[#2f4a63]"
       >
-        {showTargets.length > 1 ? `Show me (${showAt + 1}/${showTargets.length})` : "Show me"}
+        {showTargets.length > 1 ? `Show me (${showAt + 1}/${showTargets.length})` : t("Show me")}
       </button>
       <button
         type="button"
         onClick={() => setDismissedId(lock.id)}
         title="Dismiss"
-        aria-label="Dismiss this notice"
+        aria-label={t("Dismiss this notice")}
         className="flex h-5 w-5 shrink-0 items-center justify-center border border-[#365d7a] text-[#b3cbe0] hover:bg-[#24384a]"
       >
         ×
@@ -7129,6 +7134,7 @@ const SelectionActionsBar = memo(function SelectionActionsBar({
   canCombine: boolean;
   onCombine: () => boolean;
 }) {
+  const t = useT();
   const isCompact = useIsCompactViewport();
   const planBoard = useFactoryStore((state) => state.project.planMode === true);
   if (selectionCount < 2 || (!canWrap && !canCombine)) {
@@ -7163,7 +7169,7 @@ const SelectionActionsBar = memo(function SelectionActionsBar({
       <button
         type="button"
         onClick={onWrap}
-        title={planBoard ? "Group these (Ctrl+G)" : "Wrap in a board (Ctrl+G)"}
+        title={planBoard ? t("Group these (Ctrl+G)") : t("Wrap in a board (Ctrl+G)")}
         // Plain chrome, like every other button: boards have no house colour.
         className="flex h-9 items-center gap-1.5 whitespace-nowrap border-2 border-[var(--mc-15)] bg-[var(--mc-49)] px-3 font-mono text-[12px] font-bold text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:brightness-110"
       >
@@ -7339,6 +7345,7 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
   /** Zoom out until the whole plan is on screen, and centre it. */
   onFitView: () => void;
 }) {
+  const t = useT();
   const buttonClass = (active: boolean) =>
     [
       "pointer-events-auto flex h-9 w-9 items-center justify-center border-2 border-[var(--mc-15)]",
@@ -7357,8 +7364,8 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
           type="button"
           onClick={onFitView}
           className={buttonClass(false)}
-          title="Fit on screen"
-          aria-label="Fit the plan on the screen"
+          title={t("Fit on screen")}
+          aria-label={t("Fit the plan on the screen")}
         >
           <Focus className="h-4 w-4" />
         </button>
@@ -7370,8 +7377,8 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
           type="button"
           onClick={() => onModeChange("identity")}
           className={buttonClass(glanceMode === "identity")}
-          title="Big icons"
-          aria-label="Big icons"
+          title={t("Big icons")}
+          aria-label={t("Big icons")}
           aria-pressed={glanceMode === "identity"}
         >
           <Box className="h-4 w-4" />
@@ -7449,6 +7456,7 @@ const SourceToolbar = memo(function SourceToolbar({
   /** A banner has the top line: step down one. */
   shiftedDown: boolean;
 }) {
+  const t = useT();
   const rateUnit = useFactoryStore((state) => state.rateUnit);
   const setRateUnit = useFactoryStore((state) => state.setRateUnit);
   const rateChoice =
@@ -7506,7 +7514,7 @@ const SourceToolbar = memo(function SourceToolbar({
           onClick={undo}
           disabled={!canUndo}
           className={historyButtonClass(canUndo)}
-          title={canUndo ? "Undo (Ctrl+Z)" : "Nothing to undo"}
+          title={canUndo ? t("Undo (Ctrl+Z)") : t("Nothing to undo")}
           aria-label="Undo"
         >
           <Undo2 className="h-4 w-4" />
@@ -7516,7 +7524,7 @@ const SourceToolbar = memo(function SourceToolbar({
           onClick={redo}
           disabled={!canRedo}
           className={historyButtonClass(canRedo)}
-          title={canRedo ? "Redo (Ctrl+Shift+Z)" : "Nothing to redo"}
+          title={canRedo ? t("Redo (Ctrl+Shift+Z)") : t("Nothing to redo")}
           aria-label="Redo"
         >
           <Redo2 className="h-4 w-4" />
@@ -7630,7 +7638,7 @@ const SourceToolbar = memo(function SourceToolbar({
             aria-expanded={isPowerUnitMenuOpen}
             aria-label={
               powerDisplayUnit === "eu"
-                ? "Power unit: EU per tick"
+                ? t("Power unit: EU per tick")
                 : `Power unit: amps of ${powerDisplayUnit}`
             }
             className={[
@@ -7687,7 +7695,7 @@ const SourceToolbar = memo(function SourceToolbar({
                   setPowerUnitMenuOpen(false);
                 }}
                 aria-pressed={powerDisplayUnit === "eu"}
-                aria-label="EU per tick"
+                aria-label={t("EU per tick")}
                 className={[
                   // The EU/t cell wears the same bevel as the tier chips,
                   // on the toolbar's dark face with the amber bolt.
@@ -7969,6 +7977,7 @@ const CHIP_CLASS =
 const HOP_MAP_SETTLE_MS = 90;
 
 const HopMapLegend = memo(function HopMapLegend() {
+  const t = useT();
   const map = useHopMapSummary();
   // Any map gets a key, including a card wired to nothing (maxDepth 0): a
   // lone card in a field of grey needs the explanation most.
@@ -7996,7 +8005,7 @@ const HopMapLegend = memo(function HopMapLegend() {
       // a picker is open. bottom-16 leaves the corner to the view buttons.
       className="nodrag pointer-events-none absolute bottom-16 right-3 z-40 flex flex-col gap-2 border-2 border-[var(--mc-15)] bg-[var(--mc-49)] px-3 py-2.5 font-mono font-bold text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25),4px_4px_0_rgba(0,0,0,0.35)]"
     >
-      <span className="text-[13px] uppercase tracking-[1px]">Hops needed</span>
+      <span className="text-[13px] uppercase tracking-[1px]">{t("Hops needed")}</span>
       {chipped ? (
         <div className="flex items-center gap-1.5">
           {/* The hub (the card under the cursor) is step 0. */}
@@ -8035,6 +8044,7 @@ const HopMapLegend = memo(function HopMapLegend() {
 });
 
 function FlowLoadingOverlay() {
+  const t = useT();
   return (
     <div
       role="status"
@@ -8043,7 +8053,7 @@ function FlowLoadingOverlay() {
     >
       <div className="flex items-center gap-3 border-2 border-[var(--mc-15)] bg-[var(--mc-78)] px-4 py-3 text-sm font-semibold text-[var(--mc-ink)] shadow-[inset_2px_2px_0_var(--mc-100),inset_-2px_-2px_0_var(--mc-33),4px_4px_0_rgba(0,0,0,0.18)]">
         <LoaderCircle className="h-5 w-5 animate-spin" />
-        <span>Loading flowchart...</span>
+        <span>{t("Loading flowchart...")}</span>
       </div>
     </div>
   );
@@ -8157,6 +8167,7 @@ function AnnotationDraftPreview({
  * The button spins while the upload is out.
  */
 function AddImageButton({ onPlaceImage }: { onPlaceImage: (file: File) => Promise<void> }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   return (
@@ -8189,8 +8200,8 @@ function AddImageButton({ onPlaceImage }: { onPlaceImage: (file: File) => Promis
           "flex items-center gap-2 border-2 border-[var(--mc-15)] bg-[var(--mc-49)] p-1 pr-2 text-left text-white hover:bg-[var(--mc-61)]",
           busy ? "cursor-wait opacity-70" : "",
         ].join(" ")}
-        title="Add an image"
-        aria-label="Add an image"
+        title={t("Add an image")}
+        aria-label={t("Add an image")}
       >
         <span className="flex h-7 w-7 items-center justify-center">
           {busy ? (
@@ -8199,7 +8210,7 @@ function AddImageButton({ onPlaceImage }: { onPlaceImage: (file: File) => Promis
             <ImagePlus className="h-4 w-4" />
           )}
         </span>
-        <span className="whitespace-nowrap font-mono text-[11px] font-semibold">Add an image</span>
+        <span className="whitespace-nowrap font-mono text-[11px] font-semibold">{t("Add an image")}</span>
       </button>
     </>
   );
@@ -8259,6 +8270,7 @@ const BoardViewMenu = memo(function BoardViewMenu({
     onArrange: (options: { keepBoards: boolean }) => void;
   };
 }) {
+  const t = useT();
   const { canvasPattern } = view;
   // Motion is device taste, not plan state: read and written through its own
   // store (board-motion.tsx), never through the plan-view snapshot.
@@ -8278,7 +8290,7 @@ const BoardViewMenu = memo(function BoardViewMenu({
     {
       id: "fixed-edge-width",
       on: view.fixedEdgeWidth,
-      label: "Fixed edge width",
+      label: t("Fixed edge width"),
       Icon: Minus,
       flip: () => onChange({ fixedEdgeWidth: !view.fixedEdgeWidth }),
     },
@@ -8287,16 +8299,16 @@ const BoardViewMenu = memo(function BoardViewMenu({
     {
       id: "smooth",
       on: boardMotion.moveMotion,
-      label: "Smooth movement",
-      line: "Cards move smoothly instead of jumping.",
+      label: t("Smooth movement"),
+      line: t("Cards move smoothly instead of jumping."),
       Icon: Magnet,
       flip: () => writeBoardMotion({ moveMotion: !boardMotion.moveMotion }),
     },
     {
       id: "numbers",
       on: boardMotion.valueMotion,
-      label: "Live numbers",
-      line: "Numbers change smoothly.",
+      label: t("Live numbers"),
+      line: t("Numbers change smoothly."),
       Icon: Activity,
       flip: () => writeBoardMotion({ valueMotion: !boardMotion.valueMotion }),
     },
@@ -8312,8 +8324,8 @@ const BoardViewMenu = memo(function BoardViewMenu({
           "relative z-10 flex h-8 w-8 items-center justify-center border-2 border-[var(--mc-15)]",
           open ? TOOL_FACE_ON : TOOL_FACE_OFF,
         ].join(" ")}
-        title="View options"
-        aria-label="View options"
+        title={t("View options")}
+        aria-label={t("View options")}
       >
         <Eye className="h-4 w-4" />
       </button>
@@ -8413,7 +8425,7 @@ const BoardViewMenu = memo(function BoardViewMenu({
               <Network className="mt-[1px] h-4 w-4 shrink-0" />
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="flex items-baseline justify-between gap-2">
-                  <span className="font-mono text-[12px] font-black uppercase">Keep boards on rearrange</span>
+                  <span className="font-mono text-[12px] font-black uppercase">{t("Keep boards on rearrange")}</span>
                   <span
                     className={[
                       "font-mono text-[10px] font-black tracking-[1px]",
@@ -8432,7 +8444,7 @@ const BoardViewMenu = memo(function BoardViewMenu({
                 arrange.onArrange({ keepBoards: arrange.keepBoards });
               }}
               className="mt-1 flex w-full items-center justify-center gap-2 border-2 border-[var(--mc-15)] bg-[var(--mc-49)] p-2 font-mono text-[12px] font-black uppercase text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:brightness-110"
-              aria-label="Arrange the board"
+              aria-label={t("Arrange the board")}
             >
               <Network className="h-4 w-4" />
               Arrange
@@ -8457,6 +8469,7 @@ function ArrangeLoader({
   progress: ArrangeProgress;
   onCancel: () => void;
 }) {
+  const t = useT();
   const steps = ARRANGE_STEPS.length;
   const within = Math.min(progress.done, progress.total) / Math.max(progress.total, 1);
   const overall = Math.min(1, (Math.min(progress.step, steps) + within) / steps);
@@ -8471,7 +8484,7 @@ function ArrangeLoader({
     >
       <div className="pointer-events-auto w-[26rem] max-w-[calc(100*var(--ui-vw)-32px)] border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-[var(--mc-ink)] shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25),4px_4px_0_rgba(0,0,0,0.45)]">
         <div className="flex items-center justify-between border-b-2 border-[var(--mc-15)] px-4 py-2.5">
-          <h2 className="text-sm font-bold">Arranging the board</h2>
+          <h2 className="text-sm font-bold">{t("Arranging the board")}</h2>
           <span className="font-mono text-sm tabular-nums text-[var(--mc-ink-muted)]">
             {Math.round(overall * 100)}%
           </span>
@@ -8531,7 +8544,7 @@ function ArrangeLoader({
           </ol>
         </div>
         <div className="flex items-center justify-between gap-3 border-t-2 border-[var(--mc-15)] px-4 py-2.5">
-          <span className="text-xs text-[var(--mc-ink-muted)]">Every move is checked against the real wires.</span>
+          <span className="text-xs text-[var(--mc-ink-muted)]">{t("Every move is checked against the real wires.")}</span>
           <button
             type="button"
             onClick={onCancel}
@@ -8586,6 +8599,7 @@ const PaintToolbar = memo(function PaintToolbar({
   onToggleGroup: (group: ToolGroupId | undefined) => void;
   shiftedDown: boolean;
 }) {
+  const t = useT();
   const activeColor = GT_NODE_COLORS[activeColorTag];
   // A plan board's markup is the sticky note (right-click the board): no box, zone, arrow, text or image tools.
   const planMode = useFactoryStore((state) => state.project.planMode === true);
@@ -8633,8 +8647,8 @@ const PaintToolbar = memo(function PaintToolbar({
             "pointer-events-auto relative z-10 flex h-8 w-8 items-center justify-center border-2 border-[var(--mc-15)]",
             isDeleteMode ? TOOL_FACE_ON : TOOL_FACE_OFF,
           ].join(" ")}
-          title={isDeleteMode ? "Stop deleting" : "Delete tool"}
-          aria-label={isDeleteMode ? "Stop deleting" : "Delete tool"}
+          title={isDeleteMode ? t("Stop deleting") : t("Delete tool")}
+          aria-label={isDeleteMode ? t("Stop deleting") : t("Delete tool")}
         >
           {/* The pressed face says "on"; the red icon still says what is armed. */}
           <Trash2 className={isDeleteMode ? "h-4 w-4 text-red-500" : "h-4 w-4"} />
@@ -8680,7 +8694,7 @@ const PaintToolbar = memo(function PaintToolbar({
                     <Icon className="h-4 w-4" />
                   </span>
                   <span className="whitespace-nowrap font-mono text-[11px] font-semibold">
-                    {label}
+                    {t(label)}
                   </span>
                 </button>
               ))}
@@ -8706,7 +8720,7 @@ const PaintToolbar = memo(function PaintToolbar({
                   {paintMode === null ? <X className="h-4 w-4" /> : <Paintbrush className="h-4 w-4" />}
                 </span>
                 <span className="whitespace-nowrap font-mono text-[11px] font-semibold">
-                  {paintMode === null ? "Erasing colours" : "Paint cards"}
+                  {paintMode === null ? t("Erasing colours") : t("Paint cards")}
                 </span>
                 <span
                   aria-hidden
@@ -8725,8 +8739,8 @@ const PaintToolbar = memo(function PaintToolbar({
                     "flex h-6 w-6 items-center justify-center border-2 bg-[var(--mc-49)] text-white shadow-[inset_1px_1px_0_var(--mc-85),inset_-1px_-1px_0_var(--mc-25)]",
                     paintMode === null ? "border-white ring-2 ring-cyan-300" : "border-[var(--mc-15)]",
                   ].join(" ")}
-                  title="Erase colours"
-                  aria-label="Erase colours"
+                  title={t("Erase colours")}
+                  aria-label={t("Erase colours")}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -8781,7 +8795,7 @@ const PaintToolbar = memo(function PaintToolbar({
                 annotationTool !== undefined || paintMode !== undefined ? TOOL_FACE_ON : TOOL_FACE_OFF,
               ].join(" ")}
               title={annotationTool !== undefined || paintMode !== undefined ? "Stop" : "Markup"}
-              aria-label={annotationTool !== undefined || paintMode !== undefined ? "Stop marking up" : "Markup tools"}
+              aria-label={annotationTool !== undefined || paintMode !== undefined ? t("Stop marking up") : t("Markup tools")}
             >
               <Pencil className="h-4 w-4" />
             </button>
@@ -8846,6 +8860,7 @@ function ResourceEdgeComponent({
   selected,
   data,
 }: EdgeProps<ResourceFlowEdge>) {
+  const t = useT();
   const updateEdge = useFactoryStore((state) => state.updateEdge);
   // Waypoint dot dragging: a local draft while the pointer is down, committed
   // to the store (snapped to the grid) on release, so no board-wide re-solve
@@ -9467,7 +9482,7 @@ function ResourceEdgeComponent({
                 setDraftWaypoints(undefined);
               }}
             >
-              <title>Drag to steer this wire. Double-click to remove the stop</title>
+              <title>{t("Drag to steer this wire. Double-click to remove the stop")}</title>
             </circle>
           ))
         : null}
@@ -13089,6 +13104,7 @@ function nextPaint(): Promise<void> {
  * re-renders for it, and blocks nothing.
  */
 function SolvingBooksOverlay() {
+  const t = useT();
   const solving = useSolvingBooks();
   if (!solving) {
     return null;
@@ -13097,7 +13113,7 @@ function SolvingBooksOverlay() {
     <div className="pointer-events-none absolute bottom-16 left-1/2 z-30 -translate-x-1/2">
       <div className="flex items-center gap-3 whitespace-nowrap border-2 border-neutral-600 bg-neutral-950/90 px-4 py-2 font-mono text-neutral-200 shadow-[4px_4px_0_rgba(0,0,0,0.45)]">
         <div className="h-5 w-5 animate-spin rounded-full border-[3px] border-neutral-700 border-t-cyan-400" />
-        <div className="text-[13px]">Working out the numbers... you can keep editing.</div>
+        <div className="text-[13px]">{t("Working out the numbers... you can keep editing.")}</div>
       </div>
     </div>
   );

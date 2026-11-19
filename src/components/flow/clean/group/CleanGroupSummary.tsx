@@ -7,6 +7,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { formatCompact } from "@/lib/model/resources";
 import { powerDisplayFromEuT, powerDisplaySuffix, rateMultiplierForKind, rateSuffixForKind } from "@/lib/model/rate-unit";
 import { useFactoryStore, useRateDisplayUnits } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import { POCKET_CARD_SOURCE_HANDLE, POCKET_CARD_TARGET_HANDLE, type PocketFlowNode } from "../../PocketNode";
 import { useClickSlop } from "../interaction/click-slop";
 import { tipAttrs } from "../interaction/tip-spec";
@@ -22,13 +23,17 @@ function rateText(flow: GroupFlow): string {
 }
 
 function Cell({ flow, side }: { flow: GroupFlow; side: "in" | "out" }) {
+  const t = useT();
   return (
     <div
       className={`cg-cell cg-${side}`}
       {...tipAttrs({
         id: `group|${side}|${flow.key}`,
         title: flow.resource.displayName ?? flow.resourceId,
-        sub: side === "in" ? `Goes in: ${rateText(flow)}` : `Comes out: ${rateText(flow)}`,
+        sub:
+          side === "in"
+            ? t("Goes in: {rate}", { rate: rateText(flow) })
+            : t("Comes out: {rate}", { rate: rateText(flow) }),
       })}
     >
       <ResourceGlyph line={{ resource: flow.resource, energy: false }} />
@@ -45,6 +50,7 @@ function Cell({ flow, side }: { flow: GroupFlow; side: "in" | "out" }) {
  */
 function CleanGroupSummaryComponent({ data, selected }: NodeProps<PocketFlowNode>) {
   useRateDisplayUnits();
+  const t = useT();
   const { pocket } = data;
   const summary = data.groupSummary as GroupSummary | undefined;
   const expandPocket = useFactoryStore((state) => state.expandPocket);
@@ -53,7 +59,7 @@ function CleanGroupSummaryComponent({ data, selected }: NodeProps<PocketFlowNode
   const machines = summary?.machines ?? 0;
   const count = machinesText(machines);
   const eu = summary && summary.euT > 0 ? `${formatCompact(powerDisplayFromEuT(summary.euT))} ${powerDisplaySuffix()}` : "";
-  const line = [count || "No machines", eu].filter(Boolean).join("  ");
+  const line = [count || t("No machines"), eu].filter(Boolean).join("  ");
   const inputs = summary?.inputs ?? [];
   const outputs = summary?.outputs ?? [];
   const rows = Math.max(inputs.length, outputs.length);
@@ -89,20 +95,20 @@ function CleanGroupSummaryComponent({ data, selected }: NodeProps<PocketFlowNode
           title: pocket.name,
           ...(count ? { sub: count } : {}),
           actions: [
-            { input: "drag", label: "Move the group" },
-            { input: "left", label: "Rename (on the name)" },
-            { input: "right", label: "Group menu" },
+            { input: "drag", label: t("Move the group") },
+            { input: "left", label: t("Rename (on the name)") },
+            { input: "right", label: t("Group menu") },
           ],
         })}
       >
         <GroupName pocketId={pocket.id} name={pocket.name} wasClick={slop.wasClick} />
         <div
           role="button"
-          aria-label="Expand"
+          aria-label={t("Expand")}
           className="cg-key"
           data-plus=""
           data-group-key="expand"
-          {...tipAttrs({ id: `${pocket.id}|expand`, title: "Expand", actions: [{ input: "left", label: "Expand" }] })}
+          {...tipAttrs({ id: `${pocket.id}|expand`, title: t("Expand"), actions: [{ input: "left", label: t("Expand") }] })}
           onClick={(event) => {
             if (!slop.wasClick(event)) return;
             event.stopPropagation();
@@ -112,7 +118,7 @@ function CleanGroupSummaryComponent({ data, selected }: NodeProps<PocketFlowNode
       </div>
       <div className="cg-line">{line}</div>
       <div className="cg-rows">
-        {rows === 0 ? <div className="cg-cell cg-empty">Nothing goes in or out.</div> : null}
+        {rows === 0 ? <div className="cg-cell cg-empty">{t("Nothing goes in or out.")}</div> : null}
         {Array.from({ length: rows }, (_, index) => (
           <div key={index} style={{ display: "contents" }}>
             {inputs[index] ? <Cell flow={inputs[index]!} side="in" /> : <div className="cg-cell cg-in" />}

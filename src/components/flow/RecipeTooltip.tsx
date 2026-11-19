@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import type { RecipeTooltipView, TooltipAction } from "./recipe-tooltip-data";
 
 const GESTURE_NAME: Record<TooltipAction["gesture"], string> = {
@@ -32,6 +33,7 @@ export function MouseIcon({ gesture }: { gesture: TooltipAction["gesture"] }) {
 
 /** Read-only gesture legend; actions remain on the hovered control. */
 export function TooltipActions({ actions }: { actions: readonly TooltipAction[] }) {
+  const t = useT();
   const readOnly = useFactoryStore((state) => state.isReadOnly);
   // The viewer permits inspection, but none of these editing/browsing gestures.
   if (readOnly || !actions.length) return null;
@@ -39,7 +41,7 @@ export function TooltipActions({ actions }: { actions: readonly TooltipAction[] 
     <div className="mt-3 flex flex-col gap-y-1 border-t border-line pt-2.5 text-fg-subtle" data-tooltip-actions="">
       {actions.map((action) => (
         <span key={`${action.gesture}-${action.label}`} className="flex items-center gap-2">
-          <span role="img" aria-label={GESTURE_NAME[action.gesture]}>
+          <span role="img" aria-label={t(GESTURE_NAME[action.gesture])}>
             <MouseIcon gesture={action.gesture} />
           </span>
           <span>{action.label}</span>

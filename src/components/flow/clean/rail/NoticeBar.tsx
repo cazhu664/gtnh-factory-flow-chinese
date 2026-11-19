@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import { startPromptClock } from "../../virtual/prompt-phase";
 import { buildNotices, byUrgency, type BoardNotice, type NoticeSeverity } from "./notices";
 import { framesReadably } from "./rail-actions";
@@ -93,6 +94,7 @@ export function NoticeRow({
   notice: BoardNotice;
   onShow: (notice: BoardNotice) => void;
 }) {
+  const t = useT();
   const text = useRef<HTMLSpanElement>(null);
   // The sentence fades out at the end only when the room left clips it.
   useLayoutEffect(() => {
@@ -125,7 +127,7 @@ export function NoticeRow({
             if (event.key === "Enter" || event.key === " ") onShow(notice);
           }}
         >
-          Show me
+          {t("Show me")}
         </span>
       ) : null}
       {notice.dismiss ? (
@@ -138,7 +140,7 @@ export function NoticeRow({
             if (event.key === "Enter" || event.key === " ") notice.dismiss?.();
           }}
         >
-          Dismiss
+          {t("Dismiss")}
         </span>
       ) : null}
     </div>
@@ -147,6 +149,7 @@ export function NoticeRow({
 
 /** The stack itself, for the board's notice corner. Renders nothing with no notices. */
 export function PlanNoticeStack() {
+  const t = useT();
   const notices = useBoardNotices();
   const turns = useRef(new Map<string, number>());
   const frame = useFactoryStore((state) => state.frameBoardNodes);
@@ -174,7 +177,7 @@ export function PlanNoticeStack() {
       ))}
       {more > 0 ? (
         <div className="rail-notice rail-notice-more">
-          <span className="rail-notice-text">+{more} more</span>
+          <span className="rail-notice-text">{t("+{more} more", { more })}</span>
         </div>
       ) : null}
     </div>

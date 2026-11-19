@@ -7,6 +7,7 @@ import type { NodeProps } from "@xyflow/react";
 import { boardWindowSize } from "@/lib/model/board-windows";
 import type { FactoryPocket } from "@/lib/model/types";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import { BOARD_DRAG_HANDLE_CLASS, useBoardResize, type BoardWindowFlowNode, type ResizeSide } from "../../BoardNode";
 import { useClickSlop } from "../interaction/click-slop";
 import { tipAttrs } from "../interaction/tip-spec";
@@ -42,6 +43,7 @@ export function GroupName({
   name: string;
   wasClick: (event: React.MouseEvent) => boolean;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<string | undefined>(undefined);
   const renamePocket = useFactoryStore((state) => state.renamePocket);
   // The group menu's Rename opens the field here.
@@ -56,7 +58,7 @@ export function GroupName({
         autoFocus
         className="cg-rename nodrag nopan"
         value={draft}
-        aria-label="Group name"
+        aria-label={t("Group name")}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
         onFocus={(event) => event.target.select()}
@@ -86,6 +88,7 @@ export function GroupName({
 
 /** An OPEN group on a plan board (docs/groups.md): border, title strip with name, machines and the collapse key. */
 function CleanGroupFrameComponent({ data, width, height, selected }: NodeProps<BoardWindowFlowNode>) {
+  const t = useT();
   const { pocket } = data;
   const machines = typeof data.machines === "number" ? data.machines : 0;
   const minimizePocket = useFactoryStore((state) => state.minimizePocket);
@@ -113,9 +116,9 @@ function CleanGroupFrameComponent({ data, width, height, selected }: NodeProps<B
           title: pocket.name,
           ...(count ? { sub: count } : {}),
           actions: [
-            { input: "drag", label: "Move the group" },
-            { input: "left", label: "Rename (on the name)" },
-            { input: "right", label: "Group menu" },
+            { input: "drag", label: t("Move the group") },
+            { input: "left", label: t("Rename (on the name)") },
+            { input: "right", label: t("Group menu") },
           ],
         })}
       >
@@ -123,10 +126,10 @@ function CleanGroupFrameComponent({ data, width, height, selected }: NodeProps<B
         {count ? <span className="cg-muted">{count}</span> : null}
         <div
           role="button"
-          aria-label="Collapse"
+          aria-label={t("Collapse")}
           className="cg-key"
           data-group-key="collapse"
-          {...tipAttrs({ id: `${pocket.id}|collapse`, title: "Collapse", actions: [{ input: "left", label: "Collapse" }] })}
+          {...tipAttrs({ id: `${pocket.id}|collapse`, title: t("Collapse"), actions: [{ input: "left", label: t("Collapse") }] })}
           onClick={(event) => {
             if (!slop.wasClick(event)) return;
             event.stopPropagation();

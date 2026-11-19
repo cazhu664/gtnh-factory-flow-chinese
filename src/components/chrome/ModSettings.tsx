@@ -18,6 +18,7 @@ import {
   sfxToggle,
 } from "@/lib/sound/sfx";
 import { setUiScalePercent, useUiScalePercent } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 import { ChromeMenu, chromeAnchorOf, MENU_ANCHOR_ATTR, type ChromeAnchor } from "./ChromeMenu";
 import { knock, OPEN_CONTROLS_EVENT, OPEN_TOUR_EVENT } from "./chrome-events";
 import { SettingsPreview } from "./SettingsPreview";
@@ -68,6 +69,7 @@ export function ModSettings({ onClose }: { onClose: () => void }) {
   const [soundIndex, setSoundIndex] = useState(() => getSoundLevel());
   const [menu, setMenu] = useState<{ anchor: ChromeAnchor }>();
   const dragRef = useRef<string | undefined>(undefined);
+  const t = useT();
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -236,7 +238,7 @@ export function ModSettings({ onClose }: { onClose: () => void }) {
         className="ms mx"
         role="dialog"
         aria-modal="true"
-        aria-label="Settings"
+        aria-label={t("Settings")}
         data-mod-settings=""
         data-section={section.name}
         onWheel={(event) => {
@@ -251,8 +253,8 @@ export function ModSettings({ onClose }: { onClose: () => void }) {
         }}
       >
         <div className="ms-title">
-          <span>Settings</span>
-          <div className="ms-close" role="button" aria-label="Close" onClick={close}>
+          <span>{t("Settings")}</span>
+          <div className="ms-close" role="button" aria-label={t("Close")} onClick={close}>
             <svg
               width="14"
               height="14"
@@ -266,7 +268,7 @@ export function ModSettings({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <div className="ms-body">
-          <nav className="ms-side" aria-label="Settings sections" data-sfx-own="">
+          <nav className="ms-side" aria-label={t("Settings sections")} data-sfx-own="">
             {sections.map((entry, index) => (
               <div
                 key={entry.name}
@@ -276,7 +278,7 @@ export function ModSettings({ onClose }: { onClose: () => void }) {
                 data-picked={index === sectionIndex ? "" : undefined}
                 onClick={() => pick(index)}
               >
-                {entry.name}
+                {t(entry.name)}
               </div>
             ))}
           </nav>
@@ -300,7 +302,7 @@ export function ModSettings({ onClose }: { onClose: () => void }) {
       {menu ? (
         <ChromeMenu
           anchor={menu.anchor}
-          label="Font"
+          label={t("Font")}
           align="right"
           minWidth={150}
           entries={APP_FONTS.map((option) => ({
@@ -339,6 +341,7 @@ function SettingRow({
   onSet: (row: Row, index: number, anchor?: HTMLElement) => void;
   dragRef: React.MutableRefObject<string | undefined>;
 }) {
+  const t = useT();
   const last = row.names.length - 1;
   let control: ReactNode;
   if (row.kind === "switch") {
@@ -347,7 +350,7 @@ function SettingRow({
         className="ms-switch"
         role="switch"
         aria-checked={row.at === 1}
-        aria-label={row.label}
+        aria-label={t(row.label)}
         data-on={row.at === 1 ? "" : undefined}
       >
         <span className="ms-knob" />
@@ -363,7 +366,7 @@ function SettingRow({
           max={last}
           step={1}
           value={Math.max(0, row.at)}
-          aria-label={row.label}
+          aria-label={t(row.label)}
           onPointerDown={() => (dragRef.current = row.label)}
           onPointerUp={() => (dragRef.current = undefined)}
           onChange={(event) => {
@@ -371,7 +374,7 @@ function SettingRow({
             onSet(row, value);
           }}
         />
-        <span className="ms-value">{row.names[Math.max(0, row.at)]}</span>
+        <span className="ms-value">{t(row.names[Math.max(0, row.at)])}</span>
       </span>
     );
   } else {
@@ -379,7 +382,7 @@ function SettingRow({
       <span
         className="ms-choices"
         role={row.kind === "choice" ? "radiogroup" : "group"}
-        aria-label={row.label}
+        aria-label={t(row.label)}
       >
         {row.names.map((name, index) => (
           <span
@@ -394,7 +397,7 @@ function SettingRow({
               onSet(row, index, event.currentTarget);
             }}
           >
-            {name}
+            {t(name)}
           </span>
         ))}
       </span>
@@ -421,10 +424,10 @@ function SettingRow({
     >
       <span className="ms-text">
         <span className="ms-name">
-          <span className="ms-label">{row.label}</span>
-          {row.hint ? <span className="ms-hint">{row.hint}</span> : null}
+          <span className="ms-label">{t(row.label)}</span>
+          {row.hint ? <span className="ms-hint">{t(row.hint)}</span> : null}
         </span>
-        {row.about ? <span className="ms-about">{row.about}</span> : null}
+        {row.about ? <span className="ms-about">{t(row.about)}</span> : null}
       </span>
       <span className="ms-spacer" />
       {control}

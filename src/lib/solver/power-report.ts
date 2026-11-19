@@ -34,6 +34,7 @@ import {
   isMultiblockRecipe,
 } from "./power";
 import { getCropsNhStats, isIndustrialApiaryMachineType } from "@/lib/model/passive-production";
+import { t } from "@/lib/i18n/core";
 import { selectRuntimeCalculationVariant } from "./runtime-calculation";
 
 type VoltageTier = Exclude<MachineTier, "DEMO">;
@@ -136,12 +137,12 @@ export function getNodePowerReport(recipe: Recipe, node: PowerReportNode): NodeP
   const behaviour = getMachineBehaviour(effectiveRecipe.machineType);
   const voltageLimit = behaviour?.inputVoltageTierLimit?.(node.machineConfigTiers ?? {});
   const casingGateReason = voltageLimit !== undefined && getVoltageTierIndex(getVoltageTierForEuT(rawEuT)) > voltageLimit
-    ? "Machine casing voltage is too low for this recipe. Select a higher machine casing; UHV casings remove the limit."
+    ? t("Machine casing voltage is too low for this recipe. Select a higher machine casing; UHV casings remove the limit.")
     : undefined;
   const fusion = getFusionStats(effectiveRecipe);
   const fusionGateReason = fusion && !fusion.eligible
-    ? fusion.recipeMark === undefined ? "Fusion startup metadata is unavailable for this recipe."
-      : `This recipe requires a Mk-${fusion.recipeMark} fusion reactor or higher.`
+    ? fusion.recipeMark === undefined ? t("Fusion startup metadata is unavailable for this recipe.")
+      : t("This recipe requires a Mk-{mark} fusion reactor or higher.", { mark: fusion.recipeMark })
     : undefined;
   const recipeGateReason = fusionGateReason ?? behaviour?.recipeGate?.(
     buildMachineContext(effectiveRecipe, node),
@@ -303,21 +304,23 @@ export function describePowerStall(report: NodePowerReport): string | undefined 
   if (report.recipeGateReason) return report.recipeGateReason;
   if (report.state === "under-powered") {
     if (report.typedBudget) {
-      return `Needs ${report.singleDrawEuT} EU/t. Supplied ${formatBudget(report.poolEuT)}.`;
+      return t("Needs {draw} EU/t. Supplied {budget}.", { draw: report.singleDrawEuT, budget: formatBudget(report.poolEuT) });
     }
     const supply = report.hatchTypeLabel
-      ? `the ${report.tier} ${report.hatchTypeLabel} supplies`
-      : `${report.hatches}x ${report.tier} ${report.hatches === 1 ? "hatch supplies" : "hatches supply"}`;
-    return (
-      `Underpowered: the recipe draws ${report.singleDrawEuT} EU/t but ` +
-      `${supply} ${report.poolEuT} EU/t. Add amperage or raise the tier.`
-    );
+      ? t("the {tier} {hatch} supplies", { tier: report.tier, hatch: report.hatchTypeLabel })
+      : report.hatches === 1
+        ? t("{count}x {tier} hatch supplies", { count: report.hatches, tier: report.tier })
+        : t("{count}x {tier} hatches supply", { count: report.hatches, tier: report.tier });
+    return t("Underpowered: the recipe draws {draw} EU/t but {supply} {pool} EU/t. Add amperage or raise the tier.", {
+      draw: report.singleDrawEuT,
+      supply,
+      pool: report.poolEuT,
+    });
   }
   if (report.state === "over-tier") {
-    return (
-      `Won't run at ${report.tier}: this recipe needs at least ` +
-      `${report.minimumTier}${report.isMultiblock ? " hatches (amps cannot skip more than one tier)" : ""}.`
-    );
+    return report.isMultiblock
+      ? t("Won't run at {tier}: this recipe needs at least {minimum} hatches (amps cannot skip more than one tier).", { tier: report.tier, minimum: report.minimumTier })
+      : t("Won't run at {tier}: this recipe needs at least {minimum}.", { tier: report.tier, minimum: report.minimumTier });
   }
   return undefined;
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 
 /**
  * "What makes it" / "What uses it" for touch (a mouse uses its two buttons, a
@@ -185,6 +186,7 @@ function BrowseMenu({
 }) {
   // Wide enough for "What makes it" on one line in this font: wrapped over two, a
   // button stops looking like a button.
+  const t = useT();
   const width = 208;
   // Shell pixels: the menu is a body portal wearing .ui-zoom, so its left/top
   // and width are shell pixels, and the pointer and window (real pixels) come
@@ -307,7 +309,7 @@ function BrowseMenu({
           onClick={() => pick("recipes")}
           className={itemClass("recipes")}
         >
-          What makes it
+          {t("What makes it")}
         </button>
         <button
           type="button"
@@ -315,7 +317,7 @@ function BrowseMenu({
           onClick={() => pick("uses")}
           className={itemClass("uses")}
         >
-          What uses it
+          {t("What uses it")}
         </button>
         </div>
       </div>

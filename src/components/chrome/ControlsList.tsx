@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { useDeviceSettings } from "@/lib/device-settings";
 import { useDropdownDismiss } from "@/lib/hooks/use-dropdown-dismiss";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 
 /** The wheel's row; with "Scroll changes values" off the wheel only zooms. */
 const WHEEL_ROW = "Zoom; over a value, change it";
@@ -38,6 +39,7 @@ export const CONTROLS: ReadonlyArray<readonly [string, string]> = [
 export function ControlsList({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollChangesValues } = useDeviceSettings();
+  const t = useT();
   useDropdownDismiss(true, { refs: [ref], onClose, insideSelector: "[data-menu-anchor]" });
   useEffect(() => ref.current?.focus(), []);
   // Hung from the Help key's right edge, as its menu is: the items column sits at the window's right edge now, and a
@@ -49,19 +51,19 @@ export function ControlsList({ onClose }: { onClose: () => void }) {
     <div
       ref={ref}
       role="dialog"
-      aria-label="How the board works"
+      aria-label={t("How the board works")}
       tabIndex={-1}
       className="mm mc-controls ui-zoom nodrag nowheel"
       style={{ top: 24, right }}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <div className="mm-title">HOW THE BOARD WORKS</div>
+      <div className="mm-title">{t("HOW THE BOARD WORKS")}</div>
       <div className="mc-controls-grid">
         {CONTROLS.map(([gesture, effect]) => (
           <div key={gesture} className="mc-controls-row">
-            <span className="mc-controls-key">{gesture}</span>
+            <span className="mc-controls-key">{t(gesture)}</span>
             <span className="mc-controls-effect">
-              {effect === WHEEL_ROW && !scrollChangesValues ? "Zoom" : effect}
+              {t(effect === WHEEL_ROW && !scrollChangesValues ? "Zoom" : effect)}
             </span>
           </div>
         ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n";
 import type { LivePerson } from "@/lib/live/protocol";
 import { useLiveSession, type LiveStatus } from "@/store/live-session";
 
@@ -61,6 +62,7 @@ export function Face({
 
 /** Faces of whoever else has the open live plan open: one per account. */
 export function LiveFaces({ max = 5 }: { max?: number }) {
+  const t = useT();
   const present = useLiveSession((state) => state.present);
   const status = useLiveSession((state) => state.status);
   if (status === "off" || present.length === 0) {
@@ -72,14 +74,14 @@ export function LiveFaces({ max = 5 }: { max?: number }) {
     <div
       data-live-faces
       className="flex shrink-0 items-center -space-x-1.5"
-      aria-label={`Here now: ${present.map((person) => person.username).join(", ")}`}
+      aria-label={t("Here now: {names}", { names: present.map((person) => person.username).join(", ") })}
     >
       {shown.map((person: LivePerson) => (
         <Face
           key={person.id}
           username={person.username}
           color={person.color}
-          title={person.client === "game" ? `${person.username} (in game)` : person.username}
+          title={person.client === "game" ? t("{name} (in game)", { name: person.username }) : person.username}
         />
       ))}
       {more > 0 ? (
@@ -111,6 +113,7 @@ const STATUS_DOT: Record<Exclude<LiveStatus, "off">, string> = {
 
 /** Whether the open plan is live: edits saved as you make them, or waiting for the connection. */
 export function LiveStatusChip() {
+  const t = useT();
   const status = useLiveSession((state) => state.status);
   const pending = useLiveSession((state) => state.pending);
   if (status === "off") {
@@ -119,10 +122,10 @@ export function LiveStatusChip() {
   const waiting = status !== "live" && pending > 0;
   const title =
     status === "live"
-      ? "Live: every edit is saved as you make it."
+      ? t("Live: every edit is saved as you make it.")
       : status === "connecting"
-        ? "Connecting to the live plan."
-        : "Offline: your edits are kept here and go when the connection is back.";
+        ? t("Connecting to the live plan.")
+        : t("Offline: your edits are kept here and go when the connection is back.");
   return (
     <span
       data-live-status={status}
@@ -131,8 +134,8 @@ export function LiveStatusChip() {
     >
       <span aria-hidden className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} />
       <span>
-        {STATUS_LABEL[status]}
-        {waiting ? ` (${pending} waiting)` : ""}
+        {t(STATUS_LABEL[status])}
+        {waiting ? t(" ({count} waiting)", { count: pending }) : ""}
       </span>
     </span>
   );

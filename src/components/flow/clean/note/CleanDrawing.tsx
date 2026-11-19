@@ -2,6 +2,7 @@
 
 import { NodeResizer, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
 import { memo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { t } from "@/lib/i18n";
 import { ANNOTATION_MIN_BOX, BOARD_GRID } from "@/lib/board-grid";
 import type { FactoryAnnotation } from "@/lib/model/types";
 import { useFactoryStore } from "@/store/factory-store";
@@ -213,13 +214,13 @@ function Arrow({ annotation, color }: { annotation: FactoryAnnotation; color: st
       </svg>
       <div
         className="dw-end nodrag nopan"
-        aria-label="Arrow tail"
+        aria-label={t("Arrow tail")}
         style={{ left: from.x, top: from.y }}
         onPointerDown={grab("from")}
       />
       <div
         className="dw-end nodrag nopan"
-        aria-label="Arrow head"
+        aria-label={t("Arrow head")}
         style={{ left: to.x, top: to.y }}
         onPointerDown={grab("to")}
       />

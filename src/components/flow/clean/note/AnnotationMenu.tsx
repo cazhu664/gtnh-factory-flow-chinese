@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { BoardMenu, MenuLine, MenuRow } from "../menus/BoardMenu";
 import { GT_NODE_COLORS } from "../../node-colors";
 import type { FactoryAnnotation, FactoryNodeColorTag } from "@/lib/model/types";
@@ -29,6 +30,7 @@ export function AnnotationMenu({
   onClose: () => void;
 }) {
   const [view, setView] = useState<View>("main");
+  const t = useT();
   const patch = (change: Partial<FactoryAnnotation>) => () => {
     useFactoryStore.getState().updateAnnotation(annotation.id, change);
     onClose();
@@ -38,14 +40,14 @@ export function AnnotationMenu({
   const arrow = annotation.kind === "arrow";
   const arrowLook = arrowStyle(annotation);
   const thick = Math.round(arrowLook.width);
-  const word = (s: string) => s[0].toUpperCase() + s.slice(1);
+  const word = (s: string) => t(s[0].toUpperCase() + s.slice(1));
 
   if (view === "colour") {
     const current = annotation.colorTag ?? "yellow";
     return (
-      <BoardMenu x={x} y={y} label="Colour" title="Colour" onClose={onClose}>
+      <BoardMenu x={x} y={y} label={t("Colour")} title={t("Colour")} onClose={onClose}>
         {NOTE_COLOR_MENU.map(([tag, name]) => (
-          <MenuRow key={tag} label={name} swatch={GT_NODE_COLORS[tag]?.swatch} checked={tag === current} onClick={patch(recolour(annotation, tag))} />
+          <MenuRow key={tag} label={t(name)} swatch={GT_NODE_COLORS[tag]?.swatch} checked={tag === current} onClick={patch(recolour(annotation, tag))} />
         ))}
       </BoardMenu>
     );
@@ -75,13 +77,13 @@ export function AnnotationMenu({
           : null}
         {view === "thickness"
           ? ([[1, "Thin"], [2, "Normal"], [4, "Thick"]] as const).map(([value, name]) => (
-              <MenuRow key={value} label={name} checked={thick === value} onClick={patch({ arrowWidth: value })} />
+              <MenuRow key={value} label={t(name)} checked={thick === value} onClick={patch({ arrowWidth: value })} />
             ))
           : null}
         {view === "heads" ? (
           <>
-            <MenuRow label="One end" checked={!arrowLook.both} onClick={patch({ arrowHeads: "end" })} />
-            <MenuRow label="Both ends" checked={arrowLook.both} onClick={patch({ arrowHeads: "both" })} />
+            <MenuRow label={t("One end")} checked={!arrowLook.both} onClick={patch({ arrowHeads: "end" })} />
+            <MenuRow label={t("Both ends")} checked={arrowLook.both} onClick={patch({ arrowHeads: "both" })} />
           </>
         ) : null}
       </BoardMenu>
@@ -89,23 +91,23 @@ export function AnnotationMenu({
   }
 
   return (
-    <BoardMenu x={x} y={y} label={arrow ? "Arrow" : "Box"} onClose={onClose}>
-      <MenuRow label="Colour..." onClick={() => setView("colour")} />
+    <BoardMenu x={x} y={y} label={arrow ? t("Arrow") : t("Box")} onClose={onClose}>
+      <MenuRow label={t("Colour...")} onClick={() => setView("colour")} />
       {arrow ? (
         <>
-          <MenuRow label="Thickness..." onClick={() => setView("thickness")} />
-          <MenuRow label="Heads..." onClick={() => setView("heads")} />
+          <MenuRow label={t("Thickness...")} onClick={() => setView("thickness")} />
+          <MenuRow label={t("Heads...")} onClick={() => setView("heads")} />
         </>
       ) : (
         <>
-          <MenuRow label="Fill..." onClick={() => setView("fill")} />
-          <MenuRow label="Border..." onClick={() => setView("border")} />
-          <MenuRow label="Marks..." onClick={() => setView("marks")} />
+          <MenuRow label={t("Fill...")} onClick={() => setView("fill")} />
+          <MenuRow label={t("Border...")} onClick={() => setView("border")} />
+          <MenuRow label={t("Marks...")} onClick={() => setView("marks")} />
         </>
       )}
       <MenuLine />
       <MenuRow
-        label={arrow ? "Delete arrow" : annotation.kind === "zone" ? "Delete zone" : "Delete box"}
+        label={arrow ? t("Delete arrow") : annotation.kind === "zone" ? t("Delete zone") : t("Delete box")}
         danger
         onClick={() => {
           useFactoryStore.getState().deleteAnnotation(annotation.id);

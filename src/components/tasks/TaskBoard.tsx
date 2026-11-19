@@ -26,6 +26,7 @@ import { byOrder } from "@/lib/tasks/order-key";
 import { selectTask, useTaskBoardUi, useTaskView } from "@/lib/tasks/task-board-ui";
 import { startTaskLinkIndex } from "@/lib/tasks/task-link-index";
 import { TASK_STATUS_COLOR } from "@/lib/tasks/task-links";
+import { useT } from "@/lib/i18n";
 import { useDesignStore } from "@/store/design-store";
 import { useFactoryStore } from "@/store/factory-store";
 import { TaskBox } from "./TaskBox";
@@ -101,6 +102,7 @@ interface Carry {
 }
 
 function Columns({ onMake }: { onMake: (status: PlanTaskStatus) => void }) {
+  const t = useT();
   const tasks = useFactoryStore((state) => state.project.tasks);
   const items = useFactoryStore((state) => state.project.taskItems);
   const comments = useFactoryStore((state) => state.project.taskComments);
@@ -235,14 +237,14 @@ function Columns({ onMake }: { onMake: (status: PlanTaskStatus) => void }) {
   const carried = carry ? (tasks ?? []).find((task) => task.id === carry.id) : undefined;
 
   const menuEntries = (task: PlanTask): MenuEntry[] => [
-    { label: "Open", onSelect: () => selectTask(task.id) },
+    { label: t("Open"), onSelect: () => selectTask(task.id) },
     ...TASK_STATUSES.filter((status) => status !== task.status).map((status) => ({
-      label: `Move to ${TASK_STATUS_LABEL[status]}`,
+      label: `${t("Move to")} ${t(TASK_STATUS_LABEL[status])}`,
       disabled: isReadOnly,
       onSelect: () => editTasks((project) => moveTaskTo(project, task.id, status)),
     })),
     {
-      label: "Delete task",
+      label: t("Delete task"),
       tone: "red" as const,
       ruleAbove: true,
       disabled: isReadOnly,
@@ -261,15 +263,15 @@ function Columns({ onMake }: { onMake: (status: PlanTaskStatus) => void }) {
           <section key={status} className="tb-col" data-task-column={status}>
             <header className="tb-col-head">
               <StatusDot status={status} />
-              <span className="tb-col-name">{label}</span>
+              <span className="tb-col-name">{t(label)}</span>
               <span className="tb-col-count">{list.length}</span>
               {isReadOnly ? null : (
                 <button
                   type="button"
                   className="tb-add"
-                  aria-label={`Add a task to ${label}`}
+                  aria-label={t("Add a task to {column}", { column: t(label) })}
                   data-task-add={status}
-                  {...tipAttrs({ id: `task-add|${status}`, title: `Add a task to ${label}` })}
+                  {...tipAttrs({ id: `task-add|${status}`, title: t("Add a task to {column}", { column: t(label) }) })}
                   onClick={() => onMake(status)}
                 />
               )}
@@ -304,9 +306,9 @@ function Columns({ onMake }: { onMake: (status: PlanTaskStatus) => void }) {
               ) : null}
               {empty && status === TASK_STATUSES[0] ? (
                 <div className="tb-empty" data-task-empty="">
-                  <p>No tasks yet.</p>
-                  <p>Press + to add one.</p>
-                  <p>Or add a card from its menu.</p>
+                  <p>{t("No tasks yet.")}</p>
+                  <p>{t("Press + to add one.")}</p>
+                  <p>{t("Or add a card from its menu.")}</p>
                 </div>
               ) : null}
             </div>
@@ -328,7 +330,7 @@ function Columns({ onMake }: { onMake: (status: PlanTaskStatus) => void }) {
         <ChromeMenu
           anchor={menu.anchor}
           entries={menuEntries(menu.task)}
-          label="Task"
+          label={t("Task")}
           minWidth={120}
           onClose={() => setMenu(undefined)}
         />
@@ -371,6 +373,7 @@ const TaskCard = memo(function TaskCard({
   onOpen: () => void;
   onMenu: (anchor: ChromeAnchor) => void;
 }) {
+  const t = useT();
   const assignees = task.assignees ?? [];
   const counts = facts?.counts;
   const priority = shownPriority(task);
@@ -399,11 +402,11 @@ const TaskCard = memo(function TaskCard({
             id: `task|${task.id}`,
             title: task.title,
             sub: inColumnText(task),
-            rows: [{ label: "Priority", value: TASK_PRIORITY_LABEL[priority] }],
+            rows: [{ label: t("Priority"), value: t(TASK_PRIORITY_LABEL[priority]) }],
             actions: [
-              { input: "left", label: "Open it" },
-              { input: "drag", label: "Move it" },
-              { input: "right", label: "More" },
+              { input: "left", label: t("Open it") },
+              { input: "drag", label: t("Move it") },
+              { input: "right", label: t("More") },
             ],
           }))}
       onPointerDown={onPress}

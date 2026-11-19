@@ -3,6 +3,7 @@
 import { Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useIsCompactViewport } from "@/lib/compact-view";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 import { ItemPickerPopover } from "@/components/ItemPickerPopover";
 import { parseEuT } from "@/lib/community/eu-shorthand";
 import { parsePlanSearch, withTag } from "@/lib/community/search-query";
@@ -116,6 +117,7 @@ export function SetupsFilterBar({
     setMakes,
     setTakes,
   } = filters;
+  const t = useT();
   const [picking, setPicking] = useState<"makes" | "takes">();
   const [searchFocused, setSearchFocused] = useState(false);
   // On a phone everything but the search folds behind one key, which
@@ -203,7 +205,7 @@ export function SetupsFilterBar({
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                aria-label="Clear search"
+                aria-label={t("Clear search")}
                 className="text-[var(--mc-ink-muted)] hover:text-[var(--mc-ink)]"
               >
                 <X className="h-3.5 w-3.5" />
@@ -241,7 +243,7 @@ export function SetupsFilterBar({
             ].join(" ")}
           >
             <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
-            Filters
+            {t("Filters")}
             {inForce > 0 ? <span className="tabular-nums">{inForce}</span> : null}
           </button>
         ) : null}
@@ -261,7 +263,7 @@ export function SetupsFilterBar({
               }}
               className="h-3 w-3 accent-cyan-400"
             />
-            My posts
+            {t("My posts")}
           </label>
         ) : null}
         {showFilters ? (
@@ -269,19 +271,19 @@ export function SetupsFilterBar({
             {/* Unfolded on a phone, the boxes take a row of their own. */}
             <div className="hidden basis-full compact:block" />
             <label
-              title="Leave out anything that draws more than this. Shorthand works: 512, 14.3k, 2M, 1.5G"
+              title={t("Leave out anything that draws more than this. Shorthand works: 512, 14.3k, 2M, 1.5G")}
               className={[
                 `flex h-7 w-[118px] shrink-0 items-center gap-1 px-2 text-xs compact:w-auto compact:min-w-0 compact:flex-1 ${INSET}`,
                 maxEuText && maxEuT === undefined ? "!text-red-300" : "",
               ].join(" ")}
             >
-              <span className="shrink-0 text-[var(--mc-ink-muted)]">EU/t ≤</span>
+              <span className="shrink-0 text-[var(--mc-ink-muted)]">{t("EU/t ≤")}</span>
               <input
                 value={maxEuText}
                 onChange={(event) => setMaxEuText(event.target.value)}
                 onBlur={() => playBoardSound("shelfTick")}
-                placeholder="any"
-                aria-label="Highest EU/t to show"
+                placeholder={t("any")}
+                aria-label={t("Highest EU/t to show")}
                 className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--mc-ink-muted)]"
               />
             </label>
@@ -291,13 +293,13 @@ export function SetupsFilterBar({
                 playBoardSound("shelfTick");
                 setMaxTier(event.target.value);
               }}
-              aria-label="Highest power tier"
+              aria-label={t("Highest power tier")}
               className={`h-7 shrink-0 px-1 text-xs outline-none compact:min-w-0 compact:flex-1 ${INSET}`}
             >
-              <option value="">Any tier</option>
+              <option value="">{t("Any tier")}</option>
               {GT_VOLTAGE_TIERS.map((entry, index) => (
                 <option key={entry.tier} value={String(index)}>
-                  Up to {entry.tier}
+                  {t("Up to {tier}", { tier: entry.tier })}
                 </option>
               ))}
             </select>
@@ -307,7 +309,7 @@ export function SetupsFilterBar({
                 playBoardSound("shelfTick");
                 setSort(event.target.value);
               }}
-              aria-label="Sort"
+              aria-label={t("Sort")}
               className={`h-7 shrink-0 px-1 text-xs outline-none compact:min-w-0 compact:flex-1 ${INSET}`}
             >
               {sortOptions.map((option) => (
@@ -322,18 +324,18 @@ export function SetupsFilterBar({
       {itemFilter && showFilters ? (
         <div className="flex min-h-9 flex-wrap items-center gap-2 border-t border-[var(--mc-33)]/60 bg-[#0c0e11] px-4 py-1 compact:gap-1.5 compact:px-2">
           <span className="mr-1 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mc-ink-muted)]">
-            Item filter
+            {t("Item filter")}
           </span>
           {(["makes", "takes"] as const).map((side) => (
             <div key={side} className="relative flex shrink-0 items-center gap-1">
               <button
                 type="button"
                 onClick={() => setPicking(picking === side ? undefined : side)}
-                title={side === "makes" ? "Only what makes this" : "Only what takes this"}
+                title={side === "makes" ? t("Only what makes this") : t("Only what takes this")}
                 className="flex h-7 items-center gap-1 border-2 border-[var(--mc-33)] bg-[var(--mc-61)] px-2 text-xs font-bold text-[var(--mc-ink)] shadow-[inset_1px_1px_0_var(--mc-85)] hover:bg-[var(--mc-85)]"
               >
                 <Plus className="h-3 w-3" aria-hidden />
-                {side === "makes" ? "Makes" : "Takes"}
+                {side === "makes" ? t("Makes") : t("Takes")}
               </button>
               {picking === side ? (
                 // The recipe search's own picker, opened downward from the key.
@@ -368,7 +370,7 @@ export function SetupsFilterBar({
                 >
                   <Face icon={resource} size={18} />
                   <span className="max-w-[120px] truncate">
-                    {resource.displayName ?? resource.resourceId}
+                    {datasetNameLabel(resource.displayName ?? resource.resourceId)}
                   </span>
                   <button
                     type="button"
@@ -378,8 +380,10 @@ export function SetupsFilterBar({
                         list.filter((entry) => entry.resourceId !== resource.resourceId),
                       );
                     }}
-                    aria-label={`Stop filtering by ${resource.displayName ?? resource.resourceId}`}
-                    title="Remove"
+                    aria-label={t("Stop filtering by {name}", {
+                      name: datasetNameLabel(resource.displayName ?? resource.resourceId),
+                    })}
+                    title={t("Remove")}
                     className="text-[var(--mc-ink-muted)] hover:text-[var(--mc-ink)]"
                   >
                     <X className="h-3 w-3" aria-hidden />

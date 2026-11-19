@@ -20,6 +20,7 @@ import { sectionOwnerId } from "@/lib/model/shared-machine";
 import { getInputSupplyHatch, isHatchSuppliedInput } from "@/lib/model/hatch-supply";
 import { getSetupRules, type ResolvedSetupRules } from "@/lib/model/setup-rules";
 import { energyPerUnit } from "@/lib/model/rate-unit";
+import { datasetNameLabel, t } from "@/lib/i18n";
 
 type ProjectEdge = FactoryProject["edges"][number];
 
@@ -625,7 +626,7 @@ function takerDisplayName(
   if (recipe?.name && sectionOwnerId(takerId) === sectionOwnerId(askerId)) {
     const colon = recipe.name.lastIndexOf(": ");
     const product = colon >= 0 ? recipe.name.slice(colon + 2) : recipe.name;
-    return `The ${product} recipe on this machine`;
+    return t("The {product} recipe on this machine", { product });
   }
   return recipe?.machineType ?? recipe?.name ?? fallback;
 }
@@ -1805,12 +1806,12 @@ export function buildRailPorts(
   const machineNameOf = (id: string): string => {
     const node = nodesById.get(id);
     const recipe = node ? recipesById.get(node.recipeId) : undefined;
-    return recipe?.machineType ?? recipe?.name ?? "Machine";
+    return recipe?.machineType ?? recipe?.name ?? t("Machine");
   };
   const storageRoles = getStorageRoles(project);
   const storageNameOf = (id: string): string => {
     const storage = storagesById.get(id);
-    return storage ? describeStorage(storage, storageRoles.get(id)) : "Drawer";
+    return storage ? describeStorage(storage, storageRoles.get(id)) : t("Drawer");
   };
   const rules = getSetupRules(project);
   const buildSide = (side: "input" | "output"): RailPort[] => {
@@ -1996,16 +1997,16 @@ export function buildRailPorts(
             machineTargets.size === 1 && relayTargets.size === 0
               ? machineNameOf([...machineTargets][0]!)
               : machineTargets.size === 0 && relayTargets.size === 1
-                ? `via ${storageNameOf([...relayTargets][0]!)}`
+                ? t("via {name}", { name: storageNameOf([...relayTargets][0]!) })
                 : demanders > 0
-                  ? `${demanders} takers`
+                  ? t("{count} takers", { count: demanders })
                   : trashTargets.size > 0 && dumpTargets.size === 0
                     ? trashTargets.size === 1
-                      ? "Trash Can"
-                      : `${trashTargets.size} trash cans`
+                      ? t("Trash Can")
+                      : t("{count} trash cans", { count: trashTargets.size })
                     : dumpTargets.size === 1 && trashTargets.size === 0
                       ? storageNameOf([...dumpTargets][0]!)
-                      : `${dumpTargets.size + trashTargets.size} dead ends`,
+                      : t("{count} dead ends", { count: dumpTargets.size + trashTargets.size }),
           askerMachines: machineTargets.size,
           askPerSecond: ask,
           getPerSecond: get,
@@ -2025,7 +2026,7 @@ export function buildRailPorts(
           && isHatchSuppliedInput(hatchRecipe, hatchNode, { kind, id: resourceId })),
         displayName: isOreDictionaryResource({ id: resourceId })
           ? resourceLabel(slot ?? { id: resourceId })
-          : displayName ?? resource?.displayName ?? resourceId,
+          : datasetNameLabel(displayName ?? resource?.displayName ?? resourceId),
         handleId: handleFor(side, { kind, id: resourceId }),
         resource,
         connected,
@@ -2088,7 +2089,7 @@ export function buildRailPorts(
           key,
           kind: resource.kind,
           resourceId: resource.id,
-          displayName: resource.displayName ?? resource.id,
+          displayName: datasetNameLabel(resource.displayName ?? resource.id),
           handleId: handleFor(side, { kind: resource.kind, id: resource.id }),
           resource,
           connected: false,

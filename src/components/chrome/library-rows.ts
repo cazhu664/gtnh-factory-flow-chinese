@@ -1,5 +1,6 @@
 import type { ShareMode } from "@/components/community/SharePlanDialog";
 import { isLiveConfigured } from "@/lib/live/live-config";
+import { t } from "@/lib/i18n";
 import type { MenuEntry } from "./ChromeMenu";
 
 /**
@@ -18,12 +19,12 @@ export function libraryRows(
   if (!linked) {
     return [
       isLiveConfigured()
-        ? { label: "Post a copy to Community...", detail: "a copy for everyone", onSelect: () => open("save"), disabled: options.disabled }
-        : { label: "Post a copy to Community...", detail: "for other players", onSelect: () => open("save"), disabled: options.disabled },
+        ? { label: t("Post a copy to Community..."), detail: t("a copy for everyone"), onSelect: () => open("save"), disabled: options.disabled }
+        : { label: t("Post a copy to Community..."), detail: t("for other players"), onSelect: () => open("save"), disabled: options.disabled },
     ];
   }
   return [
-    { label: "Update in Community...", detail: "with the plan as it is", onSelect: () => open("update"), disabled: options.disabled },
-    { label: "Post a new copy to Community...", detail: "a post of its own", onSelect: () => open("new"), disabled: options.disabled },
+    { label: t("Update in Community..."), detail: t("with the plan as it is"), onSelect: () => open("update"), disabled: options.disabled },
+    { label: t("Post a new copy to Community..."), detail: t("a post of its own"), onSelect: () => open("new"), disabled: options.disabled },
   ];
 }

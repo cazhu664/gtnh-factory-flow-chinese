@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, Search, X, Zap } from "lucide-react";
 import { useIsCompactViewport } from "@/lib/compact-view";
+import { useT } from "@/lib/i18n";
 import { getUiScale } from "@/lib/ui-scale";
 import { useWorkspaceView } from "@/lib/workspace-view";
 import { getPowerMachineIcon } from "@/lib/power/planner-data";
@@ -36,6 +37,7 @@ const TIER_FILTER_OPTIONS = GT_VOLTAGE_TIERS.map((entry) => entry.tier).filter((
 );
 
 export function PowerSourceOverlay() {
+  const t = useT();
   const open = useFactoryStore((state) => state.powerMenuOpen);
   const closePowerMenu = useFactoryStore((state) => state.closePowerMenu);
   const addPowerSourceNode = useFactoryStore((state) => state.addPowerSourceNode);
@@ -93,8 +95,8 @@ export function PowerSourceOverlay() {
   const closeButton = (
     <button
       type="button"
-      title="Close (Esc)"
-      aria-label="Close power sources"
+      title={t("Close (Esc)")}
+      aria-label={t("Close power sources")}
       onClick={closePowerMenu}
       className={[
         "flex shrink-0 cursor-pointer items-center justify-center border-2 border-[var(--mc-33)] bg-[var(--mc-61)] hover:bg-[var(--mc-85)]",
@@ -121,7 +123,7 @@ export function PowerSourceOverlay() {
     >
       <section
         className="pointer-events-auto relative flex flex-col font-mono"
-        aria-label="Power sources"
+        aria-label={t("Power sources")}
         style={{
           // Browsing is five columns at most, so past their reach the panel
           // stops and centers instead of trailing a bare right half; a
@@ -147,7 +149,7 @@ export function PowerSourceOverlay() {
           >
             <div className={compact ? "flex items-center gap-2" : "contents"}>
               <Zap className="h-4 w-4 shrink-0 text-amber-300" aria-hidden />
-              <span className="shrink-0 text-sm uppercase tracking-wide">Power sources</span>
+              <span className="shrink-0 text-sm uppercase tracking-wide">{t("Power sources")}</span>
               {compact ? closeButton : null}
             </div>
             <div className={compact ? "flex items-center gap-2" : "contents"}>
@@ -157,38 +159,38 @@ export function PowerSourceOverlay() {
                   autoFocus={!compact}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Machine, fuel, or product..."
+                  placeholder={t("Machine, fuel, or product...")}
                   className="h-9 w-full border-2 border-[var(--mc-33)] bg-[var(--mc-61)] pl-7 pr-2 text-sm text-[var(--mc-ink)] placeholder:text-[var(--mc-ink)]/50 focus:outline-none"
                 />
               </label>
               <select
                 value={groupFilter}
                 onChange={(event) => setGroupFilter(event.target.value as PowerGroupId | "all")}
-                title="Power type"
-                aria-label="Power type"
+                title={t("Power type")}
+                aria-label={t("Power type")}
                 className={[
                   "h-9 shrink-0 border-2 border-[var(--mc-33)] bg-[#17191d] px-1.5 text-sm text-neutral-100 shadow-[inset_2px_2px_0_#30343b,inset_-2px_-2px_0_#050607] outline-none",
                   compact ? "w-28" : "w-36",
                 ].join(" ")}
               >
-                <option value="all">All types</option>
+                <option value="all">{t("All types")}</option>
                 {POWER_GROUPS.map((group) => (
                   <option key={group.id} value={group.id}>
-                    {group.name}
+                    {t(group.name)}
                   </option>
                 ))}
               </select>
               <select
                 value={tierFilter}
                 onChange={(event) => setTierFilter(event.target.value)}
-                title="Unlock tier"
-                aria-label="Unlock tier"
+                title={t("Unlock tier")}
+                aria-label={t("Unlock tier")}
                 className={[
                   "h-9 shrink-0 border-2 border-[var(--mc-33)] bg-[#17191d] px-1.5 text-sm text-neutral-100 shadow-[inset_2px_2px_0_#30343b,inset_-2px_-2px_0_#050607] outline-none",
                   compact ? "w-20" : "w-24",
                 ].join(" ")}
               >
-                <option value="all">All tiers</option>
+                <option value="all">{t("All tiers")}</option>
                 {TIER_FILTER_OPTIONS.map((tier) => (
                   <option key={tier} value={tier}>
                     {tier}
@@ -203,8 +205,7 @@ export function PowerSourceOverlay() {
             {searching ? (
               hits.length === 0 ? (
                 <p className="p-2 text-sm text-[var(--mc-ink)]/60">
-                  No power source matches. Machines are searched by name and by every fuel and
-                  product they can run on.
+                  {t("No power source matches. Machines are searched by name and by every fuel and product they can run on.")}
                 </p>
               ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] items-start gap-3">
@@ -251,7 +252,7 @@ export function PowerSourceOverlay() {
                             {/* The pixel face has one weight, so the half
                                 pixel of shadow is what bold means here. */}
                             <span className="truncate text-[16px] font-black uppercase leading-none text-amber-100 [text-shadow:0.5px_0_0_currentColor]">
-                              {group.name}
+                              {t(group.name)}
                             </span>
                             <span className="ml-auto text-[13px] font-black leading-none tabular-nums text-amber-100/60">
                               {groupHits.length}
@@ -314,6 +315,7 @@ function PowerSourceCard({
   hit: PowerSearchHit;
   onPlace: (hit: PowerSearchHit) => void;
 }) {
+  const t = useT();
   const { source, via } = hit;
   const structureArt = getPowerStructureArt(source.id);
   const icon = getPowerMachineIcon(source.id);
@@ -375,7 +377,7 @@ function PowerSourceCard({
             ) : (
               <ArrowLeft className="h-3 w-3 shrink-0" aria-hidden />
             )}
-            {via.direction === "takes" ? `Takes ${via.name}` : `Makes ${via.name}`}
+            {via.direction === "takes" ? t("Takes {name}", { name: via.name }) : t("Makes {name}", { name: via.name })}
           </span>
         ) : null}
       </span>

@@ -14,14 +14,16 @@ import type { Recipe, ResourceAmount } from "@/lib/model/types";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
 import { useFactoryStore } from "@/store/factory-store";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 
 // One list fetch per kind and dataset version, shared by every picker.
 const cachedLists = new Map<string, { versionId: string; recipes: RecipeSummary[] }>();
 
-/** "Crop Farm: Wheat" -> "Wheat": the part after the map's name. */
+/** "Crop Farm: Wheat" -> "Wheat": the part after the map's name, in 中文 when known. */
 export function recipeChoiceName(recipeName: string): string {
   const separator = recipeName.indexOf(": ");
-  return separator >= 0 ? recipeName.slice(separator + 2) : recipeName;
+  const name = separator >= 0 ? recipeName.slice(separator + 2) : recipeName;
+  return datasetNameLabel(name);
 }
 
 /** Below this much room above the card the list goes under the bar instead. */
@@ -66,6 +68,7 @@ export function RecipeListPicker({
   hover,
   dimmed,
 }: RecipeListPickerProps) {
+  const t = useT();
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
   const selectedDatasetVersionId = useFactoryStore((state) => state.selectedDatasetVersionId);
@@ -99,7 +102,7 @@ export function RecipeListPicker({
       })
       .catch((cause) => {
         if (!cancelled) {
-          setError(cause instanceof Error ? cause.message : `Could not load ${noun}.`);
+          setError(cause instanceof Error ? cause.message : t("Could not load {noun}.", { noun }));
         }
       })
       .finally(() => {
@@ -179,7 +182,7 @@ export function RecipeListPicker({
       onPick(recipe);
       onClose();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load the pick.");
+      setError(cause instanceof Error ? cause.message : t("Could not load the pick."));
     }
   };
 
@@ -206,13 +209,13 @@ export function RecipeListPicker({
             onClose();
           }
         }}
-        placeholder={`Search ${noun} or drops...`}
+        placeholder={t("Search {noun} or drops...", { noun })}
         className="mb-1 h-7 w-full border border-[var(--mc-33)] bg-[var(--mc-85)] px-2 text-[12px] font-bold text-[var(--mc-ink)] shadow-[inset_1px_1px_0_var(--mc-100),inset_-1px_-1px_0_var(--mc-54)] outline-none focus:border-cyan-700 focus:bg-[var(--mc-100)]"
-        aria-label={`Search ${noun}`}
+        aria-label={t("Search {noun}", { noun })}
       />
       {isLoading ? (
         <div className="flex items-center gap-2 px-2 py-3 text-[12px] font-bold text-[var(--mc-ink)]">
-          <LoaderCircle className="h-4 w-4 animate-spin" /> Loading {noun}...
+          <LoaderCircle className="h-4 w-4 animate-spin" /> {t("Loading {noun}...", { noun })}
         </div>
       ) : error ? (
         <div className="px-2 py-3 text-[12px] font-bold text-[var(--mc-bad)]">{error}</div>
@@ -270,7 +273,7 @@ export function RecipeListPicker({
           })}
           {filtered.length === 0 ? (
             <div className="col-span-5 px-2 py-3 text-[12px] font-bold text-[var(--mc-ink-muted)]">
-              No {noun} match.
+              {t("No {noun} match.", { noun })}
             </div>
           ) : null}
         </div>

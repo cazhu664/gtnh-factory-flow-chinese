@@ -10,6 +10,7 @@
  * Steam and gas flows are litres per TICK (the game's own tooltip unit);
  * plasma flows are litres per second.
  */
+import { t } from "@/lib/i18n/core";
 import {
   findFuel,
   findRotor,
@@ -200,7 +201,7 @@ function largeSteamRun(
       return idle(
         Math.floor(opt),
         eff,
-        "Rotor base efficiency is under 100%, so the SC turbine will not run it.",
+        t("Rotor base efficiency is under 100%, so the SC turbine will not run it."),
       );
     }
     const maxFlow = Math.min(INT_CAP, Math.floor(opt * 1.25));
@@ -294,7 +295,10 @@ function gasRun(
       maxFlow: 1,
       euPerTick,
       efficiency: baseEfficiency,
-      warning: `Rotor too weak for this fuel: it burns 1 L/t for ${xl ? "one rotor's " : ""}${formatAmount(euPerTick)} EU/t.`,
+      warning: t("Rotor too weak for this fuel: it burns 1 L/t for {rotor}{euT} EU/t.", {
+        rotor: xl ? "one rotor's " : "",
+        euT: formatAmount(euPerTick),
+      }),
     };
   }
   const perRotor = f32(f32(rotorFlow) / fuelEu);
@@ -303,7 +307,7 @@ function gasRun(
     return idle(
       0,
       eff,
-      "Optimal flow rounds down to 0 L/t on this fuel, so the turbine makes no power.",
+      t("Optimal flow rounds down to 0 L/t on this fuel, so the turbine makes no power."),
     );
   }
   const maxFlow = Math.min(
@@ -350,7 +354,7 @@ function plasmaRun(
     return idle(
       0,
       eff * derate,
-      "Optimal flow rounds down to 0 L/s on this plasma, so the turbine makes no power.",
+      t("Optimal flow rounds down to 0 L/s on this plasma, so the turbine makes no power."),
     );
   }
   const maxFlow = Math.min(
@@ -656,7 +660,9 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
         warnings.push(run.warning);
       } else if (wanted !== undefined && wanted > maxFlow) {
         warnings.push(
-          `Flow is capped at ${formatAmount(maxFlow)}; the turbine will not take more.`,
+          t("Flow is capped at {max}; the turbine will not take more.", {
+            max: formatAmount(maxFlow),
+          }),
         );
       }
 

@@ -11,6 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 import { useCommunityUser } from "@/components/community/auth";
 import { IconPicker, iconSuggestionsFromStats } from "@/components/IconPicker";
 import { formatRelativeDate } from "@/components/shelf-cards";
@@ -60,6 +61,7 @@ const SORTS: { value: SortKey; label: string }[] = [
 ];
 
 export function LibraryPage() {
+  const t = useT();
   const library = useLibraryTab();
   const everyDesign = useDesignStore((state) => state.designs);
   // Copies of plans shared with us live under Shared with me, not among ours.
@@ -291,7 +293,7 @@ export function LibraryPage() {
       }, 0);
       if (over === "new") {
         void (async () => {
-          const folder = await createFolder("New collection");
+          const folder = await createFolder(t("New collection"));
           for (const id of ids) {
             await moveDesignToFolder(id, folder.id);
           }
@@ -343,7 +345,7 @@ export function LibraryPage() {
       setCopiedId(design.id);
       window.setTimeout(() => setCopiedId((c) => (c === design.id ? undefined : c)), 1500);
     } catch {
-      window.prompt("Copy this link:", url);
+      window.prompt(t("Copy this link:"), url);
     }
   };
   const setPostVisibility = async (design: DesignSummary, isPublic: boolean) => {
@@ -354,7 +356,7 @@ export function LibraryPage() {
       await patchCommunityPlan(design.communityPlanId, { isPublic });
       notifySetupsChanged();
     } catch (thrown) {
-      setError(thrown instanceof Error ? thrown.message : "Changing visibility failed.");
+      setError(thrown instanceof Error ? thrown.message : t("Changing visibility failed."));
     }
   };
   /**
@@ -368,7 +370,7 @@ export function LibraryPage() {
         await deleteCommunityPlan(design.communityPlanId);
         notifySetupsChanged();
       } catch (thrown) {
-        setError(thrown instanceof Error ? thrown.message : "Taking the post down failed.");
+        setError(thrown instanceof Error ? thrown.message : t("Taking the post down failed."));
       }
     }
     await removeDesign(id);
@@ -402,7 +404,7 @@ export function LibraryPage() {
               onChange={(event) => {
                 const value = event.target.value;
                 if (value === "new") {
-                  const name = window.prompt("Name the collection");
+                  const name = window.prompt(t("Name the collection"));
                   if (name?.trim()) {
                     void createFolder(name).then((folder) =>
                       setLibraryView({ kind: "folder", folderId: folder.id }),
@@ -413,30 +415,32 @@ export function LibraryPage() {
                 playBoardSound("shelfTick");
                 setLibraryView(railView(value));
               }}
-              aria-label="Where in Plans"
+              aria-label={t("Where in Plans")}
               className="h-9 w-full border-2 border-[var(--mc-33)] bg-[#17191d] px-2 text-[13px] font-bold text-neutral-100 outline-none shadow-[inset_2px_2px_0_#30343b,inset_-2px_-2px_0_#050607]"
             >
-              <option value="all">My designs ({designs.length})</option>
+              <option value="all">{t("My designs ({count})", { count: designs.length })}</option>
               <option value="favorites">
-                Favorites ({designs.filter((design) => design.favorite).length})
+                {t("Favorites ({count})", { count: designs.filter((design) => design.favorite).length })}
               </option>
               {folders.map((folder) => (
                 <option key={folder.id} value={`folder:${folder.id}`}>
                   {folder.name} ({perFolder.get(folder.id) ?? 0})
                 </option>
               ))}
-              <option value="new">New collection…</option>
+              <option value="new">{t("New collection…")}</option>
               {showShared ? (
-                <option value="shared">Shared with me ({sharedCount ?? 0})</option>
+                <option value="shared">
+                  {t("Shared with me ({count})", { count: sharedCount ?? 0 })}
+                </option>
               ) : null}
-              <option value="public">Community</option>
-              <option value="saved">Saved ({savedIds.length})</option>
+              <option value="public">{t("Community")}</option>
+              <option value="saved">{t("Saved ({count})", { count: savedIds.length })}</option>
             </select>
           </div>
           <aside className="flex w-[184px] shrink-0 flex-col gap-1 overflow-y-auto bg-[#101215] px-2 py-2 compact:hidden">
             <RailItem
               icon={LayoutGrid}
-              label="My designs"
+              label={t("My designs")}
               count={designs.length}
               selected={library.view.kind === "all"}
               onClick={() => setLibraryView({ kind: "all" })}
@@ -445,7 +449,7 @@ export function LibraryPage() {
                 not a name, and cannot be deleted or renamed. */}
             <RailItem
               icon={Star}
-              label="Favorites"
+              label={t("Favorites")}
               nested
               count={designs.filter((design) => design.favorite).length}
               selected={library.view.kind === "favorites"}
@@ -482,7 +486,7 @@ export function LibraryPage() {
                 <Folder className="h-3.5 w-3.5 shrink-0 text-[var(--mc-ink-muted)]" aria-hidden />
                 <InlineName
                   initialName=""
-                  placeholder="Collection name"
+                  placeholder={t("Collection name")}
                   onCommit={(name) => {
                     setNamingFolder(false);
                     if (name.trim()) {
@@ -507,13 +511,13 @@ export function LibraryPage() {
               ].join(" ")}
             >
               <FolderPlus className="h-3.5 w-3.5" aria-hidden />
-              <span className="whitespace-nowrap text-[12px] font-bold">New collection</span>
+              <span className="whitespace-nowrap text-[12px] font-bold">{t("New collection")}</span>
             </button>
 
             {showShared ? (
               <RailItem
                 icon={Users}
-                label="Shared with me"
+                label={t("Shared with me")}
                 count={sharedCount}
                 selected={library.view.kind === "shared"}
                 onClick={() => setLibraryView({ kind: "shared" })}
@@ -523,13 +527,13 @@ export function LibraryPage() {
             <div className="mx-1 my-2 border-t-2 border-[#23262d] compact:mx-2 compact:my-0 compact:h-4 compact:border-l compact:border-t-0" />
             <RailItem
               icon={Factory}
-              label="Community"
+              label={t("Community")}
               selected={library.view.kind === "public"}
               onClick={() => setLibraryView({ kind: "public" })}
             />
             <RailItem
               icon={Bookmark}
-              label="Saved"
+              label={t("Saved")}
               nested
               count={savedIds.length}
               selected={library.view.kind === "saved"}
@@ -551,7 +555,7 @@ export function LibraryPage() {
                   name: detailDesign.name,
                   icon: detailDesign.icon,
                   creator: folders.find((folder) => folder.id === detailDesign.folderId)?.name,
-                  when: `edited ${formatRelativeDate(detailDesign.updatedAt)}`,
+                  when: t("edited {when}", { when: formatRelativeDate(detailDesign.updatedAt) }),
                   tier: detailDesign.stats?.tier,
                   machines: detailDesign.stats?.machines,
                   euT: detailDesign.stats?.euT,
@@ -567,7 +571,7 @@ export function LibraryPage() {
                   },
                   commentsPlanId: detailPost?.id,
                   primary: {
-                    label: "Open",
+                    label: t("Open"),
                     onClick: () => {
                       setDetailId(undefined);
                       open(detailDesign.id);
@@ -587,7 +591,7 @@ export function LibraryPage() {
                         });
                         notifySetupsChanged();
                       } catch (thrown) {
-                        setError(thrown instanceof Error ? thrown.message : "Saving the post failed.");
+                        setError(thrown instanceof Error ? thrown.message : t("Saving the post failed."));
                       }
                     }
                   },
@@ -597,12 +601,12 @@ export function LibraryPage() {
                     ...(detailPost
                       ? [
                           {
-                            label: "Copy the share link",
+                            label: t("Copy the share link"),
                             icon: "link" as const,
                             onClick: () => void copyLink(detailDesign),
                           },
                           {
-                            label: detailPost.isPublic ? "Make it private" : "Make it public",
+                            label: detailPost.isPublic ? t("Make it private") : t("Make it public"),
                             icon: detailPost.isPublic ? ("private" as const) : ("public" as const),
                             onClick: () => void setPostVisibility(detailDesign, !detailPost.isPublic),
                           },
@@ -610,7 +614,7 @@ export function LibraryPage() {
                       : signedIn
                         ? [
                             {
-                              label: "Post as a public setup",
+                              label: t("Post as a public setup"),
                               icon: "post" as const,
                               onClick: () => {
                                 setDetailId(undefined);
@@ -620,11 +624,11 @@ export function LibraryPage() {
                           ]
                         : []),
                     {
-                      label: "Delete this design",
+                      label: t("Delete this design"),
                       icon: "delete" as const,
                       confirm: detailPost
-                        ? `Delete "${detailDesign.name}"? Its post comes down with it. This cannot be undone.`
-                        : `Delete "${detailDesign.name}" from Plans? This cannot be undone.`,
+                        ? t('Delete "{name}"? Its post comes down with it. This cannot be undone.', { name: detailDesign.name })
+                        : t('Delete "{name}" from Plans? This cannot be undone.', { name: detailDesign.name }),
                       onClick: () => {
                         setDetailId(undefined);
                         void deleteDesign(detailDesign.id);
@@ -638,20 +642,22 @@ export function LibraryPage() {
               <>
                 <SetupsFilterBar
                   filters={filters}
-                  placeholder="Search your designs (#tag)"
-                  sortOptions={SORTS}
+                  placeholder={t("Search your designs (#tag)")}
+                  sortOptions={SORTS.map((option) => ({ ...option, label: t(option.label) }))}
                   knownTags={knownTags}
                 />
 
                 {visibleSelected.size > 0 ? (
                   <div className="flex h-9 shrink-0 items-center gap-2 border-b border-[var(--mc-33)] bg-cyan-500/10 px-4 text-xs text-[var(--mc-ink)] compact:px-2">
-                    <span className="font-bold text-cyan-200">{visibleSelected.size} selected</span>
+                    <span className="font-bold text-cyan-200">
+                      {t("{count} selected", { count: visibleSelected.size })}
+                    </span>
                     <span className="text-[var(--mc-ink-muted)] compact:hidden">
-                      Ctrl-click to add, Shift-click for a run
+                      {t("Ctrl-click to add, Shift-click for a run")}
                     </span>
                     <span className="ml-auto flex items-center gap-1.5">
                       {selectedIds.some((id) => !designs.find((d) => d.id === id)?.closed) ? (
-                        <BarButton onClick={() => void closeSelected()}>Close tabs</BarButton>
+                        <BarButton onClick={() => void closeSelected()}>{t("Close tabs")}</BarButton>
                       ) : null}
                       {folders.length > 0 ? (
                         <select
@@ -662,16 +668,16 @@ export function LibraryPage() {
                               void fileSelected(value === "none" ? undefined : value);
                             }
                           }}
-                          aria-label="Add the selection to a collection"
+                          aria-label={t("Add the selection to a collection")}
                           className="h-6 border-2 border-[var(--mc-33)] bg-[#17191d] px-1 text-xs text-neutral-100 outline-none shadow-[inset_2px_2px_0_#30343b,inset_-2px_-2px_0_#050607]"
                         >
-                          <option value="">Add to collection…</option>
+                          <option value="">{t("Add to collection…")}</option>
                           {folders.map((folder) => (
                             <option key={folder.id} value={folder.id}>
                               {folder.name}
                             </option>
                           ))}
-                          <option value="none">No collection</option>
+                          <option value="none">{t("No collection")}</option>
                         </select>
                       ) : null}
                       <BarButton
@@ -684,9 +690,11 @@ export function LibraryPage() {
                           }
                         }}
                       >
-                        {bulkDeleteArmed ? `Confirm delete ${visibleSelected.size}` : "Delete"}
+                        {bulkDeleteArmed
+                          ? t("Confirm delete {count}", { count: visibleSelected.size })
+                          : t("Delete")}
                       </BarButton>
-                      <BarButton onClick={clearSelection}>Clear</BarButton>
+                      <BarButton onClick={clearSelection}>{t("Clear")}</BarButton>
                     </span>
                   </div>
                 ) : null}
@@ -696,12 +704,12 @@ export function LibraryPage() {
                   {shown.length === 0 ? (
                     <p className="px-0.5 pt-1 text-[12px] leading-relaxed text-[var(--mc-ink-muted)]">
                       {search || maxTier
-                        ? "No designs match."
+                        ? t("No designs match.")
                         : viewFolderId
-                          ? "Nothing here yet. Drag a design onto this collection, or use Add to collection in its menu."
+                          ? t("Nothing here yet. Drag a design onto this collection, or use Add to collection in its menu.")
                           : favoritesOnly
-                            ? "Nothing starred yet. Click the star on a design to put it here."
-                            : "Nothing here yet. Press + on the tab strip to start one."}
+                            ? t("Nothing starred yet. Click the star on a design to put it here.")
+                            : t("Nothing here yet. Press + on the tab strip to start one.")}
                     </p>
                   ) : (
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-2">
@@ -726,7 +734,7 @@ export function LibraryPage() {
                             }
                             when={
                               copiedId === design.id
-                                ? "link copied"
+                                ? t("link copied")
                                 : formatRelativeDate(design.updatedAt)
                             }
                             tier={design.stats?.tier}
@@ -788,11 +796,11 @@ export function LibraryPage() {
         <LibraryMenu
           left={tileMenu.left}
           top={tileMenu.top}
-          label={`Options for ${menuDesign.name}`}
+          label={t("Options for {name}", { name: menuDesign.name })}
           onClose={closeMenus}
         >
           <MenuItem
-            label="Open"
+            label={t("Open")}
             onClick={() => {
               closeMenus();
               open(menuDesign.id);
@@ -800,7 +808,7 @@ export function LibraryPage() {
           />
           {!menuDesign.closed ? (
             <MenuItem
-              label="Close tab"
+              label={t("Close tab")}
               onClick={() => {
                 closeMenus();
                 void closeDesign(menuDesign.id);
@@ -808,14 +816,14 @@ export function LibraryPage() {
             />
           ) : null}
           <MenuItem
-            label="Rename"
+            label={t("Rename")}
             onClick={() => {
               closeMenus();
               setRenamingId(menuDesign.id);
             }}
           />
           <MenuItem
-            label="Duplicate"
+            label={t("Duplicate")}
             onClick={() => {
               closeMenus();
               void copyDesign(menuDesign.id);
@@ -823,7 +831,7 @@ export function LibraryPage() {
           />
           {folders.length > 0 ? (
             <>
-              <MenuHeading>Add to collection</MenuHeading>
+              <MenuHeading>{t("Add to collection")}</MenuHeading>
               {folders.map((folder) => (
                 <MenuItem
                   key={folder.id}
@@ -845,14 +853,14 @@ export function LibraryPage() {
           {menuPost ? (
             <>
               <MenuItem
-                label="Copy link"
+                label={t("Copy link")}
                 onClick={() => {
                   closeMenus();
                   void copyLink(menuDesign);
                 }}
               />
               <MenuItem
-                label={menuPost.isPublic ? "Make private" : "Make public"}
+                label={menuPost.isPublic ? t("Make private") : t("Make public")}
                 onClick={() => {
                   closeMenus();
                   void setPostVisibility(menuDesign, !menuPost.isPublic);
@@ -861,7 +869,7 @@ export function LibraryPage() {
             </>
           ) : signedIn ? (
             <MenuItem
-              label="Post as a public setup"
+              label={t("Post as a public setup")}
               onClick={() => {
                 closeMenus();
                 void postDesign(menuDesign.id);
@@ -869,8 +877,8 @@ export function LibraryPage() {
             />
           ) : null}
           <ArmedMenuItem
-            label="Delete"
-            armedLabel={menuPost ? "Confirm delete (the post comes down too)" : "Confirm delete"}
+            label={t("Delete")}
+            armedLabel={menuPost ? t("Confirm delete (the post comes down too)") : t("Confirm delete")}
             armed={armed?.id === menuDesign.id && armed.what === "delete"}
             onArm={() => setArmed({ id: menuDesign.id, what: "delete" })}
             onFire={() => {
@@ -885,7 +893,7 @@ export function LibraryPage() {
 
       {iconEditId ? (
         <IconPicker
-          title="Pick an icon"
+          title={t("Pick an icon")}
           suggestions={iconSuggestionsFromStats(detailPost?.needs, detailPost?.outputs)}
           onPick={(icon) => {
             const id = iconEditId;
@@ -915,19 +923,19 @@ export function LibraryPage() {
         <LibraryMenu
           left={folderMenu.left}
           top={folderMenu.top}
-          label={`Options for collection ${menuFolder.name}`}
+          label={t("Options for collection {name}", { name: menuFolder.name })}
           onClose={closeMenus}
         >
           <MenuItem
-            label="Rename"
+            label={t("Rename")}
             onClick={() => {
               closeMenus();
               setRenamingFolderId(menuFolder.id);
             }}
           />
           <ArmedMenuItem
-            label="Delete collection"
-            armedLabel="Confirm delete (designs stay)"
+            label={t("Delete collection")}
+            armedLabel={t("Confirm delete (designs stay)")}
             armed={armed?.id === menuFolder.id && armed.what === "delete"}
             onArm={() => setArmed({ id: menuFolder.id, what: "delete" })}
             onFire={() => {
@@ -1153,6 +1161,7 @@ function RailItem({
   /** Under a head entry: stepped in, so the rail reads as a tree. */
   nested?: boolean;
 }) {
+  const t = useT();
   return (
     <div
       role="button"
@@ -1194,7 +1203,7 @@ function RailItem({
       {onMenu ? (
         <button
           type="button"
-          aria-label={`Options for collection ${label}`}
+          aria-label={t("Options for collection {name}", { name: label })}
           onClick={(event) => {
             event.stopPropagation();
             const rect = event.currentTarget.getBoundingClientRect();

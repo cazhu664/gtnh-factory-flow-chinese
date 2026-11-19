@@ -18,6 +18,7 @@ import {
 import { resolveExportFontCss } from "@/lib/import-export/export-fonts";
 import { compositeExportPng, computeCompositeLayout } from "@/lib/import-export/export-composite";
 import { randomUUID } from "@/lib/random-id";
+import { useT } from "@/lib/i18n";
 import { playBoardSound } from "@/lib/board-sounds";
 import { useFactoryStore } from "@/store/factory-store";
 import { useDesignStore } from "@/store/design-store";
@@ -47,10 +48,11 @@ const MARK = "GTNH Planner";
  * By default it is the plan and nothing else, with the small mark every picture carries.
  */
 export function ModScreenshot({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const result = useFactoryStore((state) => state.lastResult);
   const activeTabName = useDesignStore(
-    (state) => state.designs.find((design) => design.id === state.activeDesignId)?.name ?? "Untitled",
+    (state) => state.designs.find((design) => design.id === state.activeDesignId)?.name ?? t("Untitled"),
   );
   const rateUnit = useFactoryStore((state) => state.rateUnit);
   const [detail, setDetail] = useState<Detail>(chosen.detail);
@@ -59,7 +61,7 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
   const [taken, setTaken] = useState<{ key: string; capture?: FlowExportCapture; problem?: string }>();
   const [status, setStatus] = useState<{ text: string; good: boolean }>();
   const [keeping, setKeeping] = useState(false);
-  const planName = project.name || activeTabName || "My factory";
+  const planName = project.name || activeTabName || t("My factory");
 
   useEffect(() => {
     chosen = { detail, title, io };
@@ -112,10 +114,10 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
           }),
         );
         window.setTimeout(() => {
-          if (pendingRef.current.delete(requestId)) resolve({ error: "Timed out photographing the board." });
+          if (pendingRef.current.delete(requestId)) resolve({ error: t("Timed out photographing the board.") });
         }, 120_000);
       }),
-    [],
+    [t],
   );
 
   // What the picture needs to be taken again for: the cards' look, and the rate unit the board prints.
@@ -133,7 +135,7 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
             window.setTimeout(() => !cancelled && attempt(retriesLeft - 1), 700);
             return;
           }
-          setTaken({ key: wantKey, problem: outcome.error ?? "The board could not be captured." });
+          setTaken({ key: wantKey, problem: outcome.error ?? t("The board could not be captured.") });
           return;
         }
         setTaken({ key: wantKey, capture: outcome.capture });
@@ -145,7 +147,7 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
       cancelAnimationFrame(frame);
     };
     // The rate unit repaints the board, not the request: the photograph is taken again.
-  }, [requestBoardCapture, detail, wantKey]);
+  }, [requestBoardCapture, detail, wantKey, t]);
 
   const previewUrl = useMemo(() => (capture?.blob ? URL.createObjectURL(capture.blob) : undefined), [capture]);
   useEffect(() => () => (previewUrl ? URL.revokeObjectURL(previewUrl) : undefined), [previewUrl]);
@@ -191,13 +193,15 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
       : 0;
   const pixels =
     capture && layout
-      ? `${Math.round(layout.boardWidth * capture.pixelRatio).toLocaleString("en-US")} x ${Math.round(layout.totalHeight * capture.pixelRatio).toLocaleString("en-US")} pixels`
+      ? t("{size} pixels", {
+          size: `${Math.round(layout.boardWidth * capture.pixelRatio).toLocaleString("en-US")} x ${Math.round(layout.totalHeight * capture.pixelRatio).toLocaleString("en-US")}`,
+        })
       : undefined;
 
   // ---- The picture itself --------------------------------------------------
 
   const compose = async (): Promise<Blob> => {
-    if (!capture?.blob || !layout) throw new Error("The board capture is missing.");
+    if (!capture?.blob || !layout) throw new Error(t("The board capture is missing."));
     const wantFooter = footerVisible && footerElement !== null && layout.footerHeight > 0;
     const fontEmbedCSS = wantFooter && footerElement ? await resolveExportFontCss(footerElement) : undefined;
     const footerBlob =
@@ -233,10 +237,10 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
       anchor.download = name;
       anchor.click();
       URL.revokeObjectURL(url);
-      setStatus({ text: `Saved as ${name}`, good: true });
+      setStatus({ text: t("Saved as {name}", { name }), good: true });
       playBoardSound("tick");
     } catch (error) {
-      setStatus({ text: `Couldn't save it: ${error instanceof Error ? error.message : "failed"}`, good: false });
+      setStatus({ text: t("Couldn't save it: {reason}", { reason: error instanceof Error ? error.message : t("failed") }), good: false });
     } finally {
       setKeeping(false);
     }
@@ -249,10 +253,10 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
     try {
       const blob = await compose();
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      setStatus({ text: "Copied: paste it anywhere", good: true });
+      setStatus({ text: t("Copied: paste it anywhere"), good: true });
       playBoardSound("tick");
     } catch (error) {
-      setStatus({ text: `Couldn't copy it: ${error instanceof Error ? error.message : "failed"}`, good: false });
+      setStatus({ text: t("Couldn't copy it: {reason}", { reason: error instanceof Error ? error.message : t("failed") }), good: false });
     } finally {
       setKeeping(false);
     }
@@ -267,10 +271,10 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="mx mshot" role="dialog" aria-modal="true" aria-label="Screenshot" data-mod-screenshot="">
+      <div className="mx mshot" role="dialog" aria-modal="true" aria-label={t("Screenshot")} data-mod-screenshot="">
         <div className="mshot-title">
-          <span>Screenshot</span>
-          <div className="ms-close" role="button" aria-label="Close" onClick={onClose}>
+          <span>{t("Screenshot")}</span>
+          <div className="ms-close" role="button" aria-label={t("Close")} onClick={onClose}>
             <svg width="14" height="14" viewBox="0 0 14 14" shapeRendering="crispEdges" aria-hidden fill="currentColor">
               <path d={crossPath()} />
             </svg>
@@ -281,7 +285,7 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
             {previewUrl && capture && scale > 0 ? (
               <div className="mshot-picture" style={{ width: capture.width * scale }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewUrl} alt="Plan picture preview" draggable={false} />
+                <img src={previewUrl} alt={t("Plan picture preview")} draggable={false} />
                 {footerVisible && layout ? (
                   <div style={{ height: layout.footerHeight * layout.footerScale * scale, overflow: "hidden" }}>
                     <div
@@ -311,13 +315,13 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
                 )}
               </div>
             ) : null}
-            {capturing ? <div className="mshot-note">Taking the picture...</div> : null}
+            {capturing ? <div className="mshot-note">{t("Taking the picture...")}</div> : null}
             {problem && !capturing ? <div className="mshot-note" data-bad="">{problem}</div> : null}
           </div>
           <div className="mshot-col">
             <div className="mshot-row">
-              <span>Cards</span>
-              <span className="ms-choices" role="radiogroup" aria-label="Cards">
+              <span>{t("Cards")}</span>
+              <span className="ms-choices" role="radiogroup" aria-label={t("Cards")}>
                 {DETAILS.map((entry) => (
                   <span
                     key={entry.id}
@@ -332,14 +336,14 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
                       }
                     }}
                   >
-                    {entry.label}
+                    {t(entry.label)}
                   </span>
                 ))}
               </span>
             </div>
-            <Toggle label="Plan name" on={title} onChange={setTitle} />
-            <Toggle label="Inputs and outputs" on={io} onChange={setIo} />
-            <div className="mshot-size">{pixels ?? "Taking the picture..."}</div>
+            <Toggle label={t("Plan name")} on={title} onChange={setTitle} />
+            <Toggle label={t("Inputs and outputs")} on={io} onChange={setIo} />
+            <div className="mshot-size">{pixels ?? t("Taking the picture...")}</div>
             {status ? (
               <div className="mshot-status" data-good={status.good ? "" : undefined}>
                 {status.text}
@@ -347,10 +351,10 @@ export function ModScreenshot({ onClose }: { onClose: () => void }) {
             ) : null}
             <div className="mshot-keys">
               <div className="mb-key mshot-key" role="button" data-off={ready ? undefined : ""} onClick={() => ready && void copy()}>
-                Copy
+                {t("Copy")}
               </div>
               <div className="mb-key mshot-key" data-save="" role="button" data-off={ready ? undefined : ""} onClick={() => ready && void save()}>
-                Save
+                {t("Save")}
               </div>
             </div>
           </div>

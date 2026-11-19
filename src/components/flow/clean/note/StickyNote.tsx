@@ -3,6 +3,7 @@
 import { useReactFlow, useStore, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { snapToGrid } from "@/lib/board-grid";
+import { useT, type TranslateParams } from "@/lib/i18n";
 import type { FactoryAnnotation } from "@/lib/model/types";
 import { useFactoryStore } from "@/store/factory-store";
 import { measureClean, useFontEpoch } from "../text-measure";
@@ -34,21 +35,25 @@ export type StickyNoteFlowNode = Node<StickyNoteData, "annotationNode">;
 
 const measure = (text: string, fontPx: number) => measureClean(text, fontPx, 400);
 
+type T = (key: string, params?: TranslateParams) => string;
+
 /** The mod's tips (`NoteCard.tip`), by what the pointer is on. */
-const TIPS: Record<NotePart, Omit<TipSpec, "id">> = {
-  body: {
-    title: "Sticky note",
-    actions: [
-      { input: "left", label: "Click: write" },
-      { input: "drag", label: "Move" },
-      { input: "right", label: "Colour, text size, delete" },
-    ],
-  },
-  delete: { title: "Delete note" },
-  smaller: { title: "Smaller text" },
-  bigger: { title: "Bigger text" },
-  resize: { title: "Resize", actions: [{ input: "drag", label: "Drag the corner or an edge" }] },
-};
+function tips(t: T): Record<NotePart, Omit<TipSpec, "id">> {
+  return {
+    body: {
+      title: t("Sticky note"),
+      actions: [
+        { input: "left", label: t("Click: write") },
+        { input: "drag", label: t("Move") },
+        { input: "right", label: t("Colour, text size, delete") },
+      ],
+    },
+    delete: { title: t("Delete note") },
+    smaller: { title: t("Smaller text") },
+    bigger: { title: t("Bigger text") },
+    resize: { title: t("Resize"), actions: [{ input: "drag", label: t("Drag the corner or an edge") }] },
+  };
+}
 
 const CURSORS = { nwse: "nwse-resize", ew: "ew-resize", ns: "ns-resize" } as const;
 
@@ -71,6 +76,7 @@ function caretOffsetAt(display: HTMLElement | null, x: number, y: number): numbe
 
 function StickyNoteComponent({ data, selected, width, height }: NodeProps<StickyNoteFlowNode>) {
   const { annotation } = data;
+  const t = useT();
   useFontEpoch();
   const updateAnnotation = useFactoryStore((state) => state.updateAnnotation);
   const deleteAnnotation = useFactoryStore((state) => state.deleteAnnotation);
@@ -182,7 +188,7 @@ function StickyNoteComponent({ data, selected, width, height }: NodeProps<Sticky
       root.removeAttribute("data-tip-id");
     } else {
       const id = `${annotation.id}|${part}`;
-      root.setAttribute("data-tip", JSON.stringify({ ...TIPS[part], id }));
+      root.setAttribute("data-tip", JSON.stringify({ ...tips(t)[part], id }));
       root.setAttribute("data-tip-id", id);
     }
     if (part === "resize") {
@@ -325,7 +331,7 @@ function StickyNoteComponent({ data, selected, width, height }: NodeProps<Sticky
           />
         ) : (
           <div ref={displayRef} className="sn-text" data-empty={noText ? "" : undefined}>
-            {noText ? "Double-click to write" : text}
+            {noText ? t("Double-click to write") : text}
           </div>
         )}
         {fits ? (

@@ -64,10 +64,11 @@ import { useFactoryStore } from "@/store/factory-store";
 import { readBoardGeometry, readBoardScore, type BoardScore } from "./flow/board-score";
 import { decodeLayout, encodeLayout } from "@/lib/board-layout-string";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 
 /** What a dial is and what its ends do, as the hover tooltip. */
-function dialTooltip(field: RouterTuningField): string {
-  return `${field.hint}\nLow: ${field.low}\nHigh: ${field.high}`;
+function dialTooltip(t: (key: string, params?: Record<string, string | number>) => string, field: RouterTuningField): string {
+  return `${field.hint}\n${t("Low: {value}", { value: field.low })}\n${t("High: {value}", { value: field.high })}`;
 }
 
 /**
@@ -79,6 +80,7 @@ function dialTooltip(field: RouterTuningField): string {
  * visible.
  */
 export function DevMenu({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const [perfHud, setPerfHud] = useState<boolean>(() => isPerfHudEnabled());
   // Two cards is the least board that reads as a sequence at all.
   const canPlayTimelapse = useFactoryStore(
@@ -139,9 +141,9 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
     });
     try {
       await navigator.clipboard.writeText(text);
-      setLayoutNote(`Layout copied: ${text.length} characters.`);
+      setLayoutNote(t("Layout copied: {count} characters.", { count: text.length }));
     } catch {
-      window.prompt("Copy this layout string:", text);
+      window.prompt(t("Copy this layout string:"), text);
       setLayoutNote(undefined);
     }
   };
@@ -150,14 +152,14 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
     try {
       text = await navigator.clipboard.readText();
     } catch {
-      text = window.prompt("Paste a layout string:");
+      text = window.prompt(t("Paste a layout string:"));
     }
     if (!text) return;
     const state = useFactoryStore.getState();
     try {
       const decoded = decodeLayout(text.trim(), state.project);
       if (decoded.moves.length === 0) {
-        setLayoutNote("No card on this plan matched that layout.");
+        setLayoutNote(t("No card on this plan matched that layout."));
         return;
       }
       state.applyBoardArrangement({
@@ -166,7 +168,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
       });
       useFactoryStore.getState().frameBoardNodes();
       setLayoutNote(
-        `Placed ${decoded.moves.length} cards${decoded.unknown.length ? `, ${decoded.unknown.length} unknown keys skipped` : ""}${decoded.missing.length ? `, ${decoded.missing.length} cards not in the layout` : ""}${decoded.otherPlan ? " (layout was made for another plan)" : ""}.`,
+        `${t("Placed {count} cards", { count: decoded.moves.length })}${decoded.unknown.length ? t(", {count} unknown keys skipped", { count: decoded.unknown.length }) : ""}${decoded.missing.length ? t(", {count} cards not in the layout", { count: decoded.missing.length }) : ""}${decoded.otherPlan ? t(" (layout was made for another plan)") : ""}.`,
       );
     } catch (error) {
       setLayoutNote(error instanceof Error ? error.message : String(error));
@@ -222,7 +224,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
     <div
       ref={dialogRef}
       role="dialog"
-      aria-label="Dev menu"
+      aria-label={t("Dev menu")}
       tabIndex={-1}
       className="fixed z-[120] flex max-h-[calc(85*var(--ui-vh))] w-96 max-w-[calc(100*var(--ui-vw)-16px)] flex-col overflow-hidden rounded-lg border border-line-strong bg-surface shadow-2xl outline-none"
       style={{ left: position.x, top: position.y }}
@@ -276,14 +278,14 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("Close")}
           className="absolute right-3 top-3 rounded p-1.5 text-fg-subtle hover:bg-surface-raised hover:text-fg"
         >
           <X className="h-4 w-4" />
         </button>
-        <h2 className="text-xl font-black leading-none tracking-tight">Dev menu</h2>
+        <h2 className="text-xl font-black leading-none tracking-tight">{t("Dev menu")}</h2>
         <p className="mt-1.5 text-sm text-fg-muted">
-          Tools for working on the planner. Saved on this device. Drag me aside.
+          {t("Tools for working on the planner. Saved on this device. Drag me aside.")}
         </p>
       </div>
 
@@ -304,10 +306,9 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
             ].join(" ")}
           >
             <span className="min-w-0 flex-1">
-              <span className="block text-base leading-tight text-fg">Performance readout</span>
+              <span className="block text-base leading-tight text-fg">{t("Performance readout")}</span>
               <span className="mt-0.5 block text-xs text-fg-muted">
-                Frame times, stutter counts and what is mounted, in the bottom left corner of the
-                board.
+                {t("Frame times, stutter counts and what is mounted, in the bottom left corner of the board.")}
               </span>
             </span>
             <Check
@@ -317,13 +318,12 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
           </button>
 
           <div className="mt-2 rounded border border-line px-3 py-2.5">
-            <span className="block text-base leading-tight text-fg">Build timelapse</span>
+            <span className="block text-base leading-tight text-fg">{t("Build timelapse")}</span>
             <span className="mt-0.5 block text-xs text-fg-muted">
-              Replays this board being built: each machine lands, wires and drawers follow.
-              Esc or a click stops it. Needs at least two cards.
+              {t("Replays this board being built: each machine lands, wires and drawers follow. Esc or a click stops it. Needs at least two cards.")}
             </span>
             <div className="mt-2.5 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Speed</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Speed")}</span>
               {BOARD_TIMELAPSE_SPEEDS.map((speed) => (
                 <button
                   key={speed}
@@ -344,7 +344,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               ))}
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Volume</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Volume")}</span>
               <input
                 type="range"
                 min={0}
@@ -355,7 +355,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                   setBoardTimelapseVolume(Number(event.target.value) / 100);
                   setVolume(getBoardTimelapseVolume());
                 }}
-                aria-label="Timelapse sound volume"
+                aria-label={t("Timelapse sound volume")}
                 className="h-1 w-full accent-cyan-500"
               />
               <span className="w-12 shrink-0 text-right tabular-nums text-fg-muted">
@@ -363,7 +363,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               </span>
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Style</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Style")}</span>
               {(["follow", "cinematic"] as const).map((mode) => (
                 <button
                   key={mode}
@@ -379,13 +379,13 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                       : "border-line text-fg-muted hover:border-line-strong hover:text-fg",
                   ].join(" ")}
                 >
-                  {mode}
+                  {t(mode)}
                 </button>
               ))}
             </div>
             {cameraMode === "cinematic" ? (
               <div className="mt-2 flex items-center gap-1.5 text-xs">
-                <span className="w-14 shrink-0 text-fg-subtle">Offset</span>
+                <span className="w-14 shrink-0 text-fg-subtle">{t("Offset")}</span>
                 <input
                   type="range"
                   min={TIMELAPSE_CINE_ZOOM_MIN}
@@ -396,8 +396,8 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                     setBoardTimelapseCineZoom(Number(event.target.value));
                     setCineZoom(getBoardTimelapseCineZoom());
                   }}
-                  aria-label="A constant nudge on the crane's own framing: 1 is the island-exact fit"
-                  title="A constant nudge on whatever the crane decides: 1.00x frames the island exactly, higher sits closer, lower hangs back"
+                  aria-label={t("A constant nudge on the crane's own framing: 1 is the island-exact fit")}
+                  title={t("A constant nudge on whatever the crane decides: 1.00x frames the island exactly, higher sits closer, lower hangs back")}
                   className="h-1 w-full accent-cyan-500"
                 />
                 <span className="w-10 shrink-0 text-right tabular-nums text-fg-muted">
@@ -406,7 +406,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               </div>
             ) : null}
             <div className="mt-2 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Camera</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Camera")}</span>
               <input
                 type="range"
                 min={TIMELAPSE_CAMERA_PACE_MIN}
@@ -417,8 +417,8 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                   setBoardTimelapseCameraPace(Number(event.target.value));
                   setCameraPace(getBoardTimelapseCameraPace());
                 }}
-                aria-label="How briskly the camera travels between shots"
-                title="How briskly the camera travels between shots"
+                aria-label={t("How briskly the camera travels between shots")}
+                title={t("How briskly the camera travels between shots")}
                 className="h-1 w-full accent-cyan-500"
               />
               <span className="w-12 shrink-0 text-right tabular-nums text-fg-muted">
@@ -426,7 +426,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               </span>
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Wire draw</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Wire draw")}</span>
               <input
                 type="range"
                 min={TIMELAPSE_WIRE_DRAW_MIN_MS}
@@ -437,8 +437,8 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                   setBoardTimelapseWireDrawMs(Number(event.target.value));
                   setWireDrawMs(getBoardTimelapseWireDrawMs());
                 }}
-                aria-label="How long a wire takes to draw itself in"
-                title="How long a wire takes to draw itself in"
+                aria-label={t("How long a wire takes to draw itself in")}
+                title={t("How long a wire takes to draw itself in")}
                 className="h-1 w-full accent-cyan-500"
               />
               <span className="w-12 shrink-0 text-right tabular-nums text-fg-muted">
@@ -446,7 +446,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               </span>
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Pop</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Pop")}</span>
               <input
                 type="range"
                 min={TIMELAPSE_POP_MIN_MS}
@@ -457,8 +457,8 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                   setBoardTimelapsePopMs(Number(event.target.value));
                   setPopMs(getBoardTimelapsePopMs());
                 }}
-                aria-label="How long a card takes to fade and grow in"
-                title="How long a card takes to fade and grow in"
+                aria-label={t("How long a card takes to fade and grow in")}
+                title={t("How long a card takes to fade and grow in")}
                 className="h-1 w-full accent-cyan-500"
               />
               <span className="w-12 shrink-0 text-right tabular-nums text-fg-muted">
@@ -466,7 +466,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               </span>
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Closest</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Closest")}</span>
               <input
                 type="range"
                 min={TIMELAPSE_ZOOM_FLOOR}
@@ -474,7 +474,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                 step={0.01}
                 value={zoomRange.max}
                 onChange={(event) => patchZoomRange({ max: Number(event.target.value) })}
-                aria-label="The closest the camera may get"
+                aria-label={t("The closest the camera may get")}
                 className="h-1 w-full accent-cyan-500"
               />
               <span className="w-10 shrink-0 text-right tabular-nums text-fg-muted">
@@ -482,7 +482,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               </span>
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Widest</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Widest")}</span>
               <input
                 type="range"
                 min={TIMELAPSE_ZOOM_FLOOR}
@@ -490,7 +490,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                 step={0.01}
                 value={zoomRange.min}
                 onChange={(event) => patchZoomRange({ min: Number(event.target.value) })}
-                aria-label="The widest the camera may go before the finale"
+                aria-label={t("The widest the camera may go before the finale")}
                 className="h-1 w-full accent-cyan-500"
               />
               <span className="w-10 shrink-0 text-right tabular-nums text-fg-muted">
@@ -507,7 +507,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                 }}
                 className="accent-cyan-500"
               />
-              Hold the final shot: when the last thing lands, the camera stays put
+              {t("Hold the final shot: when the last thing lands, the camera stays put")}
             </label>
             <button
               type="button"
@@ -520,44 +520,46 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               }}
               className="mt-2.5 w-full rounded border border-cyan-700 bg-cyan-500/10 px-3 py-1.5 text-sm text-cyan-300 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:border-line disabled:bg-transparent disabled:text-fg-subtle"
             >
-              Play
+              {t("Play")}
             </button>
           </div>
 
 
 
           <div className="mt-2 rounded border border-line px-3 py-2.5">
-            <span className="block text-base leading-tight text-fg">Score</span>
+            <span className="block text-base leading-tight text-fg">{t("Score")}</span>
             <span className="mt-0.5 block text-xs text-fg-muted">
-              The board as drawn: crossings first, wire second. Versus mode: copy your layout
-              to send it, paste one to see it here.
+              {t("The board as drawn: crossings first, wire second. Versus mode: copy your layout to send it, paste one to see it here.")}
             </span>
             <div className="mt-2.5 grid grid-cols-3 gap-2 text-center">
               <div className="rounded border border-line px-2 py-1.5">
                 <div className="text-2xl font-black tabular-nums leading-none text-fg">
                   {score ? score.crossings : "-"}
                 </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wide text-fg-subtle">crossings</div>
+                <div className="mt-1 text-[10px] uppercase tracking-wide text-fg-subtle">{t("crossings")}</div>
               </div>
               <div className="rounded border border-line px-2 py-1.5">
                 <div className="text-2xl font-black tabular-nums leading-none text-fg">
                   {score ? Math.round(score.points).toLocaleString() : "-"}
                 </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wide text-fg-subtle">points</div>
+                <div className="mt-1 text-[10px] uppercase tracking-wide text-fg-subtle">{t("points")}</div>
               </div>
               <div className="rounded border border-line px-2 py-1.5">
                 <div className="text-2xl font-black tabular-nums leading-none text-fg">
                   {score ? score.wires : "-"}
                 </div>
                 <div className="mt-1 text-[10px] uppercase tracking-wide text-fg-subtle">
-                  {score && !score.settled ? "wires, routing" : "wires"}
+                  {score && !score.settled ? t("wires, routing") : t("wires")}
                 </div>
               </div>
             </div>
             {score ? (
               <p className="mt-2 text-xs tabular-nums text-fg-subtle">
-                {Math.round(score.length).toLocaleString()} px of wire, {score.bends45} bends of 45°,{" "}
-                {score.bends90} of 90°, priced at the Wires dials below. Lower is better.
+                {t("{length} px of wire, {b45} bends of 45°, {b90} of 90°, priced at the Wires dials below. Lower is better.", {
+                  length: Math.round(score.length).toLocaleString(),
+                  b45: score.bends45,
+                  b90: score.bends90,
+                })}
               </p>
             ) : null}
             <div className="mt-2.5 flex gap-2">
@@ -566,14 +568,14 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                 onClick={() => void copyLayout()}
                 className="flex-1 rounded border border-cyan-700 bg-cyan-500/10 px-3 py-1.5 text-sm text-cyan-300 hover:bg-cyan-500/20"
               >
-                Copy layout
+                {t("Copy layout")}
               </button>
               <button
                 type="button"
                 onClick={() => void pasteLayout()}
                 className="flex-1 rounded border border-line px-3 py-1.5 text-sm text-fg-muted hover:border-line-strong hover:text-fg"
               >
-                Paste layout
+                {t("Paste layout")}
               </button>
             </div>
             {layoutNote ? <p className="mt-2 text-xs text-fg-muted">{layoutNote}</p> : null}
@@ -582,37 +584,35 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
           <div className="mt-2 rounded border border-line px-3 py-2.5">
             <div className="flex items-start justify-between gap-2">
               <span className="min-w-0">
-                <span className="block text-base leading-tight text-fg">Wires</span>
+                <span className="block text-base leading-tight text-fg">{t("Wires")}</span>
                 <span className="mt-0.5 block text-xs text-fg-muted">
-                  Every dial the wire router has. Costs are pixels of travel: a corner at 80
-                  means a wire goes 80px out of its way to avoid one. Edits re-route the board
-                  live.
+                  {t("Every dial the wire router has. Costs are pixels of travel: a corner at 80 means a wire goes 80px out of its way to avoid one. Edits re-route the board live.")}
                 </span>
               </span>
               <span className="flex shrink-0 gap-1">
                 <button
                   type="button"
                   disabled={!canUndoRouterTuning()}
-                  title="Undo (Ctrl+Z)"
+                  title={t("Undo (Ctrl+Z)")}
                   onClick={() => {
                     undoRouterTuning();
                     setTuning(getRouterTuning());
                   }}
                   className="rounded border border-line px-2 py-1 text-xs text-fg-muted hover:border-line-strong hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Undo
+                  {t("Undo")}
                 </button>
                 <button
                   type="button"
                   disabled={!canRedoRouterTuning()}
-                  title="Redo (Ctrl+Shift+Z)"
+                  title={t("Redo (Ctrl+Shift+Z)")}
                   onClick={() => {
                     redoRouterTuning();
                     setTuning(getRouterTuning());
                   }}
                   className="rounded border border-line px-2 py-1 text-xs text-fg-muted hover:border-line-strong hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Redo
+                  {t("Redo")}
                 </button>
                 <button
                   type="button"
@@ -623,7 +623,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                   }}
                   className="rounded border border-line px-2 py-1 text-xs text-fg-muted hover:border-line-strong hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Reset
+                  {t("Reset")}
                 </button>
               </span>
             </div>
@@ -632,20 +632,20 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               onClick={() => requestWireReroute()}
               className="mt-2.5 w-full rounded border border-cyan-700 bg-cyan-500/10 px-3 py-1.5 text-sm text-cyan-300 hover:bg-cyan-500/20"
             >
-              Re-route all wires
+              {t("Re-route all wires")}
             </button>
             {(["Turns", "Crossings", "Negotiation", "Docks", "Costs", "Search", "Arrange"] as const).map(
               (group) => (
                 <div key={group} className="mt-3">
                   {group === "Turns" ? (
                     <span className="mb-1 block border-b border-line pb-1 text-xs font-semibold text-fg">
-                      Wire routing. Every dial below changes how wires are drawn, and re-routes the board when moved.
+                      {t("Wire routing. Every dial below changes how wires are drawn, and re-routes the board when moved.")}
                     </span>
                   ) : null}
                   {group === "Arrange" ? (
                     <span className="mb-1 mt-3 flex items-start justify-between gap-3 border-b border-line pb-1 text-xs font-semibold text-fg">
                       <span>
-                        Auto arrange. These shape the Arrange button only; they never move a wire by themselves.
+                        {t("Auto arrange. These shape the Arrange button only; they never move a wire by themselves.")}
                       </span>
                       {/* Its own reset: the one at the top puts EVERY dial back,
                           and tuning the arranger should not cost the routing. */}
@@ -658,12 +658,12 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                         }}
                         className="shrink-0 rounded border border-line px-2 py-1 text-xs font-normal text-fg-muted hover:border-line-strong hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        Reset
+                        {t("Reset")}
                       </button>
                     </span>
                   ) : null}
                   <span className="block text-[11px] font-semibold uppercase tracking-wide text-fg-subtle">
-                    {group}
+                    {t(group)}
                   </span>
                   {ROUTER_TUNING_FIELDS.filter((field) => field.group === group).map((field) => {
                     const value = tuning[field.key];
@@ -672,7 +672,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                       return (
                         <div key={field.key} className="mt-1.5">
                         <label
-                          title={dialTooltip(field)}
+                          title={dialTooltip(t, field)}
                           className="flex cursor-pointer items-center gap-2 text-xs text-fg-muted"
                         >
                           <input
@@ -689,7 +689,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                     const number = Number(value);
                     return (
                       <div key={field.key} className="mt-2">
-                        <div title={dialTooltip(field)} className="flex items-center gap-1.5 text-xs">
+                        <div title={dialTooltip(t, field)} className="flex items-center gap-1.5 text-xs">
                         <span
                           className={[
                             "w-24 shrink-0 truncate",
@@ -722,7 +722,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                               patchTuning({ [field.key]: next });
                             }
                           }}
-                          aria-label={`${field.label} value`}
+                          aria-label={t("{label} value", { label: field.label })}
                           // A focused number input steps on the wheel unless it is let go of first.
                           onWheel={(event) => {
                             if (!wheelChangesValues()) event.currentTarget.blur();
@@ -739,12 +739,12 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="mt-2 rounded border border-line px-3 py-2.5">
-            <span className="block text-base leading-tight text-fg">Board tilt</span>
+            <span className="block text-base leading-tight text-fg">{t("Board tilt")}</span>
             <span className="mt-0.5 block text-xs text-fg-muted">
-              The demo-card lean the timelapse plays under. Edits apply live, mid-run too.
+              {t("The demo-card lean the timelapse plays under. Edits apply live, mid-run too.")}
             </span>
             <div className="mt-2.5 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Pitch</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Pitch")}</span>
               <input
                 type="range"
                 min={-BOARD_TILT_MAX_ANGLE}
@@ -752,7 +752,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                 step={0.5}
                 value={tilt.pitch}
                 onChange={(event) => patchTilt({ pitch: Number(event.target.value) })}
-                aria-label="Tilt pitch"
+                aria-label={t("Tilt pitch")}
                 className="h-1 w-full accent-cyan-500"
               />
               <span className="w-10 shrink-0 text-right tabular-nums text-fg-muted">
@@ -760,7 +760,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
               </span>
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs">
-              <span className="w-14 shrink-0 text-fg-subtle">Turn</span>
+              <span className="w-14 shrink-0 text-fg-subtle">{t("Turn")}</span>
               <input
                 type="range"
                 min={-BOARD_TILT_MAX_ANGLE}
@@ -768,7 +768,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                 step={0.5}
                 value={tilt.yaw}
                 onChange={(event) => patchTilt({ yaw: Number(event.target.value) })}
-                aria-label="Tilt turn"
+                aria-label={t("Tilt turn")}
                 className="h-1 w-full accent-cyan-500"
               />
               <span className="w-10 shrink-0 text-right tabular-nums text-fg-muted">
@@ -782,7 +782,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                 onChange={(event) => patchTilt({ drift: event.target.checked })}
                 className="accent-cyan-500"
               />
-              Slow sway on top of the set angles
+              {t("Slow sway on top of the set angles")}
             </label>
             <label className="mt-1.5 flex cursor-pointer items-center gap-2 text-xs text-fg-muted">
               <input
@@ -791,7 +791,7 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
                 onChange={(event) => patchTilt({ always: event.target.checked })}
                 className="accent-cyan-500"
               />
-              Keep the board tilted outside the timelapse too
+              {t("Keep the board tilted outside the timelapse too")}
             </label>
           </div>
 
@@ -812,10 +812,10 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
           >
             <span className="min-w-0 flex-1">
               <span className="block text-base leading-tight text-fg">
-                Zoomed-out card faces everywhere
+                {t("Zoomed-out card faces everywhere")}
               </span>
               <span className="mt-0.5 block text-xs text-fg-muted">
-                Every card wears its glance face at every zoom, however far in you are.
+                {t("Every card wears its glance face at every zoom, however far in you are.")}
               </span>
             </span>
             <Check

@@ -9,6 +9,7 @@ import {
 } from "@/lib/datasets/browser-loader";
 import type { EntryIcon, PlanResourceStat } from "@/lib/community/types";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 import { useFactoryStore } from "@/store/factory-store";
 import { ResourceIcon } from "./nei/ResourceIcon";
 
@@ -65,6 +66,7 @@ export function IconPicker({
   onClear?: () => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const selectedDatasetVersionId = useFactoryStore((state) => state.selectedDatasetVersionId);
@@ -98,7 +100,7 @@ export function IconPicker({
       })
       .catch((queryError: unknown) => {
         if (!cancelled && (queryError as Error)?.name !== "AbortError") {
-          setError(queryError instanceof Error ? queryError.message : "Search failed.");
+          setError(queryError instanceof Error ? queryError.message : t("Search failed."));
         }
       });
 
@@ -121,11 +123,11 @@ export function IconPicker({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">{title}</h2>
+          <h2 className="text-sm font-semibold">{t(title)}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close icon picker"
+            aria-label={t("Close icon picker")}
             className="rounded p-1 text-neutral-400 hover:text-neutral-100"
           >
             <X className="h-4 w-4" />
@@ -137,7 +139,7 @@ export function IconPicker({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search item or fluid..."
+            placeholder={t("Search item or fluid...")}
             className="min-w-0 flex-1 bg-transparent outline-none"
           />
         </label>
@@ -145,7 +147,7 @@ export function IconPicker({
         {suggestions && suggestions.length > 0 ? (
           <div className="mt-2 shrink-0">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-neutral-500">
-              From this build
+              {t("From this build")}
             </p>
             <div className="flex flex-wrap gap-1">
               {suggestions.map((suggestion) => (
@@ -153,7 +155,7 @@ export function IconPicker({
                   key={`${suggestion.kind}:${suggestion.resourceId}`}
                   type="button"
                   onClick={() => onPick(suggestion)}
-                  title={suggestion.displayName ?? suggestion.resourceId}
+                  title={datasetNameLabel(suggestion.displayName ?? suggestion.resourceId)}
                   className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[4px] border border-neutral-600 bg-[#17191d] hover:border-cyan-500"
                 >
                   <ResourceIcon
@@ -178,10 +180,10 @@ export function IconPicker({
         ) : null}
         <div className="mt-2 min-h-0 flex-1 overflow-y-auto">
           {!version ? (
-            <p className="pt-1 text-[11px] text-neutral-500">The dataset is still loading…</p>
+            <p className="pt-1 text-[11px] text-neutral-500">{t("The dataset is still loading…")}</p>
           ) : resources.length === 0 ? (
             <p className="pt-1 text-[11px] text-neutral-500">
-              {result ? "Nothing matches." : "Searching…"}
+              {result ? t("Nothing matches.") : t("Searching…")}
             </p>
           ) : (
             <div className="grid grid-cols-8 gap-1">
@@ -199,7 +201,7 @@ export function IconPicker({
                       dominantColor: entry.dominantColor,
                     })
                   }
-                  title={entry.displayName ?? entry.id}
+                  title={datasetNameLabel(entry.displayName ?? entry.id)}
                   className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[4px] border border-neutral-700 bg-[#17191d] hover:border-cyan-500"
                 >
                   <ResourceIcon
@@ -228,7 +230,7 @@ export function IconPicker({
             onClick={onClear}
             className="mt-2 h-7 shrink-0 rounded-[4px] border border-neutral-700 bg-[#17191d] text-[11px] text-neutral-400 hover:border-red-500 hover:text-red-400"
           >
-            Remove the current icon
+            {t("Remove the current icon")}
           </button>
         ) : null}
       </div>
@@ -251,6 +253,7 @@ export function EntryIconSlot({
   onEdit?: () => void;
   className?: string;
 }) {
+  const t = useT();
   // Fills the slot: the padded source art is drawn at 200% and cropped by
   // the wrapper, so the sprite lands at roughly the slot's own size.
   const face = icon ? (
@@ -292,7 +295,7 @@ export function EntryIconSlot({
     <button
       type="button"
       onClick={onEdit}
-      aria-label={icon ? "Change the icon" : "Pick an icon"}
+      aria-label={icon ? t("Change the icon") : t("Pick an icon")}
       className={[
         "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[4px] border",
         icon

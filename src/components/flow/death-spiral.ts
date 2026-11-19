@@ -3,6 +3,7 @@ import { makeResourceKey } from "@/lib/model";
 import { DEAD_RING_EPSILON, stronglyConnectedComponents } from "@/lib/solver/equilibrium";
 import { getSetupRules } from "@/lib/model/setup-rules";
 import { getPoolProject } from "@/lib/solver/pool-mode";
+import { datasetNameLabel, t } from "@/lib/i18n";
 import { findBareSlots } from "./bare-slots";
 
 /**
@@ -298,13 +299,19 @@ export function describeDeathSpiral(spiral: DeathSpiral): {
   fix: string;
 } {
   const count = spiral.machineIds.length;
-  const machines = count === 1 ? "This machine feeds itself" : `${count} machines feed each other`;
+  const machines =
+    count === 1
+      ? t("This machine feeds itself")
+      : t("{count} machines feed each other", { count });
   const goods =
     spiral.resourceNames.length === 0
-      ? "what they pass round"
+      ? t("what they pass round")
       : spiral.resourceNames.length <= 2
-        ? spiral.resourceNames.join(" and ")
-        : `${spiral.resourceNames.slice(0, 2).join(", ")} and ${spiral.resourceNames.length - 2} more`;
+        ? spiral.resourceNames.map((n) => datasetNameLabel(n)).join(t(" and "))
+        : t("{first} and {count} more", {
+            first: spiral.resourceNames.slice(0, 2).map((n) => datasetNameLabel(n)).join(", "),
+            count: spiral.resourceNames.length - 2,
+          });
 
   // A ring waiting on a stopped supplier is NOT dying of its own losses, and
   // saying "loop" first would send the player priming a ring whose real
@@ -313,30 +320,62 @@ export function describeDeathSpiral(spiral: DeathSpiral): {
   const feeder = spiral.deadFeeders[0];
   if (feeder) {
     const others =
-      spiral.deadFeeders.length > 1 ? ` (and ${spiral.deadFeeders.length - 1} more like it)` : "";
+      spiral.deadFeeders.length > 1
+        ? t(" (and {count} more like it)", { count: spiral.deadFeeders.length - 1 })
+        : "";
     return {
-      title: "This loop is waiting on its supplier",
-      short: `${count === 1 ? "A self-feeding machine" : `A ring of ${count} machines`} stopped because ${feeder.name} stopped sending ${feeder.resourceName}. Fix that machine and the ring restarts.`,
-      what: `${machines} in a ring, passing ${goods} round it. The ring also needs ${feeder.resourceName} from outside, and none is arriving.`,
-      why: `${feeder.name}${others} has stopped, so the ${feeder.resourceName} line into this ring delivers nothing. A ring only keeps itself going once material moves round it; with its top-up gone there is nothing to go round.`,
-      fix: `Go to ${feeder.name}: its own card says why it stopped. Get it running and this ring comes back on its own.`,
+      title: t("This loop is waiting on its supplier"),
+      short: t(
+        "{subject} stopped because {feeder} stopped sending {resource}. Fix that machine and the ring restarts.",
+        {
+          subject:
+            count === 1 ? t("A self-feeding machine") : t("A ring of {count} machines", { count }),
+          feeder: datasetNameLabel(feeder.name),
+          resource: datasetNameLabel(feeder.resourceName),
+        },
+      ),
+      what: t(
+        "{machines} in a ring, passing {goods} round it. The ring also needs {resource} from outside, and none is arriving.",
+        { machines, goods, resource: datasetNameLabel(feeder.resourceName) },
+      ),
+      why: t(
+        "{feeder}{others} has stopped, so the {resource} line into this ring delivers nothing. A ring only keeps itself going once material moves round it; with its top-up gone there is nothing to go round.",
+        { feeder: datasetNameLabel(feeder.name), others, resource: datasetNameLabel(feeder.resourceName) },
+      ),
+      fix: t(
+        "Go to {feeder}: its own card says why it stopped. Get it running and this ring comes back on its own.",
+        { feeder: datasetNameLabel(feeder.name) },
+      ),
     };
   }
 
   return {
-    title: count === 1 ? "This loop cannot start itself" : "These machines are stuck in a loop",
+    title: count === 1 ? t("This loop cannot start itself") : t("These machines are stuck in a loop"),
     // The board notice is a nudge, not a lecture: name it, size it, and give
     // the one move. Anyone who wants the reasoning hovers a card.
     short:
       count === 1
-        ? "A machine feeds itself and has stopped. Feed it from outside to start it."
-        : `${count} machines feed each other in a ring and have all stopped. Feed any one of them to start it.`,
-    what: `${machines} in a ring, passing ${goods} round it. Every one of them sits at 0%.`,
-    why: "More leaves the ring than comes back round it, so every lap starts with less than the last one and it winds down to nothing. That happens whether the recipes lose a little each time or something taps the ring for its own use. Nothing outside puts the difference back, and a ring cannot start itself from empty.",
+        ? t("A machine feeds itself and has stopped. Feed it from outside to start it.")
+        : t(
+            "{count} machines feed each other in a ring and have all stopped. Feed any one of them to start it.",
+            { count },
+          ),
+    what: t("{machines} in a ring, passing {goods} round it. Every one of them sits at 0%.", {
+      machines,
+      goods,
+    }),
+    why: t(
+      "More leaves the ring than comes back round it, so every lap starts with less than the last one and it winds down to nothing. That happens whether the recipes lose a little each time or something taps the ring for its own use. Nothing outside puts the difference back, and a ring cannot start itself from empty.",
+    ),
     fix: spiral.externalSourceDry
-      ? `The only thing feeding it, ${spiral.externalSourceName ?? "its supplier"}, has stopped too. Get that running and the ring comes back with it.`
+      ? t(
+          "The only thing feeding it, {supplier}, has stopped too. Get that running and the ring comes back with it.",
+          { supplier: datasetNameLabel(spiral.externalSourceName) ?? t("its supplier") },
+        )
       : spiral.hasExternalSource
-        ? "What feeds it does not cover the losses. Send more in, or take less out of the ring."
-        : "Wire a source into any machine in the ring, or hang a stocked barrel on one. Anything that puts the shortfall back in each pass will start it.",
+        ? t("What feeds it does not cover the losses. Send more in, or take less out of the ring.")
+        : t(
+            "Wire a source into any machine in the ring, or hang a stocked barrel on one. Anything that puts the shortfall back in each pass will start it.",
+          ),
   };
 }

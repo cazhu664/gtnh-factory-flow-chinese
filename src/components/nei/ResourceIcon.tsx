@@ -19,6 +19,7 @@ import {
   trimTrailingDecimalZeros,
 } from "@/lib/model/resources";
 import { isProgrammedCircuitResource } from "@/lib/model/programmed-circuit";
+import { useT, type TranslateParams } from "@/lib/i18n";
 import { MinecraftTooltip } from "./MinecraftTooltip";
 import { getSpriteFitScale, spriteFitStyle } from "./sprite-fit";
 
@@ -82,6 +83,7 @@ function ResourceIconComponent({
   showConsumedState = true,
   alternativeState,
 }: ResourceIconProps) {
+  const t = useT();
   // Artwork deliberately exceeds its clipped slot. Every art renderer below
   // must opt out of flex shrinking: Firefox shrinks percentage-sized <img>
   // widths where Chromium keeps their aspect-ratio minimum; atlas spans shrink
@@ -115,7 +117,7 @@ function ResourceIconComponent({
       {/* Circuits get no "NC" marker: they are a machine setting, never consumed. */}
       {showConsumedState && resource?.consumed === false && !isProgrammedCircuitResource(resource) ? (
         <span
-          title="Not consumed"
+          title={t("Not consumed")}
           className="absolute left-0 top-0 font-mono text-[8px] font-black leading-none text-[#ffff55] drop-shadow-[1px_1px_0_#000]"
         >
           NC
@@ -145,7 +147,7 @@ function ResourceIconComponent({
   // Built only on the tooltip path: icons rendered with `tooltip={false}`
   // number in the hundreds and must skip this string build.
   return (
-    <MinecraftTooltip label={buildTooltipLabel(resource, alternativeState)}>{icon}</MinecraftTooltip>
+    <MinecraftTooltip label={buildTooltipLabel(resource, alternativeState, t)}>{icon}</MinecraftTooltip>
   );
 }
 
@@ -239,7 +241,8 @@ function isFluidCellAlternative(
 
 function buildTooltipLabel(
   resource: ResourceIconProps["resource"],
-  alternativeState?: ResourceIconProps["alternativeState"],
+  alternativeState: ResourceIconProps["alternativeState"],
+  t: (key: string, params?: TranslateParams) => string,
 ) {
   if (!resource) {
     return undefined;
@@ -262,19 +265,19 @@ function buildTooltipLabel(
     : [resourceLabel(resource)].filter(Boolean);
   const chanceLine =
     resource.chance !== undefined && Number.isFinite(resource.chance) && resource.chance < 1
-      ? `Chance: ${trimAmount(resource.chance * 100)}%`
+      ? t("Chance: {value}%", { value: trimAmount(resource.chance * 100) })
       : undefined;
   const consumedLine =
     resource.consumed === false && !resource.tooltip?.some(isNotConsumedTooltipLine)
-      ? "Not consumed"
+      ? t("Not consumed")
       : undefined;
   // Both short enough to sit on one line at the panel's width: a hint that wraps
   // mid-sentence reads worse than no hint at all.
   const cycleLine =
     alternativeState === "locked"
-      ? "Scroll to change."
+      ? t("Scroll to change.")
       : alternativeState === "cycling"
-        ? "Scroll to pick one."
+        ? t("Scroll to pick one.")
         : undefined;
 
   return [...baseLines, cycleLine, chanceLine, consumedLine].filter(Boolean).join("\n");

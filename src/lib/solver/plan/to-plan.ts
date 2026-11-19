@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n/core";
 import type { FactoryProject } from "../../model/types";
 import { convertBuildToPlanWithReport, type PlanConversionReport } from "./convert";
 import { wirePoolProject, type PoolConversionReport } from "./pool-to-plan";
@@ -49,14 +50,14 @@ export function openAsPlan(project: FactoryProject): PlanOpening {
     const wired = wirePoolProject(project);
     const converted = convertBuildToPlanWithReport(wired.project);
     const details: string[] = [];
-    if (wired.report.groups > 0) details.push("Groups are gone.");
-    if (wired.report.rules > 0) details.push("Share and Outside supply switches are gone.");
+    if (wired.report.groups > 0) details.push(t("Groups are gone."));
+    if (wired.report.rules > 0) details.push(t("Share and Outside supply switches are gone."));
     if (wired.report.duplicateDrawers.length > 0) {
-      details.push("Drawers of one resource on the same side were joined.");
+      details.push(t("Drawers of one resource on the same side were joined."));
     }
-    if (wired.report.unreachedDrawers > 0) details.push("Some drawers have nothing to wire to.");
-    if (wired.report.bridgeWires > 0) details.push("Cells and their fluids meet in fluid tanks.");
-    if (converted.report.droppedTargets.length > 0) details.push("A target that no card makes was dropped.");
+    if (wired.report.unreachedDrawers > 0) details.push(t("Some drawers have nothing to wire to."));
+    if (wired.report.bridgeWires > 0) details.push(t("Cells and their fluids meet in fluid tanks."));
+    if (converted.report.droppedTargets.length > 0) details.push(t("A target that no card makes was dropped."));
     return {
       project: converted.project,
       origin: "pool",
@@ -64,7 +65,7 @@ export function openAsPlan(project: FactoryProject): PlanOpening {
       pool: wired.report,
       notice: {
         origin: "pool",
-        text: "Converted from a pool plan. Every maker is now wired to every user of its resource.",
+        text: t("Converted from a pool plan. Every maker is now wired to every user of its resource."),
         details,
       },
     };
@@ -74,22 +75,31 @@ export function openAsPlan(project: FactoryProject): PlanOpening {
   const report = converted.report;
   // Said every time: what came over and what did not, in one line.
   const details: string[] = [];
-  const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
   if (origin === "build" && report.pinned > 0) {
-    details.push(`${plural(report.pinned, "card")} set to up to ${report.pinned === 1 ? "its count" : "their counts"}.`);
+    details.push(report.pinned === 1
+      ? t("1 card set to up to its count.")
+      : t("{count} cards set to up to their counts.", { count: report.pinned }));
   }
   if (report.portRates > 0) {
-    details.push(`${plural(report.portRates, "rate")} set from ${report.portRates === 1 ? "a target" : "targets"}.`);
+    details.push(report.portRates === 1
+      ? t("1 rate set from a target.")
+      : t("{count} rates set from targets.", { count: report.portRates }));
   }
   if (report.drawerRatesParked > 0) {
-    details.push(`${plural(report.drawerRatesParked, "drawer rate")} set to Ignore.`);
+    details.push(report.drawerRatesParked === 1
+      ? t("1 drawer rate set to Ignore.")
+      : t("{count} drawer rates set to Ignore.", { count: report.drawerRatesParked }));
   }
-  if (report.unanchored) details.push("Nothing is set yet. Pin a count or set a rate.");
-  if (origin === "solve" && !report.unanchored && !report.seededFromTargets) details.push("Pins and drawer rates kept.");
+  if (report.unanchored) details.push(t("Nothing is set yet. Pin a count or set a rate."));
+  if (origin === "solve" && !report.unanchored && !report.seededFromTargets) details.push(t("Pins and drawer rates kept."));
   const dropped: string[] = [];
-  if (report.ratioBuffersFlattened > 0) dropped.push(plural(report.ratioBuffersFlattened, "ratio buffer"));
-  if (report.droppedTargets.length > 0) dropped.push(plural(report.droppedTargets.length, "target") + " no card makes");
-  if (dropped.length > 0) details.push(`Dropped: ${dropped.join(", ")}.`);
+  if (report.ratioBuffersFlattened > 0) dropped.push(report.ratioBuffersFlattened === 1
+    ? t("1 ratio buffer")
+    : t("{count} ratio buffers", { count: report.ratioBuffersFlattened }));
+  if (report.droppedTargets.length > 0) dropped.push(report.droppedTargets.length === 1
+    ? t("1 target no card makes")
+    : t("{count} targets no card makes", { count: report.droppedTargets.length }));
+  if (dropped.length > 0) details.push(t("Dropped: {items}.", { items: dropped.join(", ") }));
   return {
     project: converted.project,
     origin,
@@ -98,7 +108,7 @@ export function openAsPlan(project: FactoryProject): PlanOpening {
     notice:
       project.nodes.length === 0 && (project.storages ?? []).length === 0
         ? undefined
-        : { origin, text: `Converted from a ${origin === "solve" ? "Solve" : "Build"} plan.`, details },
+        : { origin, text: origin === "solve" ? t("Converted from a Solve plan.") : t("Converted from a Build plan."), details },
   };
 }
 

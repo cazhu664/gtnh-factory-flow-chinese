@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import type { PlanResourceStat } from "@/lib/community/types";
 import type { MachineTier } from "@/lib/model/types";
+import { t, useT } from "@/lib/i18n";
 import { formatSlotRate } from "@/components/flow/flow-explainers";
 import { GT_TIER_COLORS } from "@/components/flow/tier-colors";
 import { fluidArtPixels, isSwatchFluid, ResourceIcon } from "@/components/nei/ResourceIcon";
@@ -19,16 +20,16 @@ export function formatRelativeDate(iso: string): string {
   }
   const seconds = Math.max(0, (Date.now() - then) / 1000);
   if (seconds < 60) {
-    return "just now";
+    return t("just now");
   }
   if (seconds < 3600) {
-    return `${Math.floor(seconds / 60)}m ago`;
+    return t("{n}m ago", { n: Math.floor(seconds / 60) });
   }
   if (seconds < 86400) {
-    return `${Math.floor(seconds / 3600)}h ago`;
+    return t("{n}h ago", { n: Math.floor(seconds / 3600) });
   }
   if (seconds < 86400 * 30) {
-    return `${Math.floor(seconds / 86400)}d ago`;
+    return t("{n}d ago", { n: Math.floor(seconds / 86400) });
   }
   return new Date(iso).toLocaleDateString();
 }
@@ -75,14 +76,15 @@ function IoSection({
       so the two columns keep their headings aligned. */
   muted?: boolean;
 }) {
+  const t = useT();
   if (stats.length === 0 && !muted) {
     return null;
   }
   return (
     <div className="min-w-0 flex-1">
-      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t(label)}</div>
       {stats.length === 0 ? (
-        <div className="py-0.5 text-[11px] text-slate-500">Nothing</div>
+        <div className="py-0.5 text-[11px] text-slate-500">{t("Nothing")}</div>
       ) : null}
       {stats.slice(0, limit).map((stat) => (
         <div key={`${stat.kind}:${stat.resourceId}`} className="flex items-center gap-1.5 py-0.5">
@@ -108,7 +110,7 @@ function IoSection({
         </div>
       ))}
       {stats.length > limit ? (
-        <div className="text-[10px] text-slate-500">+{stats.length - limit} more</div>
+        <div className="text-[10px] text-slate-500">{t("+{n} more", { n: stats.length - limit })}</div>
       ) : null}
     </div>
   );

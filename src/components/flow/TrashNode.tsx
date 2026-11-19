@@ -11,6 +11,7 @@ import { makeResourceHandleId } from "./resource-handles";
 import { GT_NODE_COLORS } from "./node-colors";
 import { getPaintBrushCursor } from "./paint-cursor";
 import { NodeGlanceIcon } from "./NodeGlance";
+import { useT } from "@/lib/i18n";
 
 export interface TrashNodeData extends Record<string, unknown> {
   projectNode: FactoryNode;
@@ -117,6 +118,7 @@ function TrashCanPixelArt({ width = 64, height = 68 }: { width?: number; height?
 }
 
 function TrashNodeComponent({ data, selected }: NodeProps<TrashFlowNode>) {
+  const t = useT();
   const { projectNode } = data;
   const reactFlowStore = useStoreApi();
   // The invisible wire handle blankets the well, and React Flow does not
@@ -195,8 +197,8 @@ function TrashNodeComponent({ data, selected }: NodeProps<TrashFlowNode>) {
               deleteNode(projectNode.id);
             }}
             className="board-edit-chrome nodrag flex h-4 w-4 shrink-0 items-center justify-center border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-white shadow-[inset_1px_1px_0_var(--mc-85),inset_-1px_-1px_0_var(--mc-25)] hover:bg-red-700"
-            title="Delete trash can"
-            aria-label="Delete trash can"
+            title={t("Delete trash can")}
+            aria-label={t("Delete trash can")}
           >
             -
           </button>
@@ -207,16 +209,16 @@ function TrashNodeComponent({ data, selected }: NodeProps<TrashFlowNode>) {
               duplicateNode(projectNode.id);
             }}
             className="board-edit-chrome nodrag flex h-4 w-4 shrink-0 items-center justify-center border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-white shadow-[inset_1px_1px_0_var(--mc-85),inset_-1px_-1px_0_var(--mc-25)] hover:bg-[var(--mc-61)]"
-            title="Clone trash can"
-            aria-label="Clone trash can"
+            title={t("Clone trash can")}
+            aria-label={t("Clone trash can")}
           >
             <Copy aria-hidden className="h-2.5 w-2.5" />
           </button>
           <div className="minecraft-title min-w-0 flex-1 truncate text-left text-[11px] leading-4">
-            Trash
+            {t("Trash")}
           </div>
         </div>
-        <MinecraftTooltip content={'Voids any input. Never shows up as an "Output".'}>
+        <MinecraftTooltip content={t('Voids any input. Never shows up as an "Output".')}>
           {/* The dark well is the wire zone: drop or drag a wire anywhere on
               it. The frame and header around it move the node. */}
           {/* Square, and sized to fill what the header leaves of the card's

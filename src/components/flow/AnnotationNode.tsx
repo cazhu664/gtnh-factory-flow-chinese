@@ -16,6 +16,7 @@ import type {
   FactoryAnnotationStyle,
 } from "@/lib/model/types";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import { GT_NODE_COLORS, GT_NODE_COLOR_PALETTE, inkFor } from "./node-colors";
 import { CameraNodeToolbar } from "./scroll-camera";
 import {
@@ -333,6 +334,7 @@ function BoxShape({ look }: { look: AnnotationLook }) {
  * and the style panel offers the same border dressing a box has.
  */
 function ImageShape({ annotation, look }: { annotation: FactoryAnnotation; look: AnnotationLook }) {
+  const t = useT();
   const [failed, setFailed] = useState(false);
   return (
     <div className="h-full w-full" style={{ pointerEvents: "none" }}>
@@ -351,7 +353,7 @@ function ImageShape({ annotation, look }: { annotation: FactoryAnnotation; look:
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={annotation.imageUrl}
-            alt={annotation.text ?? "Board image"}
+            alt={annotation.text ?? t("Board image")}
             crossOrigin="anonymous"
             draggable={false}
             className="h-full w-full select-none"
@@ -361,7 +363,7 @@ function ImageShape({ annotation, look }: { annotation: FactoryAnnotation; look:
         ) : (
           <div className="flex h-full w-full items-center justify-center gap-2 bg-[var(--mc-49)] text-[var(--mc-ink)]">
             <ImageOff className="h-5 w-5 opacity-60" />
-            <span className="text-xs opacity-60">image unavailable</span>
+            <span className="text-xs opacity-60">{t("image unavailable")}</span>
           </div>
         )}
       </div>
@@ -374,6 +376,11 @@ type ArrowPoint = { x: number; y: number };
 /** Click-to-cycle orders for the two style chips. */
 const BORDER_OPTIONS: FactoryAnnotationBorderStyle[] = ["solid", "dashed", "none"];
 const SURFACE_OPTIONS: AnnotationSurface[] = ["tint", "solid", "none"];
+const BORDER_WORD: Record<FactoryAnnotationBorderStyle, string> = {
+  solid: "solid",
+  dashed: "dashed",
+  none: "off",
+};
 const SURFACE_WORD: Record<AnnotationSurface, string> = {
   tint: "tinted",
   solid: "solid",
@@ -428,6 +435,7 @@ function AnnotationStylePanel({
 }) {
   const updateAnnotation = useFactoryStore((state) => state.updateAnnotation);
   const deleteAnnotation = useFactoryStore((state) => state.deleteAnnotation);
+  const t = useT();
   const [openMenu, setOpenMenu] = useState<StylePanelMenu | undefined>(undefined);
   useEffect(() => {
     if (!selected) {
@@ -486,8 +494,8 @@ function AnnotationStylePanel({
               STYLE_CHIP_CLASS,
               openMenu === "border" ? "bg-[var(--mc-85)] shadow-[inset_2px_2px_0_var(--mc-100)]" : "",
             ].join(" ")}
-            title={`Border style: ${look.border}`}
-            aria-label={`Border style: ${look.border}`}
+            title={t("Border style: {value}", { value: t(BORDER_WORD[look.border]) })}
+            aria-label={t("Border style: {value}", { value: t(BORDER_WORD[look.border]) })}
             aria-expanded={openMenu === "border"}
           >
             {look.border === "none" ? (
@@ -509,8 +517,8 @@ function AnnotationStylePanel({
                 ? "bg-[var(--mc-85)] shadow-[inset_2px_2px_0_var(--mc-100)]"
                 : "",
             ].join(" ")}
-            title="Border colour"
-            aria-label="Border colour"
+            title={t("Border colour")}
+            aria-label={t("Border colour")}
             aria-expanded={openMenu === "borderColor"}
           >
             <span
@@ -531,8 +539,8 @@ function AnnotationStylePanel({
                     ? "bg-[var(--mc-85)] shadow-[inset_2px_2px_0_var(--mc-100)]"
                     : "",
                 ].join(" ")}
-                title={`Fill: ${SURFACE_WORD[look.surface]}`}
-                aria-label={`Fill: ${SURFACE_WORD[look.surface]}`}
+                title={t("Fill: {value}", { value: t(SURFACE_WORD[look.surface]) })}
+                aria-label={t("Fill: {value}", { value: t(SURFACE_WORD[look.surface]) })}
                 aria-expanded={openMenu === "surface"}
               >
                 {look.surface === "none" ? (
@@ -554,8 +562,8 @@ function AnnotationStylePanel({
                     ? "bg-[var(--mc-85)] shadow-[inset_2px_2px_0_var(--mc-100)]"
                     : "",
                 ].join(" ")}
-                title="Fill colour"
-                aria-label="Fill colour"
+                title={t("Fill colour")}
+                aria-label={t("Fill colour")}
                 aria-expanded={openMenu === "fillColor"}
               >
                 <span
@@ -580,8 +588,8 @@ function AnnotationStylePanel({
                     ? "bg-[var(--mc-85)] shadow-[inset_2px_2px_0_var(--mc-100)]"
                     : "",
                 ].join(" ")}
-                title={`Marks: ${MARKS_WORD[look.marks]}`}
-                aria-label={`Marks: ${MARKS_WORD[look.marks]}`}
+                title={t("Marks: {value}", { value: t(MARKS_WORD[look.marks]) })}
+                aria-label={t("Marks: {value}", { value: t(MARKS_WORD[look.marks]) })}
                 aria-expanded={openMenu === "marks"}
               >
                 {look.marks === "none" ? (
@@ -603,8 +611,8 @@ function AnnotationStylePanel({
                 type="button"
                 onClick={() => deleteAnnotation(annotation.id)}
                 className={STYLE_CHIP_CLASS}
-                title="Delete image"
-                aria-label="Delete this image"
+                title={t("Delete image")}
+                aria-label={t("Delete this image")}
               >
                 <Trash2 className="h-3.5 w-3.5 text-red-400" />
               </button>
@@ -626,8 +634,8 @@ function AnnotationStylePanel({
                 type="button"
                 onClick={() => commitStyle({ border: value })}
                 className={optionChipClass(look.border === value)}
-                title={value}
-                aria-label={`Use ${value === "none" ? "no" : value} border`}
+                title={t(BORDER_WORD[value])}
+                aria-label={value === "none" ? t("Use no border") : t("Use {value} border", { value: t(BORDER_WORD[value]) })}
               >
                 {value === "none" ? (
                   <Ban className="h-3.5 w-3.5 opacity-60" />
@@ -650,8 +658,8 @@ function AnnotationStylePanel({
                 type="button"
                 onClick={() => commitStyle({ fill: value })}
                 className={optionChipClass(look.surface === value)}
-                title={SURFACE_WORD[value]}
-                aria-label={`Use ${value === "none" ? "no" : SURFACE_WORD[value]} fill`}
+                title={t(SURFACE_WORD[value])}
+                aria-label={value === "none" ? t("Use no fill") : t("Use {value} fill", { value: t(SURFACE_WORD[value]) })}
               >
                 {value === "none" ? (
                   <Ban className="h-3.5 w-3.5 opacity-60" />
@@ -674,8 +682,8 @@ function AnnotationStylePanel({
                 type="button"
                 onClick={() => commitStyle({ marks: value })}
                 className={optionChipClass(look.marks === value)}
-                title={MARKS_WORD[value]}
-                aria-label={value === "none" ? "Use no marks" : `Use ${MARKS_WORD[value]} marks`}
+                title={t(MARKS_WORD[value])}
+                aria-label={value === "none" ? t("Use no marks") : t("Use {value} marks", { value: t(MARKS_WORD[value]) })}
               >
                 {value === "none" ? (
                   <Ban className="h-3.5 w-3.5 opacity-60" />
@@ -715,7 +723,7 @@ function AnnotationStylePanel({
                   ].join(" ")}
                   style={{ backgroundColor: entry.color.swatch }}
                   title={entry.tag}
-                  aria-label={`Use ${entry.tag} for the ${openMenu === "borderColor" ? "border" : "fill"}`}
+                  aria-label={t("Use {tag} for the {part}", { tag: entry.tag, part: openMenu === "borderColor" ? t("border") : t("fill") })}
                 />
               ))}
             </div>
@@ -735,8 +743,8 @@ function AnnotationStylePanel({
                         : "border-[var(--mc-15)]",
                     ].join(" ")}
                     style={{ backgroundColor: theme.base, backgroundImage: theme.texture }}
-                    title={`${theme.name} paper`}
-                    aria-label={`Use ${theme.name} paper for the fill`}
+                    title={t("{name} paper", { name: theme.name })}
+                    aria-label={t("Use {name} paper for the fill", { name: theme.name })}
                   />
                 ))}
               </div>
@@ -771,6 +779,7 @@ function ZoneAnnotation({
 }) {
   const updateAnnotation = useFactoryStore((state) => state.updateAnnotation);
   const { screenToFlowPosition } = useReactFlow();
+  const t = useT();
   const [draftPoints, setDraftPoints] = useState<ArrowPoint[]>();
   const points = draftPoints ?? annotation.points ?? [];
 
@@ -885,7 +894,7 @@ function ZoneAnnotation({
             <ArrowEndpointHandle
               key={index}
               point={point}
-              label={`Drag corner ${index + 1} of the zone`}
+              label={t("Drag corner {n} of the zone", { n: index + 1 })}
               onPointerDown={beginCornerDrag(index)}
             />
           ))
@@ -1158,6 +1167,7 @@ function ArrowAnnotation({
 }) {
   const updateAnnotation = useFactoryStore((state) => state.updateAnnotation);
   const { screenToFlowPosition } = useReactFlow();
+  const t = useT();
   const [draft, setDraft] = useState<{ from: ArrowPoint; to: ArrowPoint }>();
   const { from, to } = draft ?? arrowEndpoints(annotation, width, height);
 
@@ -1214,12 +1224,12 @@ function ArrowAnnotation({
         <>
           <ArrowEndpointHandle
             point={from}
-            label="Drag the arrow's tail"
+            label={t("Drag the arrow's tail")}
             onPointerDown={beginEndpointDrag("from")}
           />
           <ArrowEndpointHandle
             point={to}
-            label="Drag the arrow's head"
+            label={t("Drag the arrow's head")}
             onPointerDown={beginEndpointDrag("to")}
           />
         </>
@@ -1344,6 +1354,7 @@ function TextShape({
   color: (typeof GT_NODE_COLORS)[keyof typeof GT_NODE_COLORS];
 }) {
   const updateAnnotation = useFactoryStore((state) => state.updateAnnotation);
+  const t = useT();
   const [isEditing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState(annotation.text ?? "");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -1395,7 +1406,7 @@ function TextShape({
         setDraftText(annotation.text ?? "");
         setEditing(true);
       }}
-      title={isEditing ? undefined : "Double-click to edit"}
+      title={isEditing ? undefined : t("Double-click to edit")}
     >
       {/* Size controls, top right, on hover only: a note is something you read,
           and two buttons parked on every note permanently would be furniture in
@@ -1411,8 +1422,8 @@ function TextShape({
           onPointerDown={(event) => event.stopPropagation()}
           disabled={fontSize <= MIN_ANNOTATION_FONT_SIZE}
           className={ANNOTATION_STEP_BUTTON_CLASS}
-          title="Smaller text"
-          aria-label="Smaller text"
+          title={t("Smaller text")}
+          aria-label={t("Smaller text")}
         >
           <span aria-hidden className="block h-[2px] w-[8px] bg-current" />
         </button>
@@ -1425,8 +1436,8 @@ function TextShape({
           onPointerDown={(event) => event.stopPropagation()}
           disabled={fontSize >= MAX_ANNOTATION_FONT_SIZE}
           className={ANNOTATION_STEP_BUTTON_CLASS}
-          title="Bigger text"
-          aria-label="Bigger text"
+          title={t("Bigger text")}
+          aria-label={t("Bigger text")}
         >
           <span aria-hidden className="relative block h-[8px] w-[8px]">
             <span className="absolute left-0 top-[3px] block h-[2px] w-[8px] bg-current" />
@@ -1452,7 +1463,7 @@ function TextShape({
         />
       ) : (
         <div className="h-full w-full overflow-hidden whitespace-pre-wrap p-2">
-          {annotation.text?.length ? annotation.text : "Double-click to edit"}
+          {annotation.text?.length ? annotation.text : t("Double-click to edit")}
         </div>
       )}
     </div>

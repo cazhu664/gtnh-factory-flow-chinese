@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import { t } from "@/lib/i18n";
 
 
 /**
@@ -128,7 +129,7 @@ export function PerfHud() {
       if (lineLiveRef.current) {
         const liveMs = liveCount > 0 ? liveSum / liveCount : 0;
         const fps = liveMs > 0 ? Math.round(1000 / liveMs) : 0;
-        lineLiveRef.current.textContent = `${ms(liveMs)} ms · ${fps} fps`;
+        lineLiveRef.current.textContent = t("{ms} ms · {fps} fps", { ms: ms(liveMs), fps });
       }
       if (lineStatsRef.current) {
         if (statsWindow.length > 0) {
@@ -136,18 +137,18 @@ export function PerfHud() {
           const avg = statsWindow.reduce((sum, value) => sum + value, 0) / statsWindow.length;
           const p95 = statsWindow[Math.min(statsWindow.length - 1, Math.floor(statsWindow.length * 0.95))];
           const worst = statsWindow[statsWindow.length - 1];
-          lineStatsRef.current.textContent = `avg ${ms(avg)} · p95 ${ms(p95)} · max ${ms(worst)} (5s)`;
+          lineStatsRef.current.textContent = t("avg {avg} · p95 {p95} · max {max} (5s)", { avg: ms(avg), p95: ms(p95), max: ms(worst) });
         } else {
-          lineStatsRef.current.textContent = "avg - · p95 - · max - (5s)";
+          lineStatsRef.current.textContent = t("avg - · p95 - · max - (5s)");
         }
       }
       if (lineStutterRef.current) {
-        lineStutterRef.current.textContent = `stutters: ${stutter25} over 25ms · ${stutter40} over 40ms (60s)`;
+        lineStutterRef.current.textContent = t("stutters: {over25} over 25ms · {over40} over 40ms (60s)", { over25: stutter25, over40: stutter40 });
       }
       if (lineCountsRef.current) {
         const cards = document.querySelectorAll(".react-flow__node").length;
         const wires = document.querySelectorAll(".react-flow__edge").length;
-        lineCountsRef.current.textContent = `cards ${cards} · wires ${wires}`;
+        lineCountsRef.current.textContent = t("cards {cards} · wires {wires}", { cards, wires });
       }
       if (lineCameraRef.current) {
         // The flow-space point under the centre of the board, and the zoom:
@@ -170,7 +171,7 @@ export function PerfHud() {
           const ty = Number(match[2]) - flow.scrollTop;
           const x = (rect.width / 2 - tx) / zoom;
           const y = (rect.height / 2 - ty) / zoom;
-          lineCameraRef.current.textContent = `centre x ${Math.round(x)} · y ${Math.round(y)} · zoom ${zoom.toFixed(3)}`;
+          lineCameraRef.current.textContent = t("centre x {x} · y {y} · zoom {zoom}", { x: Math.round(x), y: Math.round(y), zoom: zoom.toFixed(3) });
         }
       }
     };

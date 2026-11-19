@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { formatCompact } from "@/lib/model";
+import { useT } from "@/lib/i18n";
 import { useBoardMotion, useMotionPoints, useMotionValue } from "@/components/flow/board-motion";
 
 /**
@@ -32,6 +33,7 @@ export function TrendSparkline({
   multiplier: number;
 }) {
   const gradientId = useId();
+  const t = useT();
   const hostRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number>();
   const { valueMotion } = useBoardMotion();
@@ -75,7 +77,7 @@ export function TrendSparkline({
         style={{ height }}
         className="flex items-center justify-center text-[10px] text-fg-muted"
       >
-        Edit the board to start the chart
+        {t("Edit the board to start the chart")}
       </div>
     );
   }
@@ -180,7 +182,7 @@ export function TrendSparkline({
       */}
       {hoverIndex === undefined ? (
         <span className="pointer-events-none absolute left-0 top-0 text-[10px] tabular-nums text-fg-muted">
-          {series.length} edits
+          {t("{count} edits", { count: series.length })}
         </span>
       ) : (
         <span

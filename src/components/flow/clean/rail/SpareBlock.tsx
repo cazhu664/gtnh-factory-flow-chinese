@@ -25,6 +25,7 @@ import { RailKey } from "./rail-controls";
 import { nudged, SHARE_SHOWN, sameShares, shareAtX } from "./rail-math";
 import { tipProps, type TipContent } from "./rail-tip";
 import type { SpareBearerView, SpareView } from "./spare-model";
+import { t, useT } from "@/lib/i18n";
 
 /**
  * One leftover and the places that could bear it (UI spec section 9; the mod's
@@ -46,7 +47,7 @@ function inkOf(spare: SpareView): string {
 /** Whether two places share a name (then the machine says which). */
 function labelOf(spare: SpareView, b: SpareBearerView, here: string | undefined): string {
   const same = spare.bearers.filter((o) => o.name === b.name).length;
-  return `${same > 1 ? b.machine : b.name}${b.key === here ? " (here)" : ""}`;
+  return `${same > 1 ? b.machine : b.name}${b.key === here ? t(" (here)") : ""}`;
 }
 
 function amountOf(b: SpareBearerView, share: number): string {
@@ -72,17 +73,20 @@ function placeTip(spare: SpareView, b: SpareBearerView, share: number, bar: bool
   const choice = spare.bearers.length > 1;
   const unit = rateSuffixForKind(b.resource.kind).trim();
   return {
-    title: `${b.name} at ${b.machine}`,
-    sub: spare.importing ? "Forced input" : "Forced output",
+    title: t("{name} at {machine}", { name: b.name, machine: b.machine }),
+    sub: spare.importing ? t("Forced input") : t("Forced output"),
     rows: [
-      [spare.importing ? "Comes in here" : "Ships out here", `${amountOf(b, share)} ${unit}`],
-      ["All of it would be", `${amountOf(b, 1)} ${unit}`],
+      [
+        spare.importing ? t("Comes in here") : t("Ships out here"),
+        `${amountOf(b, share)} ${unit}`,
+      ],
+      [t("All of it would be"), `${amountOf(b, 1)} ${unit}`],
     ],
     notes: [
       {
         text: spare.importing
-          ? "The plan brings this in at a port with no drawer."
-          : "The plan sends this out at a port with no drawer.",
+          ? t("The plan brings this in at a port with no drawer.")
+          : t("The plan sends this out at a port with no drawer."),
         tone: "muted",
       },
     ],
@@ -92,14 +96,14 @@ function placeTip(spare: SpareView, b: SpareBearerView, share: number, bar: bool
             {
               input: "left" as const,
               label: bar
-                ? "Fill the bar to here"
+                ? t("Fill the bar to here")
                 : spare.importing
-                  ? "Bring it all in here"
-                  : "Ship it all out here",
+                  ? t("Bring it all in here")
+                  : t("Ship it all out here"),
             },
           ]
         : []),
-      { input: "middle", label: "Go to its card" },
+      { input: "middle", label: t("Go to its card") },
     ],
   };
 }
@@ -108,17 +112,17 @@ function headTip(spare: SpareView): TipContent {
   const n = spare.bearers.length;
   const name = spare.bearers[0]?.name ?? "";
   return {
-    title: spare.importing ? "Forced inputs" : "Forced outputs",
+    title: spare.importing ? t("Forced inputs") : t("Forced outputs"),
     sub: name,
     notes: [
       {
         text: spare.importing
-          ? `The plan has to bring ${name} in, and ${n} places could take it.`
-          : `The plan has ${name} to send out, and ${n} places could ship it.`,
+          ? t("The plan has to bring {name} in, and {n} places could take it.", { name, n })
+          : t("The plan has {name} to send out, and {n} places could ship it.", { name, n }),
         tone: "muted",
       },
       {
-        text: "Pull the bars to choose, or Split it evenly. Auto goes back to the plan's own pick.",
+        text: t("Pull the bars to choose, or Split it evenly. Auto goes back to the plan's own pick."),
         tone: "muted",
       },
     ],
@@ -140,6 +144,7 @@ export function SpareBlock({
   onHoverPlace?: (index: number | null) => void;
 }) {
   useRateDisplayUnits();
+  const t = useT();
   const ink = inkOf(spare);
   const drag = useRef<{
     index: number;
@@ -189,28 +194,28 @@ export function SpareBlock({
           className="rail-spare-title"
           {...tipProps(`spare-head|${spare.key}`, () => headTip(spare))}
         >
-          Forced
+          {t("Forced")}
         </span>
         <RailKey
-          label="Split"
+          label={t("Split")}
           onClick={() => splitSpareEvenly(spare)}
           tip={() => ({
-            title: "Split",
-            actions: [{ input: "left", label: "Share it evenly between them" }],
+            title: t("Split"),
+            actions: [{ input: "left", label: t("Share it evenly between them") }],
           })}
         >
-          Split
+          {t("Split")}
         </RailKey>
         <RailKey
-          label="Auto"
+          label={t("Auto")}
           disabled={!spare.custom}
           onClick={() => clearSpare(spare)}
           tip={() => ({
-            title: "Auto",
-            actions: [{ input: "left", label: "Back to the plan's own pick" }],
+            title: t("Auto"),
+            actions: [{ input: "left", label: t("Back to the plan's own pick") }],
           })}
         >
-          Auto
+          {t("Auto")}
         </RailKey>
       </div>
       {spare.bearers.map((b, i) => {

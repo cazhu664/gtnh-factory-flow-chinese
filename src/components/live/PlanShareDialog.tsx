@@ -12,6 +12,7 @@ import {
   type PlanMembers,
 } from "@/lib/library/cloud-library";
 import { syncLibraryNow } from "@/lib/library/library-sync";
+import { useT } from "@/lib/i18n";
 import type { PlanMember } from "@/lib/library/sync-types";
 import { LIBRARY_MAX_MEMBERS } from "@/lib/library/sync-types";
 import { colorFor } from "@/lib/live/protocol";
@@ -28,6 +29,7 @@ import { Face } from "./LiveFaces";
  * never this plan. In the mod's panel skin, as the other boxes of its bar.
  */
 export function PlanShareDialog({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogA11y(dialogRef, { onClose, initialFocus: "#plan-share-search" });
   const user = useCommunityAuthStore((state) => state.user);
@@ -69,7 +71,7 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
       },
       (error: unknown) => {
         if (!cancelled) {
-          setLoadError(error instanceof Error ? error.message : "Sharing could not be loaded.");
+          setLoadError(error instanceof Error ? error.message : t("Sharing could not be loaded."));
         }
       },
     );
@@ -103,7 +105,7 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
       const next = await addPlanMember(remoteId, account.id);
       setInfo((current) => (current ? { ...current, members: next } : current));
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Could not share the plan.");
+      setActionError(error instanceof Error ? error.message : t("Could not share the plan."));
     } finally {
       setBusy(undefined);
     }
@@ -119,7 +121,7 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
       const next = await removePlanMember(remoteId, member.id);
       setInfo((current) => (current ? { ...current, members: next } : current));
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Could not remove them.");
+      setActionError(error instanceof Error ? error.message : t("Could not remove them."));
     } finally {
       setBusy(undefined);
     }
@@ -137,7 +139,7 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
       onClose();
       await removeDesign(design.id, { fromSync: true });
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Could not leave the plan.");
+      setActionError(error instanceof Error ? error.message : t("Could not leave the plan."));
       setBusy(undefined);
     }
   };
@@ -155,35 +157,34 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Plan together"
+        aria-label={t("Plan together")}
         data-plan-share-dialog
         className="pn pn-skin"
       >
         <div className="pn-title">
-          <span>Plan together</span>
-          <button type="button" onClick={onClose} aria-label="Close" className="pn-x" />
+          <span>{t("Plan together")}</span>
+          <button type="button" onClick={onClose} aria-label={t("Close")} className="pn-x" />
         </div>
         <div className="pn-body">
           {!user ? (
-            <p className="text-sm text-fg-muted">Sign in to invite.</p>
+            <p className="text-sm text-fg-muted">{t("Sign in to invite.")}</p>
           ) : loadError ? (
             <p className="text-sm text-red-400">{loadError}</p>
           ) : !synced || !info ? (
             <p className="flex items-center gap-2 text-sm text-fg-muted">
-              <LoaderCircle className="h-4 w-4 animate-spin" /> Loading.
+              <LoaderCircle className="h-4 w-4 animate-spin" /> {t("Loading.")}
             </p>
           ) : (
             <div className="space-y-3">
               <p className="text-xs text-fg-muted">
-                Everyone here can edit the plan with you, live. Posting a copy to Community is
-                separate.
+                {t("Everyone here can edit the plan with you, live. Posting a copy to Community is separate.")}
               </p>
               <ul className="space-y-1" data-plan-members>
                 <li className="flex items-center gap-2 text-sm">
                   <Face username={info.ownerName || "?"} color={colorFor(info.ownerId)} />
                   <span className="min-w-0 flex-1 truncate">
-                    {isOwner ? "You" : info.ownerName}
-                    <span className="ml-1 text-xs text-fg-muted">owner</span>
+                    {isOwner ? t("You") : info.ownerName}
+                    <span className="ml-1 text-xs text-fg-muted">{t("owner")}</span>
                   </span>
                 </li>
                 {members.map((member) => {
@@ -196,7 +197,7 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
                     >
                       <Face username={member.username} color={colorFor(member.id)} />
                       <span className="min-w-0 flex-1 truncate">
-                        {isMe ? "You" : member.username}
+                        {isMe ? t("You") : member.username}
                       </span>
                       {isOwner ? (
                         <button
@@ -205,7 +206,7 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
                           onClick={() => void remove(member)}
                           className="rounded border border-line px-2 py-0.5 text-xs text-fg-subtle hover:border-line-strong hover:text-fg disabled:opacity-50"
                         >
-                          {busy === member.id ? "Removing" : "Remove"}
+                          {busy === member.id ? t("Removing") : t("Remove")}
                         </button>
                       ) : null}
                     </li>
@@ -215,7 +216,7 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
               {isOwner ? (
                 full ? (
                   <p className="text-xs text-fg-muted">
-                    A plan can be shared with {LIBRARY_MAX_MEMBERS} people at most.
+                    {t("A plan can be shared with {count} people at most.", { count: LIBRARY_MAX_MEMBERS })}
                   </p>
                 ) : (
                   <AccountSearch
@@ -231,7 +232,7 @@ export function PlanShareDialog({ onClose }: { onClose: () => void }) {
                   onClick={() => void leave()}
                   className="rounded border border-red-800 px-3 py-1 text-sm text-red-300 hover:bg-red-950/50 disabled:opacity-50"
                 >
-                  {busy === "leave" ? "Leaving" : "Leave this plan"}
+                  {busy === "leave" ? t("Leaving") : t("Leave this plan")}
                 </button>
               )}
               {actionError ? <p className="text-sm text-red-400">{actionError}</p> : null}
@@ -253,6 +254,7 @@ function AccountSearch({
   busyId?: string;
   onPick: (account: PlanMember) => void;
 }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlanMember[]>();
   const [searching, setSearching] = useState(false);
@@ -280,7 +282,7 @@ function AccountSearch({
           if (controller.signal.aborted) {
             return;
           }
-          setError(failure instanceof Error ? failure.message : "Search failed.");
+          setError(failure instanceof Error ? failure.message : t("Search failed."));
           setSearching(false);
         },
       );
@@ -300,7 +302,7 @@ function AccountSearch({
   return (
     <div className="space-y-1">
       <label className="block text-xs font-medium text-fg-muted" htmlFor="plan-share-search">
-        Add someone
+        {t("Add someone")}
       </label>
       <input
         id="plan-share-search"
@@ -310,14 +312,14 @@ function AccountSearch({
           setQuery(event.target.value);
           setSearching(Boolean(event.target.value.trim()));
         }}
-        placeholder="Search by name"
+        placeholder={t("Search by name")}
         autoComplete="off"
         maxLength={24}
         className="h-8 w-full rounded border border-line-strong bg-surface-sunken px-2 text-sm outline-none focus:border-cyan-600"
       />
       {error ? <p className="text-xs text-red-400">{error}</p> : null}
       {typed && !searching && results && shown.length === 0 ? (
-        <p className="text-xs text-fg-muted">No one by that name.</p>
+        <p className="text-xs text-fg-muted">{t("No one by that name.")}</p>
       ) : null}
       {shown.length > 0 ? (
         <ul className="max-h-48 space-y-0.5 overflow-y-auto" data-account-results>
@@ -336,7 +338,7 @@ function AccountSearch({
                 <Face username={account.username} color={colorFor(account.id)} />
                 <span className="min-w-0 flex-1 truncate">{account.username}</span>
                 <UserPlus className="h-3.5 w-3.5 text-fg-muted" aria-hidden />
-                <span className="sr-only">Add</span>
+                <span className="sr-only">{t("Add")}</span>
               </button>
             </li>
           ))}

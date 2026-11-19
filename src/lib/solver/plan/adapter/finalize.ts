@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n/core";
 import { makeResourceKey } from "../../../model/resources";
 import type {
   EdgeThroughput,
@@ -115,7 +116,11 @@ export function finalizePlanResult(
         id: `solve-target:${storage.id}`,
         kind: "resource-deficit",
         severity: "critical",
-        message: `${storage.displayName ?? storage.resourceId}: the plan cannot ${role === "source" ? "use" : "make"} ${Math.abs(storage.targetPerSecond ?? 0).toFixed(2)}/s at these settings.`,
+        message: t("{name}: the plan cannot {verb} {rate}/s at these settings.", {
+          name: storage.displayName ?? storage.resourceId,
+          verb: role === "source" ? t("use") : t("make"),
+          rate: Math.abs(storage.targetPerSecond ?? 0).toFixed(2),
+        }),
       });
     }
   }
@@ -125,7 +130,7 @@ export function finalizePlanResult(
       id: "plan-failed",
       kind: "resource-deficit",
       severity: "critical",
-      message: "The plan could not be solved.",
+      message: t("The plan could not be solved."),
     });
   }
 

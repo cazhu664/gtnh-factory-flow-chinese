@@ -3,10 +3,11 @@ import { getStorageRoles } from "@/lib/model/storage-role";
 import type { FactoryProject, ResourceKind, ThroughputResult } from "@/lib/model/types";
 import { rateMultiplierForKind, rateSuffixForKind } from "@/lib/model/rate-unit";
 import { pinRuleOf } from "@/lib/model/pin-rule";
-import { UP_TO_WORD } from "../up-to-reason";
+import { upToWord } from "../up-to-reason";
 import { loopSentence, loopTag, loopTone, type LoopTone } from "../loops";
 import type { Note, NoteArg, PlanNote, PlanShortfall } from "@/lib/solver/plan/types";
 import { splitResultNodeId } from "./rail-model";
+import { datasetNameLabel, t } from "@/lib/i18n";
 
 /**
  * The notices bar's list: the solver's notes in the mod's words
@@ -117,7 +118,7 @@ export function buildNotices(
         out.push({
           id: "no-pin",
           severity: "info",
-          text: "Nothing to calculate yet: set a rate on a drawer, or pin a machine count",
+          text: t("Nothing to calculate yet: set a rate on a drawer, or pin a machine count"),
           focus: [],
         });
       }
@@ -129,7 +130,7 @@ export function buildNotices(
   const recipeOf = new Map(project.recipes.map((r) => [r.id, r]));
   const cardName = (id: string): string => {
     const node = project.nodes.find((n) => n.id === id);
-    return recipeOf.get(node?.recipeId ?? "")?.machineType ?? "machine";
+    return recipeOf.get(node?.recipeId ?? "")?.machineType ?? t("machine");
   };
 
   // Old Build's rings: a dead loop's cards starve each other, a clog lock's clog each other on a surplus. Alarms: tagged,
@@ -154,15 +155,18 @@ export function buildNotices(
       const node = project.nodes.find((n) => n.id === id);
       const reason = extras.upTo?.[id]?.reason;
       const name = cardName(id);
-      if (node && pinRuleOf(node) === "exact") parts.push(`The ${name} is set exactly.`);
+      if (node && pinRuleOf(node) === "exact")
+        parts.push(t("The {name} is set exactly.", { name }));
       else if (reason && reason !== "FULL" && reason !== "BOTTLENECK")
-        parts.push(`The ${name} is ${UP_TO_WORD[reason].toLowerCase()}.`);
-      else parts.push(`The ${name} is full.`);
+        parts.push(t("The {name} is {word}.", { name, word: upToWord(reason).toLowerCase() }));
+      else parts.push(t("The {name} is full.", { name }));
     }
     for (const id of s.limitingDrawers) {
       const other = storages.find((o) => o.id === id);
       parts.push(
-        `The ${other?.displayName ?? other?.resourceId ?? "other"} drawer's rate holds it back.`,
+        t("The {name} drawer's rate holds it back.", {
+          name: other?.displayName ?? other?.resourceId ?? t("other"),
+        }),
       );
     }
     return parts.length > 0 ? ` ${parts.join(" ")}` : "";
@@ -186,7 +190,8 @@ export function buildNotices(
       unmet.find((s) => s.resourceId === label);
     const supply = storage ? roles.get(storage.id) === "source" : false;
     const kind: ResourceKind = storage?.kind ?? "item";
-    const who = `The ${label} ${supply ? "supply" : "drawer"}`;
+    const role = supply ? t("supply") : t("drawer");
+    const who = t("The {name} {role}", { name: datasetNameLabel(label), role });
     const target = rate(asked, kind);
     const reach = rate(reached, kind);
     const shortfall = storage
@@ -194,10 +199,28 @@ export function buildNotices(
       : undefined;
     const holders = shortfall ? holdersOf(shortfall) : "";
     const sentence = shortfall
-      ? `The ${label} ${supply ? "supply" : "drawer"} gets ${reach} of ${target}.${holders}`
+      ? t("The {name} {role} gets {reach} of {target}.{holders}", {
+          name: datasetNameLabel(label),
+          role,
+          reach,
+          target,
+          holders,
+        })
       : reached > asked
-        ? `${who} allows at most ${target}, but the plan ${supply ? "needs" : "makes"} ${reach}`
-        : `${who} ${supply ? "should give" : "wants"} ${rule === "exact" ? "exactly " : ""}${target}, but the plan can only ${supply ? "use" : "make"} ${reach}`;
+        ? t("{who} allows at most {target}, but the plan {verb} {reach}", {
+            who,
+            verb: supply ? t("needs") : t("makes"),
+            target,
+            reach,
+          })
+        : t("{who} {verb} {exact}{target}, but the plan can only {verb2} {reach}", {
+            who,
+            verb: supply ? t("should give") : t("wants"),
+            exact: rule === "exact" ? t("exactly ") : "",
+            target,
+            verb2: supply ? t("use") : t("make"),
+            reach,
+          });
     out.push({
       id: `unmet:${storage?.id ?? label}`,
       severity: "warn",
@@ -213,21 +236,33 @@ export function buildNotices(
       out.push({
         id: `overshoot:${text(note.args[4])}:${text(note.args[1])}`,
         severity: "warn",
-        text: `The ${machine} makes ${rate(num(note.args[2]), kind)} of ${text(note.args[1])}, more than its ${rate(num(note.args[3]), kind)} target, because another of its outputs needs more`,
+        text: t(
+          "The {machine} makes {made} of {resource}, more than its {target} target, because another of its outputs needs more",
+          {
+            machine,
+            made: rate(num(note.args[2]), kind),
+            resource: text(note.args[1]),
+            target: rate(num(note.args[3]), kind),
+          },
+        ),
         focus: idsIn(note),
       });
     } else if (note.message === "DRAWER_NOT_CONNECTED") {
       out.push({
         id: `unwired:${text(note.args[1])}`,
         severity: "warn",
-        text: `The ${text(note.args[0])} drawer has a rate, but nothing is wired to it`,
+        text: t("The {name} drawer has a rate, but nothing is wired to it", {
+          name: text(note.args[0]),
+        }),
         focus: idsIn(note),
       });
     } else if (note.message === "DRAWER_WIRED_IGNORED") {
       out.push({
         id: `ignored:${text(note.args[1])}`,
         severity: "warn",
-        text: `The ${text(note.args[0])} drawer's rate does nothing: the ports it's on are wired`,
+        text: t("The {name} drawer's rate does nothing: the ports it's on are wired", {
+          name: text(note.args[0]),
+        }),
         focus: idsIn(note),
       });
     } else if (
@@ -237,7 +272,7 @@ export function buildNotices(
       out.push({
         id: "choice",
         severity: "warn",
-        text: "Your saved choice no longer fits this plan, so the planner's own answer is shown",
+        text: t("Your saved choice no longer fits this plan, so the planner's own answer is shown"),
         focus: [],
       });
     }
@@ -265,7 +300,9 @@ function failureNotice(note: Note, idsIn: (note: Note) => string[]): BoardNotice
     return {
       id: "pin-conflict",
       severity: "error",
-      text: `The pinned counts on ${names.join(" and ")} can't all be met at once: unpin one`,
+      text: t("The pinned counts on {names} can't all be met at once: unpin one", {
+        names: names.join(t(" and ")),
+      }),
       focus: [...new Set(ids)],
     };
   }
@@ -273,7 +310,7 @@ function failureNotice(note: Note, idsIn: (note: Note) => string[]): BoardNotice
     return {
       id: "cannot-run",
       severity: "error",
-      text: "Some machines can't run with these rates and pinned counts",
+      text: t("Some machines can't run with these rates and pinned counts"),
       focus: [],
     };
   }
@@ -283,14 +320,18 @@ function failureNotice(note: Note, idsIn: (note: Note) => string[]): BoardNotice
     return {
       id: "no-way",
       severity: "error",
-      text: "There's no way to meet all these rates and pinned counts: change a rate or unpin a count",
+      text: t(
+        "There's no way to meet all these rates and pinned counts: change a rate or unpin a count",
+      ),
       focus: [],
     };
   }
   return {
     id: "failed",
     severity: "error",
-    text: "The planner couldn't solve this plan: please report it with Feedback in the top bar",
+    text: t(
+      "The planner couldn't solve this plan: please report it with Feedback in the top bar",
+    ),
     focus: [],
   };
 }

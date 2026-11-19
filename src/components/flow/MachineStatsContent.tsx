@@ -2,6 +2,8 @@
 
 import type { FactoryNode, MachineHandler, NodeThroughputResult, Recipe } from "@/lib/model/types";
 import { useFactoryStore } from "@/store/factory-store";
+import { resourceLabel } from "@/lib/model/resources";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 import { RecipeTooltip } from "./RecipeTooltip";
 import { tooltipMode } from "./recipe-tooltip-data";
 import { buildMachineTooltip } from "./machine-tooltip-data";
@@ -38,15 +40,16 @@ function CropSourceStatsContent({
   node?: Pick<FactoryNode, "machineConfigTiers" | "machineCount">;
   title?: string;
 }) {
+  const t = useT();
   const stats = getCropsNhStats(recipe);
   if (!stats) {
     return null;
   }
-  const cropName = recipe.name.includes(": ")
-    ? recipe.name.slice(recipe.name.indexOf(": ") + 2)
-    : recipe.name;
+  const cropName = datasetNameLabel(
+    recipe.name.includes(": ") ? recipe.name.slice(recipe.name.indexOf(": ") + 2) : recipe.name,
+  );
   const displayNamesById = new Map(
-    recipe.outputs.map((output) => [output.id, output.displayName ?? output.id] as const),
+    recipe.outputs.map((output) => [output.id, resourceLabel(output)] as const),
   );
   // The node's current knobs, reshaped by the picked harvester. The worked
   // formulas live on the card's own FORMULAS strip; this hover is only the
@@ -74,35 +77,38 @@ function CropSourceStatsContent({
   const perHarvest = drops.reduce((sum, drop) => sum + drop.expected, 0);
   const perSeed = harvestSeconds > 0 ? perHarvest / harvestSeconds : 0;
   const rows = [
-    { label: "Growth speed", value: `${formatNumber(speedPercent, 0)}%` },
+    { label: t("Growth speed"), value: `${formatNumber(speedPercent, 0)}%` },
     {
-      label: "Harvest every",
+      label: t("Harvest every"),
       value:
         Number.isFinite(harvestSeconds) && harvestSeconds > 0
           ? `${formatNumber(harvestSeconds, 1)} s`
-          : "Never",
+          : t("Never"),
     },
     ...(drops.length > 1
       ? drops.map((drop) => ({
           label: drop.name,
-          value: `${formatNumber(drop.expected, 2)} per harvest`,
+          value: t("{value} per harvest", { value: formatNumber(drop.expected, 2) }),
         }))
       : [
           {
-            label: "Per harvest",
-            value: `${formatNumber(perHarvest, 2)} ${drops[0]?.name ?? "items"}`,
+            label: t("Per harvest"),
+            value: t("{value} {name}", {
+              value: formatNumber(perHarvest, 2),
+              name: drops[0]?.name ?? t("items"),
+            }),
           },
         ]),
-    { label: "Per seed", value: `${formatNumber(perSeed, 3)}/s` },
-    { label: "Crops per machine", value: cropsNhCropsPerMachine(setup).toLocaleString() },
+    { label: t("Per seed"), value: `${formatNumber(perSeed, 3)}/s` },
+    { label: t("Crops per machine"), value: cropsNhCropsPerMachine(setup).toLocaleString() },
   ];
   return (
     <RecipeTooltip
       view={{
-        title: title ?? handler?.label ?? "Crop farm",
-        subtitle: `${cropName} · Tier ${stats.tier}`,
+        title: title ?? (handler?.label ? datasetNameLabel(handler.label) : t("Crop farm")),
+        subtitle: t("{crop} · Tier {tier}", { crop: cropName, tier: stats.tier }),
         rows,
-        reason: stats.machineOnly ? "Grows only in an Industrial Farm." : undefined,
+        reason: stats.machineOnly ? t("Grows only in an Industrial Farm.") : undefined,
       }}
     />
   );

@@ -4,6 +4,7 @@ import "../chrome/mod-panel.css";
 import { Check, Link2, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDialogA11y } from "@/lib/hooks/use-dialog-a11y";
+import { useT } from "@/lib/i18n";
 import { isLiveConfigured } from "@/lib/live/live-config";
 import { normalizeBlueprintTags } from "@/lib/blueprints/types";
 import {
@@ -50,6 +51,7 @@ export function SharePlanDialog({
   onClose: () => void;
   mode?: ShareMode;
 }) {
+  const t = useT();
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogA11y(dialogRef, { onClose });
   const project = useFactoryStore((state) => state.project);
@@ -58,15 +60,15 @@ export function SharePlanDialog({
   const selectedDatasetVersionId = useFactoryStore((state) => state.selectedDatasetVersionId);
   const setProjectCommunityLink = useFactoryStore((state) => state.setProjectCommunityLink);
   const setProjectIdentity = useFactoryStore((state) => state.setProjectIdentity);
-  const activeTabName = useDesignStore(
-    (state) =>
-      state.designs.find((design) => design.id === state.activeDesignId)?.name ?? "Untitled",
+  const activeDesignName = useDesignStore(
+    (state) => state.designs.find((design) => design.id === state.activeDesignId)?.name,
   );
+  const activeTabName = activeDesignName ?? t("Untitled");
   const { user, isLoading: isUserLoading, setUser } = useCommunityUser();
 
   // The plan's own face comes first: whatever the plan card already says is
   // what the post should say, and the fields here are one last look at it.
-  const [name, setName] = useState(project.name || activeTabName || "My factory");
+  const [name, setName] = useState(project.name || activeTabName || t("My factory"));
   const [description, setDescription] = useState(project.description ?? "");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -164,7 +166,7 @@ export function SharePlanDialog({
       setProjectIdentity({ description, icon: icon ?? null });
       notifySetupsChanged();
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Sharing failed.");
+      setError(uploadError instanceof Error ? uploadError.message : t("Sharing failed."));
     } finally {
       setUploading(false);
     }
@@ -196,7 +198,7 @@ export function SharePlanDialog({
       }
       notifySetupsChanged();
     } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : "Updating failed.");
+      setError(updateError instanceof Error ? updateError.message : t("Updating failed."));
     } finally {
       setUploading(false);
     }
@@ -212,7 +214,7 @@ export function SharePlanDialog({
       setLinkedIsPublic(next);
       notifySetupsChanged();
     } catch (thrown) {
-      setError(thrown instanceof Error ? thrown.message : "Changing visibility failed.");
+      setError(thrown instanceof Error ? thrown.message : t("Changing visibility failed."));
     }
   };
 
@@ -226,7 +228,7 @@ export function SharePlanDialog({
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      window.prompt("Copy this link:", url);
+      window.prompt(t("Copy this link:"), url);
       return;
     }
 
@@ -235,19 +237,19 @@ export function SharePlanDialog({
   };
 
   const dialogTitle = linkedPost
-    ? "Update in Community"
+    ? t("Update in Community")
     : mode === "new"
-      ? "Post a new copy to Community"
+      ? t("Post a new copy to Community")
       : isLiveConfigured()
-        ? "Post a copy to Community"
-        : "Post a copy to Community";
+        ? t("Post a copy to Community")
+        : t("Post a copy to Community");
 
   return (
     <div className="pn-backdrop">
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={dialogTitle} className="pn pn-skin" data-wide="">
         <div className="pn-title">
           <span>{dialogTitle}</span>
-          <button type="button" onClick={onClose} aria-label="Close" className="pn-x" />
+          <button type="button" onClick={onClose} aria-label={t("Close")} className="pn-x" />
         </div>
         <div className="pn-body">
 
@@ -255,14 +257,14 @@ export function SharePlanDialog({
           <div className="space-y-3">
             <p className="text-sm">
               {shared.updated
-                ? "Your post is up to date."
-                : "Your setup is in Community. When the plan changes, Update in Community brings the post up to date."}
+                ? t("Your post is up to date.")
+                : t("Your setup is in Community. When the plan changes, Update in Community brings the post up to date.")}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => void copyShareLink()}
-                title="Share link"
+                title={t("Share link")}
                 className="inline-flex items-center gap-1.5 rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
               >
                 {isLinkCopied ? (
@@ -270,7 +272,7 @@ export function SharePlanDialog({
                 ) : (
                   <Link2 className="h-4 w-4" />
                 )}
-                Copy link
+                {t("Copy link")}
               </button>
             </div>
             <button
@@ -281,7 +283,7 @@ export function SharePlanDialog({
               }}
               className="inline-flex rounded border border-cyan-700 bg-cyan-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cyan-500"
             >
-              See it in Community
+              {t("See it in Community")}
             </button>
           </div>
         ) : isUserLoading ? (
@@ -291,20 +293,19 @@ export function SharePlanDialog({
         ) : !user ? (
           <div className="space-y-3">
             <p className="text-sm text-fg-subtle">
-              Sharing needs an account so your posts stay yours: just a username and password.
+              {t("Sharing needs an account so your posts stay yours: just a username and password.")}
             </p>
             <AuthForm onSignedIn={setUser} />
           </div>
         ) : linkedPost ? (
           <div className="space-y-3">
             <p className="text-sm">
-              Update <span className="font-semibold text-fg">{linkedPost.name}</span> with the
-              plan as it is now. Its votes and comments stay.
+              {t("Update {name} with the plan as it is now. Its votes and comments stay.", { name: linkedPost.name })}
             </p>
             <p className="text-xs text-fg-subtle">
               {isPublic
-                ? "Public: it shows in Community. Anyone who opens it gets their own copy."
-                : "Private: only you can see it. The link opens nothing for anyone else."}
+                ? t("Public: it shows in Community. Anyone who opens it gets their own copy.")
+                : t("Private: only you can see it. The link opens nothing for anyone else.")}
             </p>
             {error ? <p className="text-sm text-red-500">{error}</p> : null}
             <div className="flex flex-wrap gap-2">
@@ -315,14 +316,14 @@ export function SharePlanDialog({
                 className="inline-flex items-center gap-2 rounded border border-cyan-700 bg-cyan-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-                Update post
+                {t("Update post")}
               </button>
               <button
                 type="button"
                 onClick={() => setMode("new")}
                 className="inline-flex items-center gap-1.5 rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
               >
-                Post a new copy to Community
+                {t("Post a new copy to Community")}
               </button>
               <button
                 type="button"
@@ -334,14 +335,14 @@ export function SharePlanDialog({
                 ) : (
                   <Link2 className="h-4 w-4" />
                 )}
-                Copy link
+                {t("Copy link")}
               </button>
               <button
                 type="button"
                 onClick={() => void setLinkedVisibility(!isPublic)}
                 className="inline-flex items-center gap-1.5 rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
               >
-                {isPublic ? "Make it private" : "Make it public"}
+                {isPublic ? t("Make it private") : t("Make it public")}
               </button>
               <button
                 type="button"
@@ -351,7 +352,7 @@ export function SharePlanDialog({
                 }}
                 className="inline-flex items-center gap-1.5 rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
               >
-                See it in Community
+                {t("See it in Community")}
               </button>
             </div>
           </div>
@@ -364,9 +365,7 @@ export function SharePlanDialog({
               annotation.id.startsWith("auto-island-box"),
             ) && project.nodes.length >= 6 ? (
               <div className="rounded border border-cyan-700/60 bg-cyan-950/30 p-2 text-xs text-fg-subtle">
-                Tip: the post shows your board exactly as it is. The auto-arrange
-                button on the board lays it out cleanly in one press, and an icon
-                gives the post a face.
+                {t("Tip: the post shows your board exactly as it is. The auto-arrange button on the board lays it out cleanly in one press, and an icon gives the post a face.")}
               </div>
             ) : null}
             {/* What the board carries: the headline numbers with the tier
@@ -375,40 +374,40 @@ export function SharePlanDialog({
             <div className="rounded border border-line bg-surface-raised p-3">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs tabular-nums text-fg-subtle">
                 <span>
-                  <span className="font-semibold text-fg">{stats.nodeCount}</span> cards
+                  <span className="font-semibold text-fg">{stats.nodeCount}</span> {t("cards")}
                 </span>
                 <span>
-                  <span className="font-semibold text-fg">{stats.machineCount}</span> machines
+                  <span className="font-semibold text-fg">{stats.machineCount}</span> {t("machines")}
                 </span>
                 {stats.highestTier ? (
                   <span className="flex items-center gap-1.5">
-                    up to <TierBadge tier={stats.highestTier} />
+                    {t("up to")} <TierBadge tier={stats.highestTier} />
                   </span>
                 ) : null}
                 <span className="ml-auto text-fg-muted">
-                  Game version:{" "}
+                  {t("Game version:")}{" "}
                   <span className="text-fg-subtle">
                     {datasetVersion?.gtnhVersion
                       ? `GTNH ${datasetVersion.gtnhVersion}`
-                      : "unknown"}
+                      : t("unknown")}
                   </span>
                 </span>
               </div>
               <div className="mt-2 max-h-56 overflow-y-auto">
                 {renderIoStats(stats.needs, stats.outputs, { layout: "side-by-side" }) ?? (
                   <p className="text-[11px] text-fg-muted">
-                    Nothing comes in or leaves: this plan feeds itself.
+                    {t("Nothing comes in or leaves: this plan feeds itself.")}
                   </p>
                 )}
               </div>
             </div>
 
             <p className="text-xs text-fg-muted">
-              Posting as <span className="font-semibold text-fg">{user.username}</span>
+              {t("Posting as")} <span className="font-semibold text-fg">{user.username}</span>
             </p>
 
             <div className="block text-sm">
-              <span className="mb-1 block font-medium">Icon and name</span>
+              <span className="mb-1 block font-medium">{t("Icon and name")}</span>
               <div className="flex items-center gap-2">
                 <EntryIconSlot
                   icon={icon}
@@ -425,25 +424,25 @@ export function SharePlanDialog({
               </div>
             </div>
             <label className="block text-sm">
-              <span className="mb-1 block font-medium">Description (optional)</span>
+              <span className="mb-1 block font-medium">{t("Description (optional)")}</span>
               <textarea
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 maxLength={2000}
                 rows={3}
-                placeholder="What does it make? Any setup notes?"
+                placeholder={t("What does it make? Any setup notes?")}
                 className="w-full resize-y rounded border border-line-strong bg-surface-sunken px-2 py-1.5"
               />
             </label>
             <div className="block text-sm">
-              <span className="mb-1 block font-medium">Tags (optional)</span>
+              <span className="mb-1 block font-medium">{t("Tags (optional)")}</span>
               <div className="flex flex-wrap items-center gap-1 rounded border border-line-strong bg-surface-sunken px-2 py-1.5">
                 {tags.map((tag) => (
                   <button
                     key={tag}
                     type="button"
                     onClick={() => setTags(tags.filter((entry) => entry !== tag))}
-                    title={`Remove #${tag}`}
+                    title={t("Remove #{tag}", { tag })}
                     className="rounded border border-line px-1.5 py-0.5 text-xs text-fg-subtle hover:border-red-500 hover:text-red-500"
                   >
                     #{tag} ×
@@ -458,7 +457,7 @@ export function SharePlanDialog({
                       addTagFromInput();
                     }
                   }}
-                  placeholder={tags.length === 0 ? "platline, oil, early game..." : ""}
+                  placeholder={tags.length === 0 ? t("platline, oil, early game...") : ""}
                   className="min-w-24 flex-1 bg-transparent text-sm outline-none"
                 />
               </div>
@@ -472,7 +471,7 @@ export function SharePlanDialog({
                 onClick={onClose}
                 className="rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 type="button"
@@ -481,7 +480,7 @@ export function SharePlanDialog({
                 className="inline-flex items-center gap-2 rounded border border-cyan-700 bg-cyan-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-                Post a copy to Community
+                {t("Post a copy to Community")}
               </button>
             </div>
           </div>
@@ -490,7 +489,7 @@ export function SharePlanDialog({
       </div>
       {isPickingIcon ? (
         <IconPicker
-          title="Pick this setup's icon"
+          title={t("Pick this setup's icon")}
           suggestions={iconSuggestionsFromStats(stats.needs, stats.outputs)}
           onPick={(picked) => {
             setIcon(picked);

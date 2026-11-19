@@ -10,6 +10,7 @@ import { getFusionMachine, getFusionStats } from "@/lib/machines/fusion";
 import { getOverclockedRecipeStats } from "@/lib/solver/overclock";
 import { applyMachineHandlerToRecipe, formatRate, isSteamMachineHandler } from "@/lib/model";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 import type { MachineHandlerIcon } from "./machine-icons";
 import type { RecipeTwin } from "@/lib/datasets/recipe-twins";
 
@@ -219,6 +220,7 @@ export function MachineMenu({
   /** The heading over the machine rows; a shared card says "every recipe on this card". */
   title?: string;
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   // The menu PORTALS to the body, like the crop and hatch menus: inside the
   // card it would sit in the node layer, under the marching-dash canvas and
@@ -279,11 +281,11 @@ export function MachineMenu({
               ? { value: formatCompact(steam.drawSteamPerTick * 20).replace(/\.0$/, ""), unit: "L/s" }
               : stats.eut > 0
                 ? { value: formatCompact(stats.eut), unit: "EU/t" }
-                : { value: "none", unit: "" };
+                : { value: t("none"), unit: "" };
             return { twin, stats, power };
           })
         : [],
-    [node, twins],
+    [node, twins, t],
   );
   const rows = useMemo(
     () =>
@@ -299,10 +301,10 @@ export function MachineMenu({
           ? { value: formatCompact(steam.drawSteamPerTick * 20).replace(/\.0$/, ""), unit: "L/s" }
           : stats.eut > 0
             ? { value: formatCompact(stats.eut), unit: "EU/t" }
-            : { value: "none", unit: "" };
+            : { value: t("none"), unit: "" };
         return { handler, stats, power };
       }),
-    [handlers, node, recipe],
+    [handlers, node, recipe, t],
   );
 
   // Closes the way every dropdown does (use-dropdown-dismiss.ts): a press
@@ -326,7 +328,7 @@ export function MachineMenu({
     <div
       ref={rootRef}
       role="listbox"
-      aria-label="Machine"
+      aria-label={t("Machine")}
       className="ui-zoom nodrag nowheel z-[300] overflow-y-auto overflow-x-hidden border-2 border-[var(--mc-15)] bg-[var(--mc-49)] py-1.5 shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25),2px_3px_6px_rgba(0,0,0,0.2)]"
       style={{ position: "fixed", left: anchorAt.left, top: anchorAt.top, bottom: anchorAt.bottom, width: anchorAt.width, maxHeight: anchorAt.maxHeight }}
       onClick={(event) => event.stopPropagation()}
@@ -337,7 +339,7 @@ export function MachineMenu({
       {/* The list's title, in the same voice as the twins section below it:
           what these rows ARE, so the two sections read as two questions. */}
       <div className="mx-3 mb-1 mt-0.5 text-[13px] uppercase tracking-wide text-[var(--mc-ink-muted)]">
-        {title ?? "Machines that run this recipe"}
+        {title ?? t("Machines that run this recipe")}
       </div>
       {rows.map(({ handler, stats, power }) => {
         const active = handler.id === selectedId;
@@ -373,7 +375,7 @@ export function MachineMenu({
                 />
               ) : null}
             </span>
-            <span title={handler.label} style={narrow ? { gridColumn: "2 / 4", whiteSpace: "normal", overflowWrap: "anywhere" } : undefined} className={getFusionMachine(handler.machineType) ? "min-w-0 whitespace-normal" : "min-w-0 truncate"}>{handler.label}</span>
+            <span title={datasetNameLabel(handler.label)} style={narrow ? { gridColumn: "2 / 4", whiteSpace: "normal", overflowWrap: "anywhere" } : undefined} className={getFusionMachine(handler.machineType) ? "min-w-0 whitespace-normal" : "min-w-0 truncate"}>{datasetNameLabel(handler.label)}</span>
             {figures ? <DurationFigure seconds={stats.seconds} /> : <span />}
             {figures ? <Figure value={power.value} unit={power.unit} dim={power.unit === ""} /> : <span />}
           </button>
@@ -387,7 +389,7 @@ export function MachineMenu({
               the two differ (Auto Workbench running a Shaped Crafting
               recipe). Everything here is a swap of the whole recipe. */}
           <div className="mx-3 mt-1.5 border-t-2 border-[var(--mc-33)] pt-2 text-[13px] uppercase tracking-wide text-[var(--mc-ink-muted)]">
-            Other recipes that take and make the same items
+            {t("Other recipes that take and make the same items")}
           </div>
           {twinRows.map(({ twin, stats, power }) => {
               const icon = iconsById.get(twin.handler.id) ?? mapIcons?.get(twin.recipe.recipeMap);
@@ -420,9 +422,9 @@ export function MachineMenu({
                     ) : null}
                   </span>
                   <span className="min-w-0 truncate" style={narrow ? { gridColumn: "2 / 4", whiteSpace: "normal", overflowWrap: "anywhere" } : undefined}>
-                    {twin.handler.label}
+                    {datasetNameLabel(twin.handler.label)}
                     {showMap ? (
-                      <span className="ml-2 text-[13px] text-[var(--mc-ink-muted)]">{twin.recipe.recipeMap}</span>
+                      <span className="ml-2 text-[13px] text-[var(--mc-ink-muted)]">{datasetNameLabel(twin.recipe.recipeMap)}</span>
                     ) : null}
                   </span>
                   <DurationFigure seconds={stats.seconds} />
@@ -447,7 +449,7 @@ export function MachineMenu({
           className="mx-3 mt-1.5 flex w-[calc(100%-24px)] items-center gap-4 border-t-2 border-[var(--mc-33)] px-0 py-2 pt-3 text-left text-[17px] leading-[24px] text-[var(--mc-ink)] hover:bg-[var(--mc-61)] hover:text-white"
         >
           <span className="flex h-9 w-9 items-center justify-center text-[24px] font-black leading-none">+</span>
-          <span className="min-w-0 whitespace-normal">Add another recipe to this machine</span>
+          <span className="min-w-0 whitespace-normal">{t("Add another recipe to this machine")}</span>
         </button>
       ) : null}
     </div>

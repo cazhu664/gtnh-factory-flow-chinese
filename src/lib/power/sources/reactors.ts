@@ -4,6 +4,7 @@
  * docs/power-planner-math.md; where the workbook leaves a cost out (IC2
  * rods), the card says so.
  */
+import { t } from "@/lib/i18n/core";
 import { powerPlannerData } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition } from "../types";
 import { formatAmount, items, lifespanHours, liters, percent, stat } from "./helpers";
@@ -250,7 +251,7 @@ const ic2FluidReactor: PowerSourceDefinition = {
       inputs: [liters("Coolant", rate)],
       outputs: [liters("Hot Coolant", rate)],
       stats: [stat("Hot coolant", `${formatAmount(rate)} L/s`)],
-      warnings: ["Uranium rod costs are not modeled; the community planner skips them too."],
+      warnings: [t("Uranium rod costs are not modeled; the community planner skips them too.")],
     };
   },
 };
@@ -459,12 +460,22 @@ const vacuumReactor: PowerSourceDefinition = {
     const warnings: string[] = [];
     if (run.cellHeat.max > coolant.durability) {
       warnings.push(
-        `${coolant.name} bursts: the hottest cell takes ${formatAmount(run.cellHeat.max)} heat a second and holds ${formatAmount(coolant.durability)}. Pick a bigger cell.`,
+        t(
+          "{name} bursts: the hottest cell takes {max} heat a second and holds {holds}. Pick a bigger cell.",
+          {
+            name: coolant.name,
+            max: formatAmount(run.cellHeat.max),
+            holds: formatAmount(coolant.durability),
+          },
+        ),
       );
     }
     if (fuel.moxBonus) {
       warnings.push(
-        `Core temp ${formatAmount(coreTemp)}% multiplies the output by ${formatAmount(run.moxMultiplier)}. The reactor melts at 100%.`,
+        t("Core temp {temp}% multiplies the output by {multiplier}. The reactor melts at 100%.", {
+          temp: formatAmount(coreTemp),
+          multiplier: formatAmount(run.moxMultiplier),
+        }),
       );
     }
     return {

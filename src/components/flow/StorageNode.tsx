@@ -41,6 +41,7 @@ import { ratioExportShare } from "@/lib/model/storage-ratios";
 import { getCategoryPresentation } from "@/lib/model/category-presentation";
 import { STORAGE_NODE_WIDTH, STORAGE_NODE_HEIGHT } from "@/lib/board-grid";
 import { resourceLabel } from "@/lib/model/resources";
+import { useT } from "@/lib/i18n";
 
 
 export interface StorageNodeData extends Record<string, unknown> {
@@ -197,6 +198,7 @@ function storageIconPixelSize(
 
 function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
   const { storage, result } = data;
+  const t = useT();
   const category = useFactoryStore((state) =>
     getCategoryPresentation(state.project.recipes, storage.kind, storage.resourceId),
   );
@@ -499,7 +501,7 @@ function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
         >
           {/* Colour and silhouette carry the role; the tooltip explains it.
               Keep the word available to assistive technology. */}
-          <span className="storage-node-word sr-only">{word}</span>
+          <span className="storage-node-word sr-only">{t(word)}</span>
           {/* The TITLE BAR is what you move the drawer by, like a machine
               card's title row. Nothing on it starts a wire. */}
           <StorageTitleBar storage={storage} role={role} isTank={isTank} title={title} solveMode={solveMode} />
@@ -541,7 +543,7 @@ function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
               data-resource-handle="true"
               data-resource-node-id={storage.id}
               data-resource-handle-id={outputHandleId}
-              aria-label={`${title}${readOnly ? "" : ". Left click or R for recipes, right click or U for uses, drag to connect"}`}
+              aria-label={`${title}${readOnly ? "" : t(". Left click or R for recipes, right click or U for uses, drag to connect")}`}
               className="nodrag"
               style={WELL_HANDLE}
             />
@@ -580,7 +582,7 @@ function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
                     // leaving the setup, so it says so.
                     <div className="storage-chip-surplus">
                       <ChipRate net={net} kind={storage.kind} role={role} size="large" />
-                      <span className="storage-chip-surplus-word">(surplus)</span>
+                      <span className="storage-chip-surplus-word">{t("(surplus)")}</span>
                     </div>
                   ) : (
                     <ChipRate net={net} kind={storage.kind} role={role} size="large" />
@@ -788,6 +790,7 @@ export function TargetLine({
   input?: boolean;
 }) {
   const setStorageTarget = useFactoryStore((state) => state.setStorageTarget);
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const signed = useFactoryStore((state) => state.project.poolMode === true);
@@ -862,7 +865,7 @@ export function TargetLine({
         onPointerDown={(event) => event.stopPropagation()}
         onMouseDown={(event) => { event.stopPropagation(); if (event.button === 1) event.preventDefault(); }}
         onAuxClick={clearRate}
-        aria-label="Required amount"
+        aria-label={t("Required amount")}
         style={rateStyle}
         className="nodrag group/target relative z-40 flex cursor-pointer justify-center hover:brightness-125"
       >
@@ -882,7 +885,7 @@ export function TargetLine({
                 askBlink ? "animate-pulse" : "opacity-60",
               ].join(" ")}
             >
-              rate?
+              {t("rate?")}
             </div>
           )}
           <Pencil
@@ -920,8 +923,8 @@ export function TargetLine({
         onTouchStart={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
         inputMode={signed ? "text" : "decimal"}
-        placeholder="rate"
-        aria-label="Required amount"
+        placeholder={t("rate")}
+        aria-label={t("Required amount")}
         className={[
           "nodrag h-4 w-[60px] border px-[3px] text-center text-[9px] font-bold tabular-nums outline-none",
           "bg-[#14171d] shadow-[inset_1px_1px_0_rgba(255,255,255,0.08),inset_-1px_-1px_0_rgba(0,0,0,0.5)]",
@@ -936,8 +939,9 @@ export function TargetLine({
 
 /** The ratio editor's pencil, a key in the title bar beside the mode key. */
 function RatioSplitButton({ storageId }: { storageId: string }) {
+  const t = useT();
   return (
-    <button type="button" data-tooltip-stop aria-label="Edit drawer ratios" title="Edit split"
+    <button type="button" data-tooltip-stop aria-label={t("Edit drawer ratios")} title={t("Edit split")}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => { event.stopPropagation(); openRatioEditor(storageId); }}
       className="storage-title-key board-edit-chrome nodrag nopan"
@@ -966,7 +970,8 @@ function StorageTitleBar({
   solveMode: boolean;
 }) {
   const deleteStorage = useFactoryStore((state) => state.deleteStorage);
-  const noun = isTank ? "tank" : "drawer";
+  const t = useT();
+  const noun = t(isTank ? "tank" : "drawer");
   const ratio = role === "buffer" && storage.bufferMode === "ratio";
   // Pool has one drain kind, so DrainModeSwap shows nothing there.
   const poolMode = useFactoryStore((state) => state.project.poolMode === true);
@@ -981,8 +986,8 @@ function StorageTitleBar({
             deleteStorage(storage.id);
           }}
           className="storage-title-key storage-title-key--delete board-edit-chrome nodrag"
-          title={`Delete ${noun}`}
-          aria-label={`Delete ${noun}`}
+          title={t("Delete {noun}", { noun })}
+          aria-label={t("Delete {noun}", { noun })}
         />
       </span>
       <StorageTitleName title={title} />

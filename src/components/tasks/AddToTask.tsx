@@ -11,6 +11,7 @@ import {
   type TaskChoice,
 } from "@/lib/tasks/make-task";
 import { TASK_STATUS_COLOR } from "@/lib/tasks/task-links";
+import { useT } from "@/lib/i18n";
 
 /**
  * Add to a task's two menus (the game's TaskActions.addMenu): "Which task board" (each with how many tasks, then New
@@ -51,6 +52,7 @@ function close() {
 }
 
 export function AddToTaskMenu() {
+  const t = useT();
   const open = useAddToTask((state) => state.open);
   if (!open || (!open.board && !open.boards) || (open.board && !open.tasks)) return null;
   const { cards } = open;
@@ -58,8 +60,8 @@ export function AddToTaskMenu() {
     const board = open.board;
     const entries: MenuEntry[] = [
       {
-        label: "New task",
-        detail: "in To do",
+        label: t("New task"),
+        detail: t("in To do"),
         plus: true,
         onSelect: () => void addCardsToTask(cards, board.id),
       },
@@ -75,7 +77,7 @@ export function AddToTaskMenu() {
       <ChromeMenu
         anchor={open.anchor}
         entries={entries}
-        label="Which task"
+        label={t("Which task")}
         title={board.name}
         minWidth={180}
         onClose={close}
@@ -86,7 +88,7 @@ export function AddToTaskMenu() {
   const entries: MenuEntry[] = [
     ...boards.map((board) => ({
       label: board.name,
-      detail: board.tasks === 0 ? "" : `${board.tasks} ${board.tasks === 1 ? "task" : "tasks"}`,
+      detail: board.tasks === 0 ? "" : `${board.tasks} ${board.tasks === 1 ? t("task") : t("tasks")}`,
       // The menu stays open for the second step: the row's own close is undone by the next menu opening.
       onSelect: () => {
         const anchor = open.anchor;
@@ -95,7 +97,7 @@ export function AddToTaskMenu() {
       },
     })),
     {
-      label: "New task board",
+      label: t("New task board"),
       ruleAbove: boards.length > 0,
       onSelect: () => void addCardsToTask(cards, undefined),
     },
@@ -104,8 +106,8 @@ export function AddToTaskMenu() {
     <ChromeMenu
       anchor={open.anchor}
       entries={entries}
-      label="Which task board"
-      title="Which task board"
+      label={t("Which task board")}
+      title={t("Which task board")}
       minWidth={160}
       onClose={close}
     />

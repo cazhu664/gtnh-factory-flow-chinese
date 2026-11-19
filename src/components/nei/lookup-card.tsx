@@ -24,6 +24,7 @@ import {
 import type { ResourceAmount } from "@/lib/model/types";
 import { energyPerUnitSuffix, type TimeRateUnit } from "@/lib/model/rate-unit";
 import { formatCompact, resourceLabel } from "@/lib/model/resources";
+import { datasetNameLabel, useT } from "@/lib/i18n";
 import {
   getRecipeProgrammedCircuit,
   isProgrammedCircuitResource,
@@ -180,6 +181,7 @@ export const LookupRecipeCard = memo(function LookupRecipeCard({
   onCardMenu: (event: ReactMouseEvent, add: () => void) => void;
   handlers: LookupHandlers;
 }) {
+  const t = useT();
   const preview = useMemo(
     () => contextualizePreviewRecipe(summaryToPreviewRecipe(recipe), contextResource),
     [contextResource, recipe],
@@ -317,7 +319,7 @@ export const LookupRecipeCard = memo(function LookupRecipeCard({
     const keptHere = !isRecipeInputConsumed(chip.raw);
     const free = keptHere && isFreeRecipeInput(chip.raw) && !isControllerSlotInput(chip.raw);
     const amount: ChipAmount = keptHere
-      ? { text: free ? "free" : "not used up" }
+      ? { text: free ? t("free") : t("not used up") }
       : rateView === "eu"
         ? formatChipEnergy(chip.resource, "input", eut, durationTicks)
         : formatChipAmount(chip.resource, rateView, durationTicks, ratioDivisor);
@@ -328,7 +330,7 @@ export const LookupRecipeCard = memo(function LookupRecipeCard({
         resource={chip.resource}
         amount={amount}
         kept={keptHere}
-        tip={keptHere ? (free ? "Free: nothing is spent" : "Not used up") : undefined}
+        tip={keptHere ? (free ? t("Free: nothing is spent") : t("Not used up")) : undefined}
         picker={picker}
         onCycle={
           picker
@@ -364,7 +366,7 @@ export const LookupRecipeCard = memo(function LookupRecipeCard({
       <CardHead
         add={add}
         readOnly={isReadOnly}
-        label="Add recipe node"
+        label={t("Add recipe node")}
         tier={tier}
         circuit={circuit}
         press={headPress}
@@ -420,6 +422,7 @@ export function LookupPowerCard({
   onCardMenu: (event: ReactMouseEvent) => void;
   handlers: LookupHandlers;
 }) {
+  const t = useT();
   const headPress = useLongPress(onCardMenu);
   const model = useMemo(() => {
     try {
@@ -472,7 +475,7 @@ export function LookupPowerCard({
     >
       <CardHead
         add={onPlace}
-        label={`Add ${hit.source.name}`}
+        label={t("Add {name}", { name: hit.source.name })}
         tier={hit.source.unlock}
         press={headPress}
       >
@@ -537,6 +540,7 @@ function CardHead({
   press: ReturnType<typeof useLongPress>;
   children: ReactNode;
 }) {
+  const t = useT();
   const chip = tier ? tierChipColors(tier) : undefined;
   const number = circuit ? circuitNumber(circuit) : undefined;
   return (
@@ -548,7 +552,7 @@ function CardHead({
         data-glyph="plus"
         aria-label={label}
         aria-disabled={readOnly || undefined}
-        title={readOnly ? "Open a copy to add recipes" : undefined}
+        title={readOnly ? t("Open a copy to add recipes") : undefined}
         onClick={(event) => {
           event.stopPropagation();
           if (press.consumeClick() || readOnly) {
@@ -566,7 +570,7 @@ function CardHead({
       {children}
       <span className="nrw-grow" />
       {circuit?.resource ? (
-        <span className="nrw-card-circuit" title={number ? `Circuit ${number}` : "Circuit"}>
+        <span className="nrw-card-circuit" title={number ? t("Circuit {number}", { number }) : t("Circuit")}>
           <ResourceIcon
             itemZoom={1.5}
             resource={{ ...circuit.resource, amount: 1, chance: undefined }}
@@ -610,6 +614,7 @@ function PowerRow({
   unit: string;
   side?: "input" | "output";
 }) {
+  const t = useT();
   return (
     <div className="cc-row" data-power="" data-side={side}>
       <span className="cc-bolt" />
@@ -620,7 +625,7 @@ function PowerRow({
       >
         {number}
       </span>
-      <span className="cc-pname">Power</span>
+      <span className="cc-pname">{t("Power")}</span>
     </div>
   );
 }
@@ -664,6 +669,7 @@ function LookupRow({
   onCycle?: (step: 1 | -1) => void;
   handlers: LookupHandlers;
 }) {
+  const t = useT();
   const { onBrowseResource, onChipMenu, onChipDragStart, onHoverSlot } = handlers;
   // The wheel listener is attached by hand, non-passive: React's synthetic wheel cannot preventDefault, and without it
   // every cycle also turns the page.
@@ -695,7 +701,7 @@ function LookupRow({
   const consumeChance = (resource as { consumeChance?: number }).consumeChance;
   const consumeText =
     consumeChance !== undefined && consumeChance < 1
-      ? `Used up ${Math.round(consumeChance * 1000) / 10}% of runs, counted in`
+      ? t("Used up {value}% of runs, counted in", { value: Math.round(consumeChance * 1000) / 10 })
       : undefined;
   const unit = amount.unit ?? "";
   const nameSmall = mcTextWidth(name) > 71;
@@ -711,11 +717,11 @@ function LookupRow({
     const extra = [
       ...(reading ? [reading] : []),
       ...(tip ? [tip] : []),
-      ...(chanceText ? [`${chanceText} chance, counted in`] : []),
+      ...(chanceText ? [t("{chance} chance, counted in", { chance: chanceText })] : []),
       ...(consumeText ? [consumeText] : []),
     ];
     const out = itemTipLines({ name, id: resource.id, tooltip: resource.tooltip, extra });
-    if (picker) out.splice(1, 0, { text: "Scroll to change it", tone: "hint" });
+    if (picker) out.splice(1, 0, { text: t("Scroll to change it"), tone: "hint" });
     return out;
   }, [
     amount.text,
@@ -728,6 +734,7 @@ function LookupRow({
     picker,
     resource.id,
     resource.tooltip,
+    t,
     tip,
   ]);
 
@@ -811,7 +818,7 @@ function RowIcon({ resource }: { resource: ResourceAmount }) {
       <span
         className="cc-icon cc-swatch"
         role="img"
-        aria-label={resource.displayName}
+        aria-label={datasetNameLabel(resource.displayName)}
         style={fluidSwatchStyle({ ...resource, dominantColor: color })}
       />
     );

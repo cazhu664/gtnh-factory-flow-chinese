@@ -7,6 +7,7 @@ import { activateOnKey } from "@/lib/hooks/button-keys";
 import { useDialogA11y } from "@/lib/hooks/use-dialog-a11y";
 import { withoutRuntimeTables } from "@/lib/import-export/plan-code";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import { latestMinimapScene } from "../minimap/scene-store";
 import { planPictureBase64 } from "../minimap/picture";
 import {
@@ -55,6 +56,7 @@ const KIND_ICONS = { bug: Bug, idea: Lightbulb, help: CircleHelp } as const;
 type Sent = { number: number; url: string };
 
 export function FeedbackPanel({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const [kind, setKind] = useState<FeedbackKind>("bug");
   const [mood, setMood] = useState<FeedbackMood | undefined>(undefined);
   const [text, setText] = useState("");
@@ -76,7 +78,7 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
 
   const send = async () => {
     if (!titleOf(text)) {
-      setError("Write a line about it first");
+      setError(t("Write a line about it first"));
       return;
     }
     setError(undefined);
@@ -102,12 +104,16 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
       });
       const body = (await response.json().catch(() => ({}))) as { number?: number; url?: string; error?: string };
       if (!response.ok || typeof body.number !== "number" || typeof body.url !== "string") {
-        throw new Error(body.error ?? `The site answered ${response.status}`);
+        throw new Error(body.error ?? t("The site answered {status}", { status: response.status }));
       }
       setSent({ number: body.number, url: body.url });
       playSfx("note.stick");
     } catch (e) {
-      setError(`Couldn't send it: ${e instanceof Error ? e.message : "no answer"}`);
+      setError(
+        t("Couldn't send it: {reason}", {
+          reason: e instanceof Error ? e.message : t("no answer"),
+        }),
+      );
     } finally {
       setSending(false);
     }
@@ -115,10 +121,10 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fb-backdrop" data-feedback-backdrop="">
-      <div ref={dialogRef} className="fb" role="dialog" aria-modal="true" aria-label="Send feedback">
+      <div ref={dialogRef} className="fb" role="dialog" aria-modal="true" aria-label={t("Send feedback")}>
         <div className="fb-title">
-          <span>Send feedback</span>
-          <div role="button" tabIndex={0} aria-label="Close" className="fb-x" data-sfx-own="" onClick={() => {
+          <span>{t("Send feedback")}</span>
+          <div role="button" tabIndex={0} aria-label={t("Close")} className="fb-x" data-sfx-own="" onClick={() => {
             playSfx("ui.close");
             onClose();
           }} onKeyDown={activateOnKey} />
@@ -126,11 +132,11 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
         {sent ? (
           <div className="fb-sent">
             <Face mood={0} picked hot={false} size={50} />
-            <div className="fb-sent-line">Thanks! It&apos;s sent.</div>
-            <div className="fb-sent-sub">Issue #{sent.number} on GitHub</div>
+            <div className="fb-sent-line">{t("Thanks! It's sent.")}</div>
+            <div className="fb-sent-sub">{t("Issue #{number} on GitHub", { number: sent.number })}</div>
             <div className="fb-keys">
               <div role="button" tabIndex={0} onKeyDown={activateOnKey} className="fb-key fb-key-primary" onClick={() => window.open(sent.url, "_blank", "noopener")}>
-                Open it
+                {t("Open it")}
               </div>
               <div
                 role="button"
@@ -139,10 +145,10 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
                 className="fb-key"
                 onClick={() => void navigator.clipboard?.writeText(sent.url).catch(() => undefined)}
               >
-                Copy link
+                {t("Copy link")}
               </div>
               <div role="button" tabIndex={0} onKeyDown={activateOnKey} className="fb-key" onClick={onClose}>
-                Done
+                {t("Done")}
               </div>
             </div>
           </div>
@@ -153,7 +159,7 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
                 <div
                   key={m}
                   role="button"
-                  aria-label={m === "happy" ? "Happy" : m === "okay" ? "Okay" : "Unhappy"}
+                  aria-label={m === "happy" ? t("Happy") : m === "okay" ? t("Okay") : t("Unhappy")}
                   aria-pressed={mood === m}
                   tabIndex={0}
                   onKeyDown={activateOnKey}
@@ -171,7 +177,7 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
                 </div>
               ))}
             </div>
-            <div className="fb-kinds" role="radiogroup" aria-label="What it is">
+            <div className="fb-kinds" role="radiogroup" aria-label={t("What it is")}>
               {KINDS.map((k) => {
                 const Icon = KIND_ICONS[k.id];
                 return (
@@ -201,7 +207,7 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
               <span>{promptFor(kind)}</span>
               {kind === "help" ? (
                 <a className="fb-discord" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
-                  Open Discord
+                  {t("Open Discord")}
                 </a>
               ) : null}
             </div>
@@ -212,12 +218,12 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
               disabled={sending}
               maxLength={8000}
               onChange={(e) => setText(e.target.value)}
-              aria-label="Your feedback"
+              aria-label={t("Your feedback")}
             />
             <div className="fb-sends">{sendsLine(hasPlan ? planName || "Plan" : undefined, pictureAvailable)}</div>
             <div className="fb-foot">
               <span className="fb-where" data-error={error ? "" : undefined}>
-                {error ?? "It becomes a public issue on GitHub."}
+                {error ?? t("It becomes a public issue on GitHub.")}
               </span>
               <div
                 role="button"
@@ -228,7 +234,7 @@ export function FeedbackPanel({ onClose }: { onClose: () => void }) {
                 data-sending={sending ? "" : undefined}
                 onClick={() => !sending && void send()}
               >
-                {sending ? "Sending..." : "Send"}
+                {sending ? t("Sending...") : t("Send")}
               </div>
             </div>
           </div>

@@ -11,12 +11,14 @@ import {
 import { ClipboardCheck, RotateCcw } from "lucide-react";
 import { useFactoryStore } from "@/store/factory-store";
 import { playBoardSound } from "@/lib/board-sounds";
+import { useT } from "@/lib/i18n";
 
 const cursor = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path d="M3 2v21l5-6 5 10 4-2-5-10h8z" fill="#172922" stroke="#dcfce7" stroke-width="1.5"/><path d="m18 9 4 4 7-8" fill="none" stroke="#86efac" stroke-width="3" stroke-linecap="square"/></svg>')}") 3 2, crosshair`;
 const keyClass =
   "pointer-events-auto flex h-8 w-8 shrink-0 items-center justify-center border-2 border-[var(--mc-15)]";
 
 export function ChecklistKeys({ folded = false }: { folded?: boolean }) {
+  const t = useT();
   const readOnly = useFactoryStore((s) => s.isReadOnly);
   const active = useFactoryStore((s) => s.checklistMode);
   const project = useFactoryStore((s) => s.project);
@@ -30,9 +32,9 @@ export function ChecklistKeys({ folded = false }: { folded?: boolean }) {
     <div className="relative flex items-center gap-2">
       <button
         type="button"
-        aria-label="Checklist mode"
+        aria-label={t("Checklist mode")}
         aria-pressed={active}
-        title="Checklist mode"
+        title={t("Checklist mode")}
         className={`${keyClass} ${active ? "bg-[var(--mc-85)] text-[var(--mc-ink)] shadow-[inset_2px_2px_0_var(--mc-100)]" : "bg-[var(--mc-49)] text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:brightness-110"}`}
         onClick={() => {
           playBoardSound(active ? "checklistOff" : "checklistOn");
@@ -44,10 +46,10 @@ export function ChecklistKeys({ folded = false }: { folded?: boolean }) {
       {active && (
         <div className={`pointer-events-auto flex h-8 w-max items-center gap-2 whitespace-nowrap text-white ${folded ? "" : "absolute left-0 top-[calc(100%+10px)] z-30 border border-[var(--mc-15)] bg-[var(--mc-49)] px-2 shadow-[2px_2px_0_rgba(0,0,0,0.3)]"}`}>
           <span role="status" className="font-mono text-[11px] tabular-nums"
-            title="Completed machines, drawers and wires" aria-label={`${done} of ${total} completed`}>
+            title={t("Completed machines, drawers and wires")} aria-label={t("{done} of {total} completed", { done, total })}>
             {done} / {total}
           </span>
-          <button type="button" aria-label="Reset checklist" title={readOnly ? "Reset checklist" : "Reset checklist (can be undone)"}
+          <button type="button" aria-label={t("Reset checklist")} title={readOnly ? t("Reset checklist") : t("Reset checklist (can be undone)")}
             disabled={!done} className="flex h-7 w-7 items-center justify-center hover:bg-white/10 disabled:opacity-30"
             onClick={() => useFactoryStore.getState().clearChecklist()}>
             <RotateCcw className="h-3.5 w-3.5" />

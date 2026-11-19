@@ -3,6 +3,7 @@
 import { useReactFlow, useStore, useStoreApi } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import { toBoard } from "./minimap-draw";
 import { MinimapEngine } from "./minimap-engine";
 import { getMinimap, MINIMAP_SIZES, setMinimap, useMinimapSettings } from "./minimap-settings";
@@ -22,6 +23,7 @@ function isTyping(target: EventTarget | null): boolean {
 }
 
 export function BoardMinimap({ hidden = false }: { hidden?: boolean }) {
+  const t = useT();
   const settings = useMinimapSettings();
   const flow = useReactFlow();
   const storeApi = useStoreApi();
@@ -108,7 +110,7 @@ export function BoardMinimap({ hidden = false }: { hidden?: boolean }) {
         ref={canvasRef}
         className="mmap-canvas"
         style={{ width: size, height: size }}
-        aria-label="Minimap"
+        aria-label={t("Minimap")}
         onPointerDown={(event) => {
           if (event.button !== 0) return;
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -125,8 +127,8 @@ export function BoardMinimap({ hidden = false }: { hidden?: boolean }) {
       />
       <div
         role="button"
-        aria-label="Minimap settings"
-        title="Minimap settings"
+        aria-label={t("Minimap settings")}
+        title={t("Minimap settings")}
         className="mmap-gear"
         onClick={() => setSettingsOpen((open) => !open)}
       />

@@ -3,18 +3,27 @@
  * by the overview and the tooltips. Pure.
  */
 import type { PlanUpTo } from "@/lib/solver/plan/types";
+import { t } from "@/lib/i18n";
 
 type Reason = NonNullable<PlanUpTo["reason"]>;
 
 /** The word for a reason. FULL is the quiet case and has none. */
-export const UP_TO_WORD: Record<Reason, string> = {
-  FULL: "Full",
-  BOTTLENECK: "Bottleneck",
-  STARVED: "Starved",
-  CLOGGED: "Clogged",
-  UNUSED: "Unused",
-  LIMITED: "Limited",
-};
+export function upToWord(reason: Reason): string {
+  switch (reason) {
+    case "FULL":
+      return t("Full");
+    case "BOTTLENECK":
+      return t("Bottleneck");
+    case "STARVED":
+      return t("Starved");
+    case "CLOGGED":
+      return t("Clogged");
+    case "UNUSED":
+      return t("Unused");
+    default:
+      return t("Limited");
+  }
+}
 
 /** The colour of a reason's word: the card's foot bar tones (clean.css `.cc-foot[data-tone]`). */
 export const UP_TO_COLOR: Record<Reason, string> = {
@@ -36,19 +45,19 @@ export function shownReason(upTo: PlanUpTo | undefined): Reason | undefined {
 export function upToSentence(upTo: PlanUpTo | undefined): string | undefined {
   switch (upTo?.reason) {
     case "FULL":
-      return "Every machine runs flat out.";
+      return t("Every machine runs flat out.");
     case "BOTTLENECK":
       return upTo.wants !== undefined
-        ? `The plan would use ${round(upTo.wants)}.`
-        : "The plan would use more.";
+        ? t("The plan would use {n}.", { n: round(upTo.wants) })
+        : t("The plan would use more.");
     case "STARVED":
-      return "An input is short.";
+      return t("An input is short.");
     case "CLOGGED":
-      return "An output has nowhere to go.";
+      return t("An output has nowhere to go.");
     case "UNUSED":
-      return "Nothing uses what it makes.";
+      return t("Nothing uses what it makes.");
     case "LIMITED":
-      return "The plan holds it back.";
+      return t("The plan holds it back.");
     default:
       return undefined;
   }

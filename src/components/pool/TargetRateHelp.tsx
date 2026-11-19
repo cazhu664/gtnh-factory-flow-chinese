@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import type { FactoryProject, FactoryStorage, StorageThroughputResult } from "@/lib/model/types";
 import { storageTargetMode, TARGET_MODE_LABELS } from "@/lib/model/storage-target";
 import { formatPoolRate, isPoolDisplayZero } from "./worksheet-format";
@@ -16,10 +17,10 @@ export function TargetRateHelp({ storage, input, result, project }: {
   return <div className="pool-target-explanation">
     <strong className="pool-target-help-name">{storage.displayName ?? storage.resourceId}</strong>
     <div className="pool-target-help-rates">
-      <span>{input ? "Use" : "Make"} {TARGET_MODE_LABELS[mode].toLowerCase()} <strong className="pool-help-goal">{formatPoolRate(Math.abs(storage.targetPerSecond ?? 0), storage.kind)}</strong></span>
-      <span>Currently {input ? "using" : "making"} <strong className="pool-help-actual">{formatPoolRate(Math.abs(actual ?? 0), storage.kind)}</strong></span>
+      <span>{input ? t("Use") : t("Make")} {t(TARGET_MODE_LABELS[mode]).toLowerCase()} <strong className="pool-help-goal">{formatPoolRate(Math.abs(storage.targetPerSecond ?? 0), storage.kind)}</strong></span>
+      <span>{t("Currently {verb}", { verb: input ? t("using") : t("making") })} <strong className="pool-help-actual">{formatPoolRate(Math.abs(actual ?? 0), storage.kind)}</strong></span>
     </div>
-    {stopped ? <p className="pool-help-actual"><strong>No flow.</strong> This target is stopped.</p> : null}
-    {!hasRecipes ? <p>Add or enable recipes that {input ? "use" : "make"} this item.</p> : <p>The solver could not identify which constraint blocks this rate.</p>}
+    {stopped ? <p className="pool-help-actual"><strong>{t("No flow.")}</strong> {t("This target is stopped.")}</p> : null}
+    {!hasRecipes ? <p>{t("Add or enable recipes that {verb} this item.", { verb: input ? t("use") : t("make") })}</p> : <p>{t("The solver could not identify which constraint blocks this rate.")}</p>}
   </div>;
 }

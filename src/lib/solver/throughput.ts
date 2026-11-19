@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n/core";
 import { hasStorageTarget, isInputRate, storageTargetMode } from "../model/storage-target";
 import {
   getChanceMultiplier,
@@ -133,7 +134,7 @@ export function calculateThroughput(
       nodes[node.id] = {
         nodeId: node.id,
         recipeId: node.recipeId,
-        recipeName: "Missing recipe",
+        recipeName: t("Missing recipe"),
         enabled: node.enabled,
         operationRatePerSecond: 0,
         inputs: {},
@@ -144,13 +145,16 @@ export function calculateThroughput(
         utilization: 0,
         theoreticalMachinesRequired: 0,
         status: "missing-recipe",
-        warnings: [`Recipe "${node.recipeId}" does not exist.`],
+        warnings: [t('Recipe "{id}" does not exist.', { id: node.recipeId })],
       };
       bottlenecks.push({
         id: `missing-recipe:${node.id}`,
         kind: "missing-recipe",
         severity: "critical",
-        message: `Node ${node.id} references missing recipe ${node.recipeId}.`,
+        message: t("Node {node} references missing recipe {recipe}.", {
+          node: node.id,
+          recipe: node.recipeId,
+        }),
         nodeId: node.id,
       });
       continue;
@@ -329,9 +333,11 @@ export function calculateThroughput(
       id: `node-capacity:${node.id}`,
       kind: "node-capacity",
       severity: "critical",
-      message: `${recipe.name} needs ${nodeResult.requiredRatePerSecond.toFixed(
-        2,
-      )}/s but can produce ${nodeResult.maxRatePerSecond.toFixed(2)}/s.`,
+      message: t("{recipe} needs {required}/s but can produce {capacity}/s.", {
+        recipe: recipe.name,
+        required: nodeResult.requiredRatePerSecond.toFixed(2),
+        capacity: nodeResult.maxRatePerSecond.toFixed(2),
+      }),
       nodeId: node.id,
       resource: nodeResult.limitingResource,
       requiredPerSecond: nodeResult.requiredRatePerSecond,
@@ -349,9 +355,10 @@ export function calculateThroughput(
       id: `resource-deficit:${balance.key}`,
       kind: "resource-deficit",
       severity: "critical",
-      message: `${balance.displayName ?? balance.resourceId} is short by ${balance.deficitPerSecond.toFixed(
-        2,
-      )}/s.`,
+      message: t("{name} is short by {deficit}/s.", {
+        name: balance.displayName ?? balance.resourceId,
+        deficit: balance.deficitPerSecond.toFixed(2),
+      }),
       resource: {
         key: balance.key,
         kind: balance.kind,
@@ -460,8 +467,8 @@ function finalizeSolveModeResult(
       kind: "resource-deficit",
       severity: "critical",
       message: targets.some((target) => target.exact || target.atMost)
-        ? "The pinned machine counts conflict with each other or a rate limit. Check the target rates and pinned counts."
-        : "The pinned machine counts cannot run together. Check their outputs have somewhere to go.",
+        ? t("The pinned machine counts conflict with each other or a rate limit. Check the target rates and pinned counts.")
+        : t("The pinned machine counts cannot run together. Check their outputs have somewhere to go."),
     });
   }
 
@@ -532,7 +539,11 @@ function finalizeSolveModeResult(
         id: `solve-target:${storage.id}`,
         kind: "resource-deficit",
         severity: "critical",
-        message: `${storage.displayName ?? storage.resourceId}: no chain can ${isInputRate(storage, roles.get(storage.id)) ? "use" : "make"} ${Math.abs(storage.targetPerSecond ?? 0).toFixed(2)}/s at these targets.`,
+        message: t("{name}: no chain can {verb} {rate}/s at these targets.", {
+          name: storage.displayName ?? storage.resourceId,
+          verb: isInputRate(storage, roles.get(storage.id)) ? t("use") : t("make"),
+          rate: Math.abs(storage.targetPerSecond ?? 0).toFixed(2),
+        }),
       });
     }
   }

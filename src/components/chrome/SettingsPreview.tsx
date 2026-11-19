@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import { MouseIcon } from "@/components/flow/clean/interaction/TipPanel";
 import { useDeviceSettings } from "@/lib/device-settings";
+import { useT } from "@/lib/i18n";
 
 /** The size choice's card scale in the picture (Tiny, Small, Normal, Large). */
 const CARD_SCALE = [0.78, 0.9, 1, 1.14];
@@ -82,6 +83,7 @@ function SoundPicture({ level }: { level: number }) {
 
 function ControlsPicture() {
   const { scrollChangesValues } = useDeviceSettings();
+  const t = useT();
   return (
     <div className="sp-controls" aria-hidden>
       {(
@@ -96,7 +98,7 @@ function ControlsPicture() {
           <span className="sp-mouse">
             <MouseIcon input={input} />
           </span>
-          <span>{text}</span>
+          <span>{t(text)}</span>
         </div>
       ))}
     </div>

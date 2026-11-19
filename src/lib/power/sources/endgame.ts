@@ -4,6 +4,7 @@
  * Antimatter loop (closed-form optimum search instead of the workbook's
  * 3,235-row sweep).
  */
+import { t } from "@/lib/i18n/core";
 import { powerPlannerData } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition } from "../types";
 import { formatAmount, liters, stat } from "./helpers";
@@ -160,7 +161,7 @@ function buildFusion(compact: boolean): PowerSourceDefinition {
           stat("Startup", `${formatAmount(recipe.startupEu)} EU`),
         ],
         warnings: belowMark
-          ? [`${recipe.name} needs at least mark ${recipe.minMark}.`]
+          ? [t("{name} needs at least mark {mark}.", { name: recipe.name, mark: recipe.minMark })]
           : undefined,
       };
     },
@@ -212,7 +213,7 @@ const eoh: PowerSourceDefinition = {
         stat("EU out", formatAmount(star.euOutput * 0.6)),
         stat("Star matter", formatAmount(star.starMatter)),
       ],
-      warnings: ["Simplified model: base upgrade tiers, success assumed."],
+      warnings: [t("Simplified model: base upgrade tiers, success assumed.")],
     };
   },
 };
@@ -312,7 +313,7 @@ const antimatter: PowerSourceDefinition = {
       ],
       warnings:
         requested > 0 && Math.abs(requested - optimum) / optimum > 0.5
-          ? ["Far from the best quantity; net power falls off steeply."]
+          ? [t("Far from the best quantity; net power falls off steeply.")]
           : undefined,
     };
   },
@@ -364,7 +365,9 @@ const dysonSwarm: PowerSourceDefinition = {
         stat("Overworld factor", "1"),
       ],
       warnings: [
-        "Modules burn off over time. The rate depends on module count and computation, and is not modeled.",
+        t(
+          "Modules burn off over time. The rate depends on module count and computation, and is not modeled.",
+        ),
       ],
     };
   },

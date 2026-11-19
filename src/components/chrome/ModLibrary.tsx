@@ -4,6 +4,7 @@ import "./chrome.css";
 import "./library.css";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { requestShareDialog } from "@/lib/setups-tab";
 import { openDesigns, type DesignSummary } from "@/lib/designs/design-library";
 import { readDesign } from "@/lib/designs/design-storage";
@@ -36,6 +37,7 @@ const LIVE = isLiveConfigured();
  * key and a close key; the shelf below. It takes the board's place and closes back onto it.
  */
 export function ModLibrary() {
+  const t = useT();
   const library = useLibraryTab();
   const everyDesign = useDesignStore((state) => state.designs);
   // Copies of plans shared with us are listed under Shared with me, never among ours.
@@ -69,9 +71,9 @@ export function ModLibrary() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const sortLabel = SETUP_SORTS.find((entry) => entry.value === filters.sort)?.label ?? "Top voted";
+  const sortLabel = SETUP_SORTS.find((entry) => entry.value === filters.sort)?.label ?? t("Top voted");
   const tierIndex = filters.maxTier === "" ? -1 : Number(filters.maxTier);
-  const tierLabel = tierIndex < 0 ? "Any tier" : `Up to ${GT_VOLTAGE_TIERS[tierIndex]?.tier ?? ""}`;
+  const tierLabel = tierIndex < 0 ? t("Any tier") : t("Up to {tier}", { tier: GT_VOLTAGE_TIERS[tierIndex]?.tier ?? "" });
 
   const menuEntries = (kind: "sort" | "tier"): MenuEntry[] => {
     if (kind === "sort") {
@@ -82,9 +84,9 @@ export function ModLibrary() {
       }));
     }
     return [
-      { label: "Any tier", current: tierIndex < 0, onSelect: () => filters.setMaxTier("") },
+      { label: t("Any tier"), current: tierIndex < 0, onSelect: () => filters.setMaxTier("") },
       ...GT_VOLTAGE_TIERS.map((entry, index) => ({
-        label: `Up to ${entry.tier}`,
+        label: t("Up to {tier}", { tier: entry.tier }),
         current: tierIndex === index,
         onSelect: () => filters.setMaxTier(String(index)),
       })),
@@ -94,17 +96,17 @@ export function ModLibrary() {
   return (
     <div className="ml mx" data-mod-library="">
       <div className="ml-head">
-        <ShelfTab label="MY PLANS" count={String(designs.length)} on={shelf === "mine"} onClick={() => setLibraryView({ kind: "all" })} />
+        <ShelfTab label={t("MY PLANS")} count={String(designs.length)} on={shelf === "mine"} onClick={() => setLibraryView({ kind: "all" })} />
         {showShared ? (
           <ShelfTab
-            label="SHARED WITH ME"
+            label={t("SHARED WITH ME")}
             count={sharedCount === undefined ? "..." : String(sharedCount)}
             on={shelf === "shared"}
             onClick={() => setLibraryView({ kind: "shared" })}
           />
         ) : null}
         <ShelfTab
-          label="COMMUNITY"
+          label={t("COMMUNITY")}
           count={publicTotal === undefined ? "..." : compact(publicTotal)}
           on={shelf === "public"}
           onClick={() => setLibraryView({ kind: "public" })}
@@ -113,8 +115,8 @@ export function ModLibrary() {
           <input
             className="ml-search"
             style={{ width: 240 }}
-            placeholder="Find a plan"
-            aria-label="Find a plan"
+            placeholder={t("Find a plan")}
+            aria-label={t("Find a plan")}
             value={mineQuery}
             onChange={(event) => setMineQuery(event.target.value)}
           />
@@ -122,8 +124,8 @@ export function ModLibrary() {
           <input
             className="ml-search"
             style={{ width: 300 }}
-            placeholder="Search setups (#tag, @name)"
-            aria-label="Search setups"
+            placeholder={t("Search setups (#tag, @name)")}
+            aria-label={t("Search setups")}
             value={filters.query}
             onChange={(event) => filters.setQuery(event.target.value)}
           />
@@ -134,31 +136,31 @@ export function ModLibrary() {
             <DropKey
               label={sortLabel}
               open={menu?.kind === "sort"}
-              tip="How the public list is ordered"
+              tip={t("How the public list is ordered")}
               onOpen={(anchor) => setMenu({ kind: "sort", anchor })}
             />
             <DropKey
               label={tierLabel}
               open={menu?.kind === "tier"}
-              tip="Hide setups that need a higher tier"
+              tip={t("Hide setups that need a higher tier")}
               onOpen={(anchor) => setMenu({ kind: "tier", anchor })}
             />
           </>
         ) : null}
         {user ? (
           <span className="ml-as" data-signed-in-as="">
-            Signed in as {user.username}
+            {t("Signed in as {name}", { name: user.username })}
           </span>
         ) : null}
         <div
           className="mb-key ml-close"
           role="button"
-          aria-label="Close the panel"
+          aria-label={t("Close the panel")}
           onClick={() => {
             playBoardSound("tick");
             leaveLibrary();
           }}
-          {...tipAttrs({ id: "lib|close", title: "Back to the board" })}
+          {...tipAttrs({ id: "lib|close", title: t("Back to the board") })}
         >
           x
         </div>
@@ -180,7 +182,7 @@ export function ModLibrary() {
         <ChromeMenu
           anchor={menu.anchor}
           entries={menuEntries(menu.kind)}
-          label={menu.kind === "sort" ? "Sort" : "Tier"}
+          label={menu.kind === "sort" ? t("Sort") : t("Tier")}
           minWidth={130}
           onClose={closeMenu}
         />
@@ -229,6 +231,7 @@ function DropKey({ label, open, tip, onOpen }: { label: string; open: boolean; t
 // ---- My plans --------------------------------------------------------------
 
 function MyPlans({ query }: { query: string }) {
+  const t = useT();
   const everyDesign = useDesignStore((state) => state.designs);
   const allDesigns = useMemo(() => everyDesign.filter((design) => !design.cloud), [everyDesign]);
   const activeDesignId = useDesignStore((state) => state.activeDesignId);
@@ -272,14 +275,14 @@ function MyPlans({ query }: { query: string }) {
   const entries = (m: NonNullable<typeof menu>): MenuEntry[] => {
     if (m.kind === "delete") {
       return [
-        { label: "Delete it", tone: "red", onSelect: () => void removeDesign(m.id) },
-        { label: "Keep it", onSelect: () => undefined },
+        { label: t("Delete it"), tone: "red", onSelect: () => void removeDesign(m.id) },
+        { label: t("Keep it"), onSelect: () => undefined },
       ];
     }
     return [
-      { label: "Open", onSelect: () => void open(m.id) },
-      { label: "Rename", onSelect: () => setRenaming(m.id) },
-      { label: "Copy plan code", detail: "to paste or share", onSelect: () => void copyCode(m.id) },
+      { label: t("Open"), onSelect: () => void open(m.id) },
+      { label: t("Rename"), onSelect: () => setRenaming(m.id) },
+      { label: t("Copy plan code"), detail: t("to paste or share"), onSelect: () => void copyCode(m.id) },
       ...libraryRows(
         Boolean(m.id === activeDesignId ? linkedPostId : allDesigns.find((design) => design.id === m.id)?.communityPlanId),
         (mode) => {
@@ -291,7 +294,7 @@ function MyPlans({ query }: { query: string }) {
         { taskBoard: Boolean(allDesigns.find((design) => design.id === m.id)?.taskBoard) },
       ),
       {
-        label: "Delete plan",
+        label: t("Delete plan"),
         tone: "red",
         onSelect: () => setMenu({ kind: "delete", id: m.id, name: m.name, anchor: m.anchor }),
       },
@@ -309,7 +312,7 @@ function MyPlans({ query }: { query: string }) {
           void addDesign();
         }}
       >
-        + New plan
+        {t("+ New plan")}
       </div>
       {shown.map(({ design, open: isOpen, at }) => (
         <PlanTile
@@ -331,8 +334,8 @@ function MyPlans({ query }: { query: string }) {
         <ChromeMenu
           anchor={menu.anchor}
           entries={entries(menu)}
-          label={`Plan options for ${menu.name}`}
-          title={menu.kind === "delete" ? `Delete '${menu.name}' for good?` : undefined}
+          label={t("Plan options for {name}", { name: menu.name })}
+          title={menu.kind === "delete" ? t("Delete '{name}' for good?", { name: menu.name }) : undefined}
           minWidth={menu.kind === "delete" ? 150 : 190}
           onClose={() => setMenu(undefined)}
         />
@@ -360,14 +363,15 @@ function PlanTile({
   onMenu: (anchor: ChromeAnchor) => void;
   onRename: (name: string) => void;
 }) {
+  const t = useT();
   const cards = design.stats ? Math.max(0, design.stats.cards - (design.stats.drawers ?? 0)) : undefined;
   const drawers = design.stats?.drawers;
   const tasks = design.stats?.tasks ?? 0;
   const size = design.taskBoard
-    ? `${tasks} ${tasks === 1 ? "task" : "tasks"}`
+    ? (tasks === 1 ? t("{count} task", { count: tasks }) : t("{count} tasks", { count: tasks }))
     : cards === undefined
       ? undefined
-      : `${cards} ${cards === 1 ? "card" : "cards"}${drawers === undefined ? "" : ` · ${drawers} ${drawers === 1 ? "drawer" : "drawers"}`}`;
+      : `${cards === 1 ? t("{count} card", { count: cards }) : t("{count} cards", { count: cards })}${drawers === undefined ? "" : ` · ${drawers === 1 ? t("{count} drawer", { count: drawers }) : t("{count} drawers", { count: drawers })}`}`;
   const drawable = Boolean(design.icon && (design.icon.iconPath || design.icon.iconAtlas || design.icon.kind === "fluid"));
   return (
     <div
@@ -384,17 +388,17 @@ function PlanTile({
       {...tipAttrs({
         id: `lib|plan:${design.id}`,
         title: design.name,
-        sub: showing ? "On the board now" : "Click to open it",
+        sub: showing ? t("On the board now") : t("Click to open it"),
         actions: [
-          { input: "left", label: "Open" },
-          { input: "right", label: "More" },
+          { input: "left", label: t("Open") },
+          { input: "right", label: t("More") },
         ],
       })}
     >
       <span className="ml-face">
         {drawable ? <Face icon={design.icon} size={24} /> : <span className="ml-noface" />}
       </span>
-      {open ? <span className="ml-chip" data-showing={showing ? "" : undefined}>{showing ? "SHOWING" : "OPEN"}</span> : null}
+      {open ? <span className="ml-chip" data-showing={showing ? "" : undefined}>{showing ? t("SHOWING") : t("OPEN")}</span> : null}
       {renaming ? (
         <TileRename initial={design.name} onDone={onRename} />
       ) : (
@@ -404,13 +408,14 @@ function PlanTile({
         </span>
       )}
       {size ? <span className="ml-size">{size}</span> : null}
-      <span className="ml-when">last open {when}</span>
-      {design.communityPlanId ? <span className="ml-posted">posted</span> : null}
+      <span className="ml-when">{t("last open {when}", { when })}</span>
+      {design.communityPlanId ? <span className="ml-posted">{t("posted")}</span> : null}
     </div>
   );
 }
 
 function TileRename({ initial, onDone }: { initial: string; onDone: (name: string) => void }) {
+  const t = useT();
   const [value, setValue] = useState(initial);
   const doneRef = useRef(false);
   const finish = (commit: boolean) => {
@@ -422,7 +427,7 @@ function TileRename({ initial, onDone }: { initial: string; onDone: (name: strin
     <input
       autoFocus
       className="ml-rename"
-      aria-label="Plan name"
+      aria-label={t("Plan name")}
       value={value}
       onFocus={(event) => event.currentTarget.select()}
       onChange={(event) => setValue(event.target.value)}

@@ -10,7 +10,9 @@ import {
 import localFont from "next/font/local";
 import { APP_FONT_STORAGE_KEY, DEFAULT_APP_FONT } from "@/lib/app-font";
 import { AppFontRestore } from "@/components/AppFontRestore";
+import { LocaleBoot } from "@/components/LocaleBoot";
 import { UiScaleRestore } from "@/components/UiScaleRestore";
+import { localeBootScript } from "@/lib/i18n-boot";
 import { uiScaleBootScript } from "@/lib/ui-scale-boot";
 import {
   COMPACT_MAX_HEIGHT,
@@ -118,6 +120,9 @@ const uiScaleBoot = uiScaleBootScript({
   compactMaxHeight: COMPACT_MAX_HEIGHT,
   snugMaxWidth: SNUG_MAX_WIDTH,
 });
+
+/* Stamps the document language before first paint; see src/lib/i18n. */
+const localeBoot = localeBootScript();
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gtnhplanner.com";
 
@@ -235,6 +240,7 @@ export default function RootLayout({
       <body className="min-h-full">
         <script dangerouslySetInnerHTML={{ __html: appFontBootScript }} />
         <script dangerouslySetInnerHTML={{ __html: uiScaleBoot }} />
+        <script dangerouslySetInnerHTML={{ __html: localeBoot }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
@@ -248,6 +254,8 @@ export default function RootLayout({
         {/* Puts the saved font back if anything took it off after the boot
             script above; see the component. */}
         <AppFontRestore />
+        {/* Applies the saved language after hydration; see src/lib/i18n. */}
+        <LocaleBoot />
         {/* Every `title` attribute in the app, worn as the planner's own
             tooltip: the browser's grey box never renders again. */}
         <GlobalTitleTooltip />

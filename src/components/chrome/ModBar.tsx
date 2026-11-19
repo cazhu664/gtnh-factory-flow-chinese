@@ -34,6 +34,7 @@ import { useLiveSession } from "@/store/live-session";
 import { closeFeedback, useFeedbackOpen } from "@/components/flow/clean/feedback/feedback-store";
 import { PlanShareDialog } from "@/components/live/PlanShareDialog";
 import { initialsOf, inkOn } from "@/components/live/LiveFaces";
+import { LOCALES, setLocale, useLocale, useT } from "@/lib/i18n";
 
 /** Live plans (sharing, presence, task boards): none of it shows without NEXT_PUBLIC_LIVE_URL. */
 const LIVE = isLiveConfigured();
@@ -105,7 +106,9 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
   const library = useLibraryTab();
   const isReadOnly = useFactoryStore((state) => state.isReadOnly);
   const feedbackOpen = useFeedbackOpen();
-  const [menu, setMenu] = useState<{ kind: "share" | "help"; anchor: ChromeAnchor }>();
+  const t = useT();
+  const locale = useLocale();
+  const [menu, setMenu] = useState<{ kind: "share" | "help" | "language"; anchor: ChromeAnchor }>();
   const [pasting, setPasting] = useState(false);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [inviting, setInviting] = useState(false);
@@ -153,17 +156,17 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
     ...(LIVE
       ? [
           {
-            label: "Invite people...",
+            label: t("Invite people..."),
             disabled: !signedIn,
-            tip: signedIn ? undefined : "Sign in to invite people",
+            tip: signedIn ? undefined : t("Sign in to invite people"),
             onSelect: () => setInviting(true),
           } satisfies MenuEntry,
         ]
       : []),
-    { label: "Copy plan link", ruleAbove: LIVE, onSelect: () => void copyPlanLink(plan()) },
-    { label: "Copy plan code", onSelect: () => void copyPlanCode(plan()) },
-    { label: "Export plan file", onSelect: () => downloadPlanFile(plan()) },
-    { label: "Screenshot...", onSelect: onScreenshot },
+    { label: t("Copy plan link"), ruleAbove: LIVE, onSelect: () => void copyPlanLink(plan()) },
+    { label: t("Copy plan code"), onSelect: () => void copyPlanCode(plan()) },
+    { label: t("Export plan file"), onSelect: () => downloadPlanFile(plan()) },
+    { label: t("Screenshot..."), onSelect: onScreenshot },
     openInModRow(modReach, plan),
     ...libraryRows(Boolean(linkedPost), onShare, { disabled: isReadOnly, taskBoard: isTaskBoardPlan }).map(({ detail, ...row }, index) => {
       void detail;
@@ -171,7 +174,7 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
     }),
   ];
 
-  const openMenuFrom = (kind: "share" | "help", event: MouseEvent<HTMLElement>) => {
+  const openMenuFrom = (kind: "share" | "help" | "language", event: MouseEvent<HTMLElement>) => {
     const anchor = chromeAnchorOf(event.currentTarget);
     setMenu((current) => (current?.kind === kind ? undefined : { kind, anchor }));
   };
@@ -185,8 +188,8 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
         <>
           <BarKey
             id="drawer-side"
-            label={planLayout ? "Overview" : "Resources"}
-            tip={planLayout ? "Overview: inputs, outputs and machines" : "Resources"}
+            label={planLayout ? t("Overview") : t("Resources")}
+            tip={planLayout ? t("Overview: inputs, outputs and machines") : t("Resources")}
             open={sideOpen}
             onClick={() =>
               writeWorkspaceView(sideOpen ? { rightPanelOpen: false } : { rightPanelOpen: true, leftPanelOpen: false })
@@ -194,8 +197,8 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
           />
           <BarKey
             id="drawer-items"
-            label="Items"
-            tip="Items: search and place recipes"
+            label={t("Items")}
+            tip={t("Items: search and place recipes")}
             open={itemsOpen}
             onClick={() =>
               writeWorkspaceView(itemsOpen ? { leftPanelOpen: false } : { leftPanelOpen: true, rightPanelOpen: false })
@@ -206,12 +209,12 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
       <BarKey
         id="plans"
         gap
-        label={pictures ? undefined : "Plans"}
+        label={pictures ? undefined : t("Plans")}
         icon={pictures}
-        ariaLabel="Plans"
-        width={pictures ? undefined : 42}
+        ariaLabel={t("Plans")}
+        minWidth={pictures ? undefined : 42}
         open={library.active}
-        tip="Plans: your plans, the ones shared with you, and Community"
+        tip={t("Plans: your plans, the ones shared with you, and Community")}
         // Opens the library on My plans, and shuts it again; its shelves are along its top.
         onClick={() => (library.active ? leaveLibrary() : openLibrary({ kind: "all" }))}
       >
@@ -219,11 +222,11 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
       </BarKey>
       <BarKey
         id="share"
-        label={pictures ? undefined : "Share"}
+        label={pictures ? undefined : t("Share")}
         icon={pictures}
-        ariaLabel="Share"
-        width={pictures ? undefined : 42}
-        tip="Share this plan: invite people to edit it with you, or send a copy"
+        ariaLabel={t("Share")}
+        minWidth={pictures ? undefined : 42}
+        tip={t("Share this plan: invite people to edit it with you, or send a copy")}
         open={menu?.kind === "share"}
         onClick={(event) => openMenuFrom("share", event)}
         menuAnchor
@@ -236,8 +239,8 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
         gap
         icon
         open={feedbackOpen}
-        ariaLabel="Feedback"
-        tip="Feedback: report a bug, share an idea, or ask for help"
+        ariaLabel={t("Feedback")}
+        tip={t("Feedback: report a bug, share an idea, or ask for help")}
         onClick={() => {
           if (feedbackOpen) {
             closeFeedback();
@@ -248,14 +251,23 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
       >
         <PixelIcon name="bug" className="mb-bug" />
       </BarKey>
-      <BarKey id="settings" icon ariaLabel="Settings" tip="Settings" onClick={onSettings}>
+      <BarKey
+        id="language"
+        label={locale === "zh" ? "中文" : "EN"}
+        ariaLabel={t("Language")}
+        tip={t("Language: English or 中文")}
+        open={menu?.kind === "language"}
+        onClick={(event) => openMenuFrom("language", event)}
+        menuAnchor
+      />
+      <BarKey id="settings" icon ariaLabel={t("Settings")} tip={t("Settings")} onClick={onSettings}>
         <PixelIcon name="gear" />
       </BarKey>
       <BarKey
         id="help"
         icon
-        ariaLabel="Help"
-        tip="Help: the tour, and every control"
+        ariaLabel={t("Help")}
+        tip={t("Help: the tour, and every control")}
         open={menu?.kind === "help"}
         onClick={(event) => {
           if (event.shiftKey) {
@@ -269,17 +281,32 @@ export function ModBar({ onShare, onScreenshot, onSettings, onChangelog, onDevMe
         <PixelIcon name="help" />
       </BarKey>
       {menu?.kind === "share" ? (
-        <ChromeMenu anchor={menu.anchor} entries={shareEntries} label="Share this plan" minWidth={110} align="right" onClose={closeMenu} />
+        <ChromeMenu anchor={menu.anchor} entries={shareEntries} label={t("Share this plan")} minWidth={110} align="right" onClose={closeMenu} />
+      ) : null}
+      {menu?.kind === "language" ? (
+        <ChromeMenu
+          anchor={menu.anchor}
+          entries={LOCALES.map((option) => ({
+            label: option.label,
+            current: option.id === locale,
+            onSelect: () => setLocale(option.id),
+          }))}
+          label={t("Language")}
+          minWidth={120}
+          align="right"
+          onClose={closeMenu}
+        />
       ) : null}
       {menu?.kind === "help" ? (
         <ChromeMenu
           anchor={menu.anchor}
           entries={helpEntries({
+            t,
             onChangelog,
             unreadNotes,
             openControls: () => setControlsOpen(true),
           })}
-          label="Help"
+          label={t("Help")}
           minWidth={190}
           align="right"
           onClose={closeMenu}
@@ -308,19 +335,20 @@ function LivePresence({ tight }: { tight: boolean }) {
   const status = useLiveSession((state) => state.status);
   const present = useLiveSession((state) => state.present);
   const pending = useLiveSession((state) => state.pending);
+  const t = useT();
   if (status === "off") return null;
   // A narrow bar keeps the first two faces and counts the rest.
   const shown = present.slice(0, tight ? 2 : 5);
   const more = present.length - shown.length;
-  const waiting = status !== "live" && pending > 0 ? ` (${pending} waiting)` : "";
+  const waiting = status !== "live" && pending > 0 ? t(" ({count} waiting)", { count: pending }) : "";
   return (
     <div
       className="mb-live"
       data-live-status={status}
       {...tipAttrs({
         id: "bar|live",
-        title: `${LIVE_STATUS_TIP[status]}${waiting}`,
-        sub: present.length > 0 ? `Here now: ${present.map((person) => person.username).join(", ")}` : undefined,
+        title: `${t(LIVE_STATUS_TIP[status])}${waiting}`,
+        sub: present.length > 0 ? t("Here now: {names}", { names: present.map((person) => person.username).join(", ") }) : undefined,
       })}
     >
       <span className="mb-live-dot" data-status={status} aria-hidden />
@@ -330,7 +358,7 @@ function LivePresence({ tight }: { tight: boolean }) {
             <span
               key={person.id}
               className="mb-face"
-              aria-label={person.client === "game" ? `${person.username} (in game)` : person.username}
+              aria-label={person.client === "game" ? t("{name} (in game)", { name: person.username }) : person.username}
               style={{ background: person.color, color: inkOn(person.color) }}
             >
               {initialsOf(person.username)}
@@ -344,10 +372,12 @@ function LivePresence({ tight }: { tight: boolean }) {
 }
 
 function helpEntries({
+  t,
   onChangelog,
   unreadNotes,
   openControls,
 }: {
+  t: (key: string, params?: Record<string, string | number>) => string;
   onChangelog: () => void;
   unreadNotes: boolean;
   openControls: () => void;
@@ -358,20 +388,20 @@ function helpEntries({
       ? []
       : [
           {
-            label: "Take the tour",
-            detail: "3 minutes",
+            label: t("Take the tour"),
+            detail: t("3 minutes"),
             onSelect: () => {
               // The tour lives in its own package; with nothing listening yet the knock goes unanswered.
               knock(OPEN_TOUR_EVENT);
             },
           },
         ]),
-    { label: "Controls and shortcuts", onSelect: openControls },
-    { label: "Welcome", ruleAbove: true, onSelect: () => HelpLinks.openWelcome() },
-    { label: unreadNotes ? "What's new *" : "What's new", detail: HelpLinks.version, onSelect: onChangelog },
-    { label: "Download the mod", detail: "GTNH 2.9", onSelect: () => HelpLinks.open(HelpLinks.mod) },
-    { label: "Source on GitHub", onSelect: () => HelpLinks.open(HelpLinks.github) },
-    { label: "Discord thread", onSelect: () => HelpLinks.open(HelpLinks.discord) },
-    { label: "Support on Ko-fi", onSelect: () => HelpLinks.open(HelpLinks.kofi) },
+    { label: t("Controls and shortcuts"), onSelect: openControls },
+    { label: t("Welcome"), ruleAbove: true, onSelect: () => HelpLinks.openWelcome() },
+    { label: unreadNotes ? t("What's new *") : t("What's new"), detail: HelpLinks.version, onSelect: onChangelog },
+    { label: t("Download the mod"), detail: "GTNH 2.9", onSelect: () => HelpLinks.open(HelpLinks.mod) },
+    { label: t("Source on GitHub"), onSelect: () => HelpLinks.open(HelpLinks.github) },
+    { label: t("Discord thread"), onSelect: () => HelpLinks.open(HelpLinks.discord) },
+    { label: t("Support on Ko-fi"), onSelect: () => HelpLinks.open(HelpLinks.kofi) },
   ];
 }

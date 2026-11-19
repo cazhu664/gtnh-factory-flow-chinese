@@ -35,6 +35,7 @@ import {
 } from "./flow/machine-icons";
 import { useIsCompactViewport } from "@/lib/compact-view";
 import { getUiScale, useUiScale } from "@/lib/ui-scale";
+import { datasetNameLabel, datasetRecipeLabel, useT } from "@/lib/i18n";
 import { machineArtPixels } from "./flow/MachinePicker";
 import { isEditableKeyboardTarget } from "./flow/keyboard";
 import { ItemPickerPopover } from "./ItemPickerPopover";
@@ -248,6 +249,9 @@ export function RecipeSearchOverlay({
   // A phone (or any window the app calls compact) gets the search FULL
   // SCREEN: the window and the stencil fill it, the machine column goes.
   const compact = useIsCompactViewport();
+  const t = useT();
+  /** The pinned machine's name in the reader's language; the store keeps the dataset name. */
+  const pinnedLabel = machinePin ? datasetNameLabel(machinePin.label) : undefined;
   // The shell zoom, for placing fixed children of this zoomed portal.
   const uiScale = useUiScale();
   const sheet = compact || layout.sheet;
@@ -660,23 +664,23 @@ export function RecipeSearchOverlay({
         ? [
             {
               id: PINNED_TAB,
-              label: machinePin.label,
+              label: pinnedLabel ?? machinePin.label,
               icon: machinePinIcon ? { ...machinePinIcon, amount: 1 } : undefined,
               pinned: true,
             },
           ]
         : [
             ...(powerHits.length > 0
-              ? [{ id: GENERATORS_TAB, label: "Generators", count: powerHits.length, generators: true }]
+              ? [{ id: GENERATORS_TAB, label: t("Generators"), count: powerHits.length, generators: true }]
               : []),
             ...recipeMapChips.map((chip) => ({
               id: chip.id,
-              label: chip.label,
+              label: datasetNameLabel(chip.label),
               count: chip.count,
               icon: chip.icon,
             })),
           ],
-    [machinePin, machinePinIcon, pinnedIdle, powerHits.length, recipeMapChips],
+    [machinePin, machinePinIcon, pinnedIdle, pinnedLabel, powerHits.length, recipeMapChips, t],
   );
   const activeTabId =
     activeTab && tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0]?.id;
@@ -1001,7 +1005,7 @@ export function RecipeSearchOverlay({
   const closeButton = (
     <button
       type="button"
-      aria-label="Close recipe search"
+      aria-label={t("Close recipe search")}
       onClick={closeSearch}
       className="nei-btn nrw-close"
     >
@@ -1014,17 +1018,22 @@ export function RecipeSearchOverlay({
     ? queryError
     : clauses.length === 0 && !query.trim()
       ? machinePin
-        ? `Add an item to Takes or Makes. Only recipes the ${machinePin.label} runs will show.`
-        : "Add an item to either side of the card below."
+        ? t("Add an item to Takes or Makes. Only recipes the {machine} runs will show.", {
+            machine: pinnedLabel ?? machinePin.label,
+          })
+        : t("Add an item to either side of the card below.")
       : tabs.length === 0 && !isLoading
         ? asksWhatTakesPower
-          ? "Nearly every machine takes power, so that list would be the whole pack. Search for what makes power instead."
+          ? t("Nearly every machine takes power, so that list would be the whole pack. Search for what makes power instead.")
           : machinePin
-            ? `Nothing the ${machinePin.label} runs matches.`
-            : "No matching recipes."
+            ? t("Nothing the {machine} runs matches.", { machine: pinnedLabel ?? machinePin.label })
+            : t("No matching recipes.")
         : undefined;
 
-  const pageLabel = `Page ${tabs.length > 0 ? page + 1 : 0}/${tabs.length > 0 ? pageCount : 0}`;
+  const pageLabel = t("Page {page}/{count}", {
+    page: tabs.length > 0 ? page + 1 : 0,
+    count: tabs.length > 0 ? pageCount : 0,
+  });
   const gridStyle = {
     gridTemplateColumns: `repeat(${columns}, ${cell.width}px)`,
     // Rows fit their own cards; a page is still counted by the tallest, so it never runs over.
@@ -1055,7 +1064,7 @@ export function RecipeSearchOverlay({
       <section
         ref={panelRef}
         className="nrw pointer-events-auto relative flex flex-col"
-        aria-label="Recipe search"
+        aria-label={t("Recipe search")}
         style={{
           width: sheet ? "100%" : `min(${layout.width}px, 100%)`,
           height: sheet ? "100%" : `min(${layout.height}px, 100%)`,
@@ -1068,13 +1077,13 @@ export function RecipeSearchOverlay({
             <button
               type="button"
               className="nei-btn nrw-tab-step"
-              aria-label="Previous machines"
+              aria-label={t("Previous machines")}
               onClick={() => stepTabPage(-1)}
             >
               &lt;
             </button>
           ) : null}
-          <div className="nrw-tab-run" ref={setTabRun} role="tablist" aria-label="Machines">
+          <div className="nrw-tab-run" ref={setTabRun} role="tablist" aria-label={t("Machines")}>
             {visibleTabs.map((tab) => (
               <button
                 key={tab.id}
@@ -1117,7 +1126,7 @@ export function RecipeSearchOverlay({
             <button
               type="button"
               className="nei-btn nrw-tab-step"
-              aria-label="Next machines"
+              aria-label={t("Next machines")}
               onClick={() => stepTabPage(1)}
             >
               &gt;
@@ -1134,7 +1143,7 @@ export function RecipeSearchOverlay({
               <button
                 type="button"
                 className="nei-btn"
-                aria-label="Previous machine"
+                aria-label={t("Previous machine")}
                 onClick={() => stepTab(-1)}
               >
                 &lt;
@@ -1142,14 +1151,14 @@ export function RecipeSearchOverlay({
             ) : null}
             <div className="nrw-band">
               <span className="nrw-text nrw-title" data-recipe-tab-title="">
-                {active?.label ?? machinePin?.label ?? (isLoading ? "" : "No recipes")}
+                {active?.label ?? pinnedLabel ?? machinePin?.label ?? (isLoading ? "" : t("No recipes"))}
               </span>
             </div>
             {tabs.length > 1 ? (
               <button
                 type="button"
                 className="nei-btn"
-                aria-label="Next machine"
+                aria-label={t("Next machine")}
                 onClick={() => stepTab(1)}
               >
                 &gt;
@@ -1162,7 +1171,7 @@ export function RecipeSearchOverlay({
             <button
               type="button"
               className="nei-btn"
-              aria-label="Previous page"
+              aria-label={t("Previous page")}
               disabled={pageCount < 2}
               onClick={() => turnPage(-1, true)}
             >
@@ -1171,7 +1180,7 @@ export function RecipeSearchOverlay({
             <button
               type="button"
               className="nei-btn"
-              aria-label="Filter recipes by name"
+              aria-label={t("Filter recipes by name")}
               aria-pressed={showFind}
               data-on={showFind ? "" : undefined}
               style={{ marginLeft: 2 }}
@@ -1200,8 +1209,8 @@ export function RecipeSearchOverlay({
                         onQueryChange("");
                       }
                     }}
-                    placeholder="Filter by name..."
-                    aria-label="Filter recipes by name"
+                    placeholder={t("Filter by name...")}
+                    aria-label={t("Filter recipes by name")}
                   />
                 </label>
                 <span className="nrw-text nrw-find-page">
@@ -1216,7 +1225,7 @@ export function RecipeSearchOverlay({
             <button
               type="button"
               className="nei-btn"
-              aria-label="Next page"
+              aria-label={t("Next page")}
               disabled={pageCount < 2}
               onClick={() => turnPage(1, true)}
             >
@@ -1229,14 +1238,14 @@ export function RecipeSearchOverlay({
             {!sheet ? (
               <div
                 className="nrw-machines recipe-search-scroll"
-                aria-label="Machines that run these recipes"
+                aria-label={t("Machines that run these recipes")}
               >
                 {catalysts.map((resource, index) => (
                   <button
                     key={`${resource.kind}:${resource.id}`}
                     type="button"
                     className="nrw-catalyst"
-                    aria-label={resource.displayName ?? resource.id}
+                    aria-label={datasetNameLabel(resource.displayName ?? resource.id)}
                     onClick={() =>
                       onBrowseResource({ ...resource, amount: 1 } as ResourceAmount, "recipes")
                     }
@@ -1288,7 +1297,7 @@ export function RecipeSearchOverlay({
                   className="nrw-grid"
                   style={gridStyle}
                   role="status"
-                  aria-label="Loading recipes"
+                  aria-label={t("Loading recipes")}
                 >
                   {Array.from({ length: Math.min(perPage, 12) }, (_, index) => (
                     <LookupSkeletonCard key={index} delay={index * 110} />
@@ -1305,7 +1314,7 @@ export function RecipeSearchOverlay({
                       handlers={cardHandlers}
                       onCardMenu={(event) =>
                         openCardMenu(event, {
-                          label: hit.source.name,
+                          label: datasetNameLabel(hit.source.name),
                           add: () => placePowerHit(hit),
                         })
                       }
@@ -1326,7 +1335,7 @@ export function RecipeSearchOverlay({
                       rateView={rateView}
                       onCardMenu={(event, add) =>
                         openCardMenu(event, {
-                          label: recipe.name,
+                          label: datasetRecipeLabel(recipe.name),
                           add,
                         })
                       }
@@ -1336,7 +1345,7 @@ export function RecipeSearchOverlay({
                     <div
                       className="contents"
                       role="status"
-                      aria-label={`Loading ${active?.label ?? ""} recipes`}
+                      aria-label={t("Loading {machine} recipes", { machine: active?.label ?? "" })}
                     >
                       {Array.from({ length: awaited }, (_, index) => (
                         <LookupSkeletonCard key={index} delay={index * 110} />
@@ -1355,7 +1364,7 @@ export function RecipeSearchOverlay({
               className="nei-btn"
               onClick={onBack}
               disabled={!canGoBack}
-              aria-label="Back to the previous search"
+              aria-label={t("Back to the previous search")}
             >
               <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
             </button>
@@ -1364,17 +1373,17 @@ export function RecipeSearchOverlay({
               className="nei-btn"
               onClick={onForward}
               disabled={!canGoForward}
-              aria-label="Forward to the next search"
+              aria-label={t("Forward to the next search")}
             >
               <ChevronRight className="h-3.5 w-3.5" aria-hidden />
             </button>
-            <div ref={ratePillsRef} className="nrw-seg" role="group" aria-label="How amounts read">
+            <div ref={ratePillsRef} className="nrw-seg" role="group" aria-label={t("How amounts read")}>
               {RATE_VIEW_CHOICES.map((choice) => (
                 <button
                   key={choice.view}
                   type="button"
                   className="nei-btn"
-                  title={choice.title}
+                  title={t(choice.title)}
                   aria-pressed={rateView === choice.view}
                   data-gold={choice.view === "eu" ? "" : undefined}
                   onClick={() => {
@@ -1386,7 +1395,7 @@ export function RecipeSearchOverlay({
                     changeRateView(choice.view);
                   }}
                 >
-                  {choice.label}
+                  {t(choice.label)}
                 </button>
               ))}
             </div>
@@ -1397,9 +1406,9 @@ export function RecipeSearchOverlay({
                   playBoardSound("tick");
                   onMaxTierChange(tier);
                 }}
-                label="Maximum machine tier"
+                label={t("Maximum machine tier")}
                 options={[
-                  { value: "all" as TierFilter, label: "All tiers" },
+                  { value: "all" as TierFilter, label: t("All tiers") },
                   ...GT_VOLTAGE_TIERS.map((entry) => ({
                     value: entry.tier as TierFilter,
                     label: `≤ ${entry.tier}`,
@@ -1431,8 +1440,8 @@ export function RecipeSearchOverlay({
                         playBoardSound("stencilRemove");
                         onClearPin();
                       }}
-                      aria-label={`Unpin the ${machinePin.label}`}
-                      title="Unpin: every machine's recipes show and a pick makes a new card"
+                      aria-label={t("Unpin the {machine}", { machine: pinnedLabel ?? machinePin.label })}
+                      title={t("Unpin: every machine's recipes show and a pick makes a new card")}
                     >
                       <X className="h-3 w-3" aria-hidden />
                     </button>
@@ -1450,12 +1459,12 @@ export function RecipeSearchOverlay({
                       />
                     ) : null}
                   </span>
-                  <span className="nrw-text w-full truncate text-[13px]">{machinePin.label}</span>
-                  <span className="text-[11px] uppercase text-[#9a9ca4]">Pinned</span>
+                  <span className="nrw-text w-full truncate text-[13px]">{pinnedLabel ?? machinePin.label}</span>
+                  <span className="text-[11px] uppercase text-[#9a9ca4]">{t("Pinned")}</span>
                 </div>
               ) : null}
               <StencilSide
-                label="Takes"
+                label={t("Takes")}
                 role="takes"
                 sideClauses={takesClauses}
                 clauses={clauses}
@@ -1473,14 +1482,14 @@ export function RecipeSearchOverlay({
                   playBoardSound("tick");
                   onSwapSides();
                 }}
-                aria-label="Swap the takes and makes sides"
+                aria-label={t("Swap the takes and makes sides")}
                 className="nrw-swap compact:!w-9"
               >
                 <ProgressArrow className="nrw-swap-rest" />
                 <ArrowLeftRight aria-hidden className="nrw-swap-hover h-6 w-6" />
               </button>
               <StencilSide
-                label="Makes"
+                label={t("Makes")}
                 role="makes"
                 sideClauses={makesClauses}
                 clauses={clauses}
@@ -1522,7 +1531,7 @@ export function RecipeSearchOverlay({
             <span className="nrw-cond" data-lifted="">
               <ConditionSlot clause={liftedClause} />
               <span className="nrw-text nrw-cond-name">
-                {liftedClause.displayName ?? liftedClause.id}
+                {datasetNameLabel(liftedClause.displayName ?? liftedClause.id)}
               </span>
             </span>
           </div>
@@ -1546,10 +1555,10 @@ export function RecipeSearchOverlay({
                   setCardMenu(undefined);
                 }}
               >
-                {machinePin ? "Add to the card" : "Add to board"}
+                {machinePin ? t("Add to the card") : t("Add to board")}
               </button>
             ) : (
-              <div className="nrw-menu-head">Open a copy to add recipes</div>
+              <div className="nrw-menu-head">{t("Open a copy to add recipes")}</div>
             )}
           </div>
         ) : null}
@@ -1565,19 +1574,19 @@ export function RecipeSearchOverlay({
             {(
               [
                 {
-                  label: "Find what makes it",
+                  label: t("Find what makes it"),
                   act: () => onBrowseResource({ ...chipMenu.resource, amount: 1 }, "recipes"),
                 },
                 {
-                  label: "Find what uses it",
+                  label: t("Find what uses it"),
                   act: () => onBrowseResource({ ...chipMenu.resource, amount: 1 }, "uses"),
                 },
                 {
-                  label: "Add to takes",
+                  label: t("Add to takes"),
                   act: () => addResourceClause(chipMenu.resource, "takes"),
                 },
                 {
-                  label: "Add to makes",
+                  label: t("Add to makes"),
                   act: () => addResourceClause(chipMenu.resource, "makes"),
                 },
               ] as const
@@ -1597,7 +1606,7 @@ export function RecipeSearchOverlay({
             {chipMenu.picker ? (
               <>
                 <div className="nrw-menu-rule" />
-                <div className="nrw-menu-head">This slot also takes</div>
+                <div className="nrw-menu-head">{t("This slot also takes")}</div>
                 <div className="recipe-search-scroll max-h-[180px] overflow-y-auto">
                   {chipMenu.picker.faces.map((face) => (
                     <button
@@ -1621,7 +1630,7 @@ export function RecipeSearchOverlay({
                           iconPixelSize={machineArtPixels(24)}
                         />
                       </span>
-                      <span className="min-w-0 flex-1 truncate">{face.displayName ?? face.id}</span>
+                      <span className="min-w-0 flex-1 truncate">{datasetNameLabel(face.displayName ?? face.id)}</span>
                       {/* Three faces all called "Iron Nugget" are three
                           mods' nuggets: say which, or the list is useless. */}
                       {face.modId ? (
@@ -1644,7 +1653,9 @@ export function RecipeSearchOverlay({
               ...(tipTab.count !== undefined
                 ? [
                     {
-                      text: `${tipTab.count.toLocaleString()} ${tipTab.count === 1 ? "recipe" : "recipes"}`,
+                      text: t(tipTab.count === 1 ? "{count} recipe" : "{count} recipes", {
+                        count: tipTab.count.toLocaleString(),
+                      }),
                     },
                   ]
                 : []),
@@ -1656,7 +1667,7 @@ export function RecipeSearchOverlay({
             x={catTip.x}
             y={catTip.y}
             lines={itemTipLines({
-              name: catalysts[catTip.index]!.displayName ?? catalysts[catTip.index]!.id,
+              name: datasetNameLabel(catalysts[catTip.index]!.displayName ?? catalysts[catTip.index]!.id),
               id: catalysts[catTip.index]!.id,
             })}
           />
@@ -1742,6 +1753,7 @@ function StencilSide({
   registerListRef: (role: RecipeQueryRole, element: HTMLDivElement | null) => void;
   onOpenPicker: () => void;
 }) {
+  const t = useT();
   const dragActive = drag?.active ?? false;
   const layoutClauses = dragActive
     ? sideClauses.filter((clause) => clauses.indexOf(clause) !== drag?.index)
@@ -1761,7 +1773,7 @@ function StencilSide({
         <div className="nrw-band">
           <span className="nrw-text">{label}</span>
         </div>
-        <div className="nrw-seg" role="group" aria-label={`${label}: how its items combine`}>
+        <div className="nrw-seg" role="group" aria-label={t("{label}: how its items combine", { label })}>
           {(
             [
               ["any", "Any"],
@@ -1776,7 +1788,7 @@ function StencilSide({
               aria-pressed={op === value}
               onClick={() => changeOp(value)}
             >
-              {text}
+              {t(text)}
             </button>
           ))}
         </div>
@@ -1798,14 +1810,16 @@ function StencilSide({
             >
               <ConditionSlot clause={clause} />
               <span className="nrw-text nrw-cond-name compact:whitespace-normal compact:text-[12px] compact:leading-tight">
-                {clause.displayName ?? clause.id}
+                {datasetNameLabel(clause.displayName ?? clause.id)}
               </span>
               <button
                 type="button"
                 className="nei-btn"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onRemove(index)}
-                aria-label={`Remove ${clause.displayName ?? clause.id} from the search`}
+                aria-label={t("Remove {name} from the search", {
+                  name: datasetNameLabel(clause.displayName ?? clause.id),
+                })}
               >
                 <X className="h-3 w-3" aria-hidden />
               </button>
@@ -1816,7 +1830,9 @@ function StencilSide({
           type="button"
           onClick={onOpenPicker}
           aria-label={
-            role === "takes" ? "Add an input to the search" : "Add an output to the search"
+            role === "takes"
+              ? t("Add an input to the search")
+              : t("Add an output to the search")
           }
           style={{ transform: gapAt !== undefined ? `translateY(${pitch}px)` : undefined }}
           className="nrw-add-cond"
@@ -1825,7 +1841,7 @@ function StencilSide({
             <Plus className="h-4 w-4" aria-hidden />
           </span>
           <span className="nrw-text text-[13px] !text-inherit" style={{ textShadow: "none" }}>
-            {role === "takes" ? "Input" : "Output"}
+            {role === "takes" ? t("Input") : t("Output")}
           </span>
         </button>
       </div>

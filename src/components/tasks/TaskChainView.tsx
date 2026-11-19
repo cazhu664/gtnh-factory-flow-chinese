@@ -12,6 +12,7 @@ import {
 import { selectTask } from "@/lib/tasks/task-board-ui";
 import { chainIds, chainRows, taskChains } from "@/lib/tasks/task-chain";
 import { TASK_STATUS_COLOR } from "@/lib/tasks/task-links";
+import { useT } from "@/lib/i18n";
 import { useFactoryStore } from "@/store/factory-store";
 import { PriorityIcon, StatusDot, TaskFaces, useNameOf } from "./task-look";
 
@@ -48,6 +49,7 @@ interface Layout {
 }
 
 export function TaskChainView() {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const tasks = project.tasks;
   const nameOf = useNameOf();
@@ -258,17 +260,17 @@ export function TaskChainView() {
         onClick={listShown ? undefined : () => setListOpen(true)}
         {...(listShown
           ? {}
-          : tipAttrs({ id: "task-chain|unfold", title: "Show the list of tasks" }))}
+          : tipAttrs({ id: "task-chain|unfold", title: t("Show the list of tasks") }))}
       >
         {listShown ? (
           <>
             <div className="tc-list-head">
-              {count === 1 ? "1 task" : `${count} tasks`}
+              {count === 1 ? t("1 task") : t("{count} tasks", { count })}
               <button
                 type="button"
                 className="tc-fold"
-                aria-label="Fold the list away"
-                {...tipAttrs({ id: "task-chain|fold", title: "Fold the list away" })}
+                aria-label={t("Fold the list away")}
+                {...tipAttrs({ id: "task-chain|fold", title: t("Fold the list away") })}
                 onClick={() => setListOpen(false)}
               >
                 <Caret right={false} />
@@ -280,7 +282,7 @@ export function TaskChainView() {
                 return (
                   <div key={at} className="tc-chain" data-chain={at + 1}>
                     <div className="tc-heading">
-                      Chain {at + 1}
+                      {t("Chain {number}", { number: at + 1 })}
                       <i>{ids.length}</i>
                     </div>
                     {ids.map((id) => (
@@ -301,7 +303,7 @@ export function TaskChainView() {
               {layout.loose.length > 0 ? (
                 <div className="tc-loose">
                   <div className="tc-heading">
-                    Not linked
+                    {t("Not linked")}
                     <i>{layout.loose.length}</i>
                   </div>
                   {layout.loose.map((id) => (
@@ -321,7 +323,7 @@ export function TaskChainView() {
             </div>
           </>
         ) : (
-          <button type="button" className="tc-fold" aria-label="Show the list of tasks">
+          <button type="button" className="tc-fold" aria-label={t("Show the list of tasks")}>
             <Caret right />
           </button>
         )}
@@ -336,8 +338,8 @@ export function TaskChainView() {
       >
         {count === 0 ? (
           <div className="tc-empty">
-            <p>No tasks yet.</p>
-            <p>Press New task to add one.</p>
+            <p>{t("No tasks yet.")}</p>
+            <p>{t("Press New task to add one.")}</p>
           </div>
         ) : (
           <div
@@ -360,7 +362,7 @@ export function TaskChainView() {
             </svg>
             {placed.looseY >= 0 ? (
               <div className="tc-loose-head" style={{ left: MARGIN, top: placed.looseY + 3 }}>
-                {layout.chains.length === 0 ? "No task waits on another yet" : "Not linked"}
+                {layout.chains.length === 0 ? t("No task waits on another yet") : t("Not linked")}
               </div>
             ) : null}
             {[...placed.nodes].map(([id, at]) => {
@@ -384,9 +386,9 @@ export function TaskChainView() {
                   {...tipAttrs({
                     id: `task-node|${id}`,
                     title: task.title,
-                    sub: `${TASK_STATUS_LABEL[task.status]}. ${inColumnText(task)}`,
-                    rows: [{ label: "Priority", value: TASK_PRIORITY_LABEL[priority] }],
-                    actions: [{ input: "left", label: "Open it" }],
+                    sub: `${t(TASK_STATUS_LABEL[task.status])}. ${inColumnText(task)}`,
+                    rows: [{ label: t("Priority"), value: t(TASK_PRIORITY_LABEL[priority]) }],
+                    actions: [{ input: "left", label: t("Open it") }],
                   })}
                   onPointerEnter={() => setHover(id)}
                   onPointerLeave={() => setHover((now) => (now === id ? undefined : now))}
@@ -408,17 +410,17 @@ export function TaskChainView() {
           </div>
         )}
         {count > 0 && layout.chains.length === 0 ? (
-          <p className="tc-hint">Open a task and add what it waits on to link it.</p>
+          <p className="tc-hint">{t("Open a task and add what it waits on to link it.")}</p>
         ) : null}
         {count > 0 ? (
           <button
             type="button"
             className="tb-key tc-fit"
-            {...tipAttrs({ id: "task-chain|fit", title: "Show every task" })}
+            {...tipAttrs({ id: "task-chain|fit", title: t("Show every task") })}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={fit}
           >
-            Fit
+            {t("Fit")}
           </button>
         ) : null}
       </div>
@@ -437,6 +439,7 @@ function ListRow({
   on: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
   if (!task) return null;
   return (
     <div
@@ -450,8 +453,8 @@ function ListRow({
       {...tipAttrs({
         id: `task-row|${task.id}`,
         title: task.title,
-        sub: TASK_STATUS_LABEL[task.status],
-        actions: [{ input: "left", label: "Show it on the map" }],
+        sub: t(TASK_STATUS_LABEL[task.status]),
+        actions: [{ input: "left", label: t("Show it on the map") }],
       })}
       onClick={onClick}
       onKeyDown={(event) => {

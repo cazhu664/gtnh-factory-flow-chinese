@@ -1,6 +1,7 @@
 "use client";
 
 import { makeResourceKey } from "@/lib/model";
+import { datasetNameLabel } from "@/lib/i18n";
 import { fluidSwatchStyle } from "../fluid-swatch";
 import type { FactoryStorage, Recipe, ResourceAmount } from "@/lib/model/types";
 import { getFallbackFluidColor, ResourceIcon } from "@/components/nei/ResourceIcon";
@@ -55,7 +56,7 @@ export function DrawerIcon({
       <span
         className="cd-icon cd-swatch"
         role="img"
-        aria-label={storage.displayName}
+        aria-label={datasetNameLabel(storage.displayName)}
         style={fluidSwatchStyle({ id: storage.resourceId, dominantColor: color, iconAtlas: art.iconAtlas })}
       />
     );

@@ -17,6 +17,7 @@ import { isMultiblockRecipe } from "@/lib/solver/power";
 import { getMachineBehaviour, getMachineTableControls } from "@/lib/machines/machine-table";
 import { pinRuleOf } from "@/lib/model/pin-rule";
 import type { PlanUpTo } from "@/lib/solver/plan/types";
+import { datasetNameLabel, t } from "@/lib/i18n";
 import type { RecipeTooltipView, TooltipMode } from "./recipe-tooltip-data";
 
 const number = (value: number) =>
@@ -49,32 +50,32 @@ export function buildMachineTooltip(
       : (running ?? node.solvePin ?? result?.theoreticalMachinesRequired);
   const countLabel =
     mode === "build"
-      ? "Installed machines"
+      ? t("Installed machines")
       : rule === "upTo"
-        ? "Machines running"
+        ? t("Machines running")
         : rule === "exact"
-          ? "Exact machines"
-          : "Required machines";
+          ? t("Exact machines")
+          : t("Required machines");
   const rows = [
-    { label: countLabel, value: count === undefined ? "Unavailable" : number(count) },
+    { label: countLabel, value: count === undefined ? t("Unavailable") : number(count) },
     ...(mode !== "build" && rule === "upTo" && node.solvePin
-      ? [{ label: "Up to", value: number(node.solvePin) }]
+      ? [{ label: t("Up to"), value: number(node.solvePin) }]
       : []),
-    ...(power ? [{ label: "Configured tier", value: stats.tier }] : []),
+    ...(power ? [{ label: t("Configured tier"), value: stats.tier }] : []),
     {
-      label: "Time per operation",
-      value: stats.durationTicks > 0 ? `${number(stats.durationTicks / 20)} s` : "Instant",
+      label: t("Time per operation"),
+      value: stats.durationTicks > 0 ? `${number(stats.durationTicks / 20)} s` : t("Instant"),
     },
     ...(steam
-      ? [{ label: "Steam per machine", value: `${formatCompact(steam.drawSteamPerTick * 20)} L/s` }]
+      ? [{ label: t("Steam per machine"), value: `${formatCompact(steam.drawSteamPerTick * 20)} L/s` }]
       : power
-        ? [{ label: "Draw per machine", value: `${formatCompact(power.drawEuT)} EU/t` }]
+        ? [{ label: t("Draw per machine"), value: `${formatCompact(power.drawEuT)} EU/t` }]
         : []),
-    ...(parallels > 1 ? [{ label: "Parallel operations", value: number(parallels) }] : []),
+    ...(parallels > 1 ? [{ label: t("Parallel operations"), value: number(parallels) }] : []),
   ];
   return {
-    title: title ?? handler.label,
-    subtitle: isMultiblockRecipe(effective) ? "Multiblock" : "Machine",
+    title: title ?? datasetNameLabel(handler.label),
+    subtitle: isMultiblockRecipe(effective) ? t("Multiblock") : t("Machine"),
     mode,
     rows,
     requirement: getMachineBehaviour(effective.machineType)?.note,
@@ -111,41 +112,41 @@ export function buildConfigTooltip(
       ...(control.numeric
         ? [
             {
-              label: "Range",
+              label: t("Range"),
               value:
                 control.numeric.max === undefined
-                  ? `${control.numeric.min} or more`
-                  : `${control.numeric.min} to ${control.numeric.max}`,
+                  ? t("{min} or more", { min: control.numeric.min })
+                  : t("{min} to {max}", { min: control.numeric.min, max: control.numeric.max }),
             },
           ]
         : []),
       {
-        label: "Time per operation",
-        value: stats.durationTicks > 0 ? `${number(stats.durationTicks / 20)} s` : "Instant",
+        label: t("Time per operation"),
+        value: stats.durationTicks > 0 ? `${number(stats.durationTicks / 20)} s` : t("Instant"),
       },
       ...(steam
         ? [
             {
-              label: "Steam per machine",
+              label: t("Steam per machine"),
               value: `${formatCompact(steam.drawSteamPerTick * 20)} L/s`,
             },
           ]
         : power
-          ? [{ label: "Draw per machine", value: `${formatCompact(power.drawEuT)} EU/t` }]
+          ? [{ label: t("Draw per machine"), value: `${formatCompact(power.drawEuT)} EU/t` }]
           : []),
       {
-        label: "Parallel operations",
+        label: t("Parallel operations"),
         value: number(power?.parallels ?? getMachineParallelMultiplier(effective, node)),
       },
     ],
     reason: power && power.state !== "ok" ? describePowerStall(power) : undefined,
     actions: control.numeric
       ? [
-          { gesture: "left", label: "Type a value" },
-          { gesture: "wheel", label: "Step" },
+          { gesture: "left", label: t("Type a value") },
+          { gesture: "wheel", label: t("Step") },
         ]
       : control.tiers.length > 1
-        ? [{ gesture: "left", label: "Change setting" }]
+        ? [{ gesture: "left", label: t("Change setting") }]
         : [],
   };
 }

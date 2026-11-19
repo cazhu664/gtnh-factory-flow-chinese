@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { ArtBox } from "./ArtBox";
 import { MenuPortal, type MenuAnchor } from "./MenuPortal";
 import type { SettingControl } from "./settings-model";
@@ -21,6 +22,7 @@ export function OptionListMenu({
   onPick: (optionKey: string) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
   const shown = control.options.filter((option) => option.label.toLowerCase().includes(needle));
@@ -29,9 +31,9 @@ export function OptionListMenu({
       <input
         autoFocus
         className="cm-filter nodrag"
-        placeholder="Filter..."
+        placeholder={t("Filter...")}
         value={query}
-        aria-label={`Filter ${control.label}`}
+        aria-label={t("Filter {label}", { label: control.label })}
         onChange={(event) => setQuery(event.target.value)}
         onKeyDown={(event) => {
           event.stopPropagation();
@@ -40,7 +42,7 @@ export function OptionListMenu({
         }}
       />
       <div className="cm-scroll">
-        {shown.length === 0 ? <div className="cm-empty">Nothing matches.</div> : null}
+        {shown.length === 0 ? <div className="cm-empty">{t("Nothing matches.")}</div> : null}
         {shown.map((option) => (
           <div
             key={option.key}

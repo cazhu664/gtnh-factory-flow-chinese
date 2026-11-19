@@ -5,6 +5,7 @@ import "./power-picker.css";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import { playBoardSound } from "@/lib/board-sounds";
 import { getUiScale } from "@/lib/ui-scale";
 import { GT_VOLTAGE_TIERS } from "@/lib/model";
@@ -60,6 +61,7 @@ const TIER_FILTERS = GT_VOLTAGE_TIERS.map((entry) => entry.tier).filter((tier) =
  * make, so "benzene" finds every machine that runs on it and places it with that fuel set.
  */
 export function ModPowerPicker() {
+  const t = useT();
   const open = useFactoryStore((state) => state.powerMenuOpen);
   const closePowerMenu = useFactoryStore((state) => state.closePowerMenu);
   const addPowerSourceNode = useFactoryStore((state) => state.addPowerSourceNode);
@@ -169,7 +171,7 @@ export function ModPowerPicker() {
   const menuEntries: MenuEntry[] =
     menu?.kind === "group"
       ? [
-          { label: "All types", current: groupFilter === "all", onSelect: () => setGroupFilter("all") },
+          { label: t("All types"), current: groupFilter === "all", onSelect: () => setGroupFilter("all") },
           ...POWER_GROUPS.map((group) => ({
             label: group.name,
             current: groupFilter === group.id,
@@ -177,7 +179,7 @@ export function ModPowerPicker() {
           })),
         ]
       : [
-          { label: "All tiers", current: tierFilter === "all", onSelect: () => setTierFilter("all") },
+          { label: t("All tiers"), current: tierFilter === "all", onSelect: () => setTierFilter("all") },
           ...TIER_FILTERS.map((tier) => ({ label: tier, current: tierFilter === tier, onSelect: () => setTierFilter(tier) })),
         ];
 
@@ -201,40 +203,40 @@ export function ModPowerPicker() {
         ref={sheetRef}
         className="mp mx"
         role="dialog"
-        aria-label="Non-recipe machines"
+        aria-label={t("Non-recipe machines")}
         data-mod-power-picker=""
         onPointerDown={(event) => event.stopPropagation()}
         onScroll={() => setPreview(undefined)}
       >
         <div className="mp-head">
           <PixelBolt className="mp-bolt" />
-          <span className="mp-title">NON-RECIPE MACHINES</span>
+          <span className="mp-title">{t("NON-RECIPE MACHINES")}</span>
           <span className="mb-grow" />
           <input
             autoFocus
             className="ml-search mp-search"
-            placeholder="Machine, fuel, or product..."
-            aria-label="Machine, fuel, or product"
+            placeholder={t("Machine, fuel, or product...")}
+            aria-label={t("Machine, fuel, or product")}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
           <PickerKey
-            label={groupFilter === "all" ? "All types" : groupTitle(groupFilter)}
+            label={groupFilter === "all" ? t("All types") : groupTitle(groupFilter)}
             open={menu?.kind === "group"}
             onOpen={(anchor) => setMenu((current) => (current?.kind === "group" ? undefined : { kind: "group", anchor }))}
           />
           <PickerKey
-            label={tierFilter === "all" ? "All tiers" : tierFilter}
+            label={tierFilter === "all" ? t("All tiers") : tierFilter}
             open={menu?.kind === "tier"}
             onOpen={(anchor) => setMenu((current) => (current?.kind === "tier" ? undefined : { kind: "tier", anchor }))}
           />
-          <div className="mb-key mp-close" role="button" aria-label="Close" onClick={closePowerMenu}>
+          <div className="mb-key mp-close" role="button" aria-label={t("Close")} onClick={closePowerMenu}>
             x
           </div>
         </div>
         <div className="mp-body" onScroll={() => setPreview(undefined)}>
           {entries.length === 0 ? (
-            <div className="mp-none">No machine burns, makes or is named that.</div>
+            <div className="mp-none">{t("No machine burns, makes or is named that.")}</div>
           ) : searching ? (
             <div className="mp-results">{entries.map(tile)}</div>
           ) : (
@@ -261,7 +263,7 @@ export function ModPowerPicker() {
         <ChromeMenu
           anchor={menu.anchor}
           entries={menuEntries}
-          label={menu.kind === "group" ? "Type" : "Tier"}
+          label={menu.kind === "group" ? t("Type") : t("Tier")}
           minWidth={120}
           onClose={() => setMenu(undefined)}
         />
@@ -295,9 +297,10 @@ function PickerKey({ label, open, onOpen }: { label: string; open: boolean; onOp
 const REST_MS = 800;
 
 function Tile({ entry, onPlace, onRest }: { entry: Entry; onPlace: (entry: Entry) => void; onRest: (rect: DOMRect | undefined) => void }) {
+  const t = useT();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
-  const name = entry.kind === "other" ? entry.card.name : entry.hit.source.name;
+  const name = entry.kind === "other" ? t(entry.card.name) : entry.hit.source.name;
   const tier = entry.kind === "other" ? undefined : entry.hit.source.unlock;
   const via = entry.kind === "source" ? entry.hit.via : undefined;
   return (
@@ -322,7 +325,7 @@ function Tile({ entry, onPlace, onRest }: { entry: Entry; onPlace: (entry: Entry
       </span>
       <NameLines name={name} tier={tier} />
       {tier ? <TierTag tier={tier} /> : null}
-      {via ? <span className="mp-via">{via.direction === "takes" ? "Takes " : "Makes "}{via.name}</span> : null}
+      {via ? <span className="mp-via">{via.direction === "takes" ? t("Takes ") : t("Makes ")}{via.name}</span> : null}
     </div>
   );
 }
@@ -448,10 +451,11 @@ function TankArt({ size }: { size: number }) {
 
 /** The machine under the mouse, beside its tile: its picture large, its name, kind and unlock tier, what it does. */
 function Preview({ entry, rect, scale }: { entry: Entry; rect: DOMRect; scale: number }) {
+  const t = useT();
   const source = entry.kind === "source" ? entry.hit.source : undefined;
-  const name = source?.name ?? (entry.kind === "other" ? entry.card.name : "");
-  const kind = source ? (POWER_GROUPS.find((group) => group.id === source.group)?.name ?? "") : "Other";
-  const blurb = source?.blurb ?? (entry.kind === "other" ? entry.card.blurb : "");
+  const name = source?.name ?? (entry.kind === "other" ? t(entry.card.name) : "");
+  const kind = source ? (POWER_GROUPS.find((group) => group.id === source.group)?.name ?? "") : t("Other");
+  const blurb = source?.blurb ?? (entry.kind === "other" ? t(entry.card.blurb) : "");
   const width = 190;
   const vw = window.innerWidth / scale;
   let left = rect.right / scale + 6;
@@ -466,12 +470,12 @@ function Preview({ entry, rect, scale }: { entry: Entry; rect: DOMRect; scale: n
       <div className="mp-preview-name">{name}</div>
       <div className="mp-preview-kind">
         {kind}
-        {source?.unlock ? `, unlocks at ${source.unlock}` : ""}
+        {source?.unlock ? t(", unlocks at {tier}", { tier: source.unlock }) : ""}
       </div>
       <div className="mp-preview-blurb">{blurb}</div>
       {entry.kind === "source" && entry.hit.via ? (
         <div className="mp-via">
-          {entry.hit.via.direction === "takes" ? "Takes " : "Makes "}
+          {entry.hit.via.direction === "takes" ? t("Takes ") : t("Makes ")}
           {entry.hit.via.name}
         </div>
       ) : null}

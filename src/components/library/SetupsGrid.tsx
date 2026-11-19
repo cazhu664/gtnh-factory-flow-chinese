@@ -17,6 +17,7 @@ import { copyCommunityPost, openCommunityPost } from "@/lib/community/open-post"
 import { sharedPlanLink } from "@/lib/community/shared-link";
 import type { CommunityPlanSort, CommunityPlanSummary, EntryIcon } from "@/lib/community/types";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useT } from "@/lib/i18n";
 import { serializeFactoryProject } from "@/lib/import-export";
 import { toggleSavedSetup, useSavedSetups } from "@/lib/library/saved-setups";
 import { capturePlanView } from "@/lib/plan-view";
@@ -97,6 +98,7 @@ export function SetupsGrid({
   /** Told how many setups the shelf found. */
   onTotal?: (total: number) => void;
 }) {
+  const t = useT();
   const savedIds = useSavedSetups();
   const { user, isLoading: isAuthLoading } = useCommunityUser();
   const ownFilters = useSetupFilters("active");
@@ -136,10 +138,10 @@ export function SetupsGrid({
   }
   /** The sentinel under the grid; scrolling it into view asks for the next page. */
   const moreRef = useRef<HTMLDivElement>(null);
-  const activeTabName = useDesignStore(
-    (state) =>
-      state.designs.find((design) => design.id === state.activeDesignId)?.name ?? "this board",
+  const activeDesignName = useDesignStore(
+    (state) => state.designs.find((design) => design.id === state.activeDesignId)?.name,
   );
+  const activeTabName = activeDesignName ?? t("this board");
   const hasEditableDesign = useDesignStore((state) => state.activeDesignId !== undefined);
 
   useEffect(() => {
@@ -212,7 +214,7 @@ export function SetupsGrid({
         if (cancelled) {
           return;
         }
-        setError(loadError instanceof Error ? loadError.message : "Loading setups failed.");
+        setError(loadError instanceof Error ? loadError.message : t("Loading setups failed."));
         setShelf({ key, page: activePage, total: 0, plans: [] });
       },
     );
@@ -317,7 +319,7 @@ export function SetupsGrid({
         myVote: response.myVote,
       }));
     } catch (thrown) {
-      fail(thrown, "Voting failed.");
+      fail(thrown, t("Voting failed."));
     }
   };
 
@@ -345,7 +347,7 @@ export function SetupsGrid({
       setError(undefined);
       setDetailId(undefined);
     } catch (thrown) {
-      fail(thrown, "Opening the setup failed.");
+      fail(thrown, t("Opening the setup failed."));
       setDetailId(undefined);
     } finally {
       setBusyId(undefined);
@@ -359,7 +361,7 @@ export function SetupsGrid({
       setCopiedId(plan.id);
       window.setTimeout(() => setCopiedId((c) => (c === plan.id ? undefined : c)), 1500);
     } catch {
-      window.prompt("Copy this link:", url);
+      window.prompt(t("Copy this link:"), url);
     }
   };
 
@@ -371,7 +373,7 @@ export function SetupsGrid({
       await patchCommunityPlan(plan.id, { tags });
       patchPlan(plan.id, (entry) => ({ ...entry, tags }));
     } catch (thrown) {
-      fail(thrown, "Saving tags failed.");
+      fail(thrown, t("Saving tags failed."));
     }
   };
 
@@ -380,7 +382,7 @@ export function SetupsGrid({
       await patchCommunityPlan(planId, { icon });
       patchPlan(planId, (entry) => ({ ...entry, icon: icon ?? undefined }));
     } catch (thrown) {
-      fail(thrown, "Saving the icon failed.");
+      fail(thrown, t("Saving the icon failed."));
     }
   };
 
@@ -398,7 +400,7 @@ export function SetupsGrid({
       setError(undefined);
       setRefreshTick((tick) => tick + 1);
     } catch (thrown) {
-      fail(thrown, "Overwriting the post failed.");
+      fail(thrown, t("Overwriting the post failed."));
     }
   };
 
@@ -412,7 +414,7 @@ export function SetupsGrid({
         patchPlan(plan.id, (entry) => ({ ...entry, isPublic: next }));
       }
     } catch (thrown) {
-      fail(thrown, "Changing visibility failed.");
+      fail(thrown, t("Changing visibility failed."));
     }
   };
 
@@ -421,7 +423,7 @@ export function SetupsGrid({
       await deleteCommunityPlan(plan.id);
       dropPlan(plan.id);
     } catch (thrown) {
-      fail(thrown, "Taking the post down failed.");
+      fail(thrown, t("Taking the post down failed."));
     }
   };
 
@@ -447,7 +449,7 @@ export function SetupsGrid({
                   setQuery((current) => withAuthor(current, detailPlan.authorName ?? ""));
                 }
               : undefined,
-            when: `posted ${formatRelativeDate(detailPlan.createdAt)}`,
+            when: t("posted {when}", { when: formatRelativeDate(detailPlan.createdAt) }),
             tier: detailPlan.highestTier,
             machines: detailPlan.machineCount,
             euT: detailPlan.totalEuT,
@@ -472,42 +474,42 @@ export function SetupsGrid({
                     });
                     patchPlan(detailPlan.id, (entry) => ({ ...entry, ...patch }));
                   } catch (thrown) {
-                    fail(thrown, "Saving the post failed.");
+                    fail(thrown, t("Saving the post failed."));
                   }
                 }
               : undefined,
             editTags: true,
             onPickIcon: detailPlan.isMine ? () => setIconEditId(detailPlan.id) : undefined,
             primary: {
-              label: detailPlan.isMine ? "Open" : "Open a copy",
+              label: detailPlan.isMine ? t("Open") : t("Open a copy"),
               onClick: () => {
                 void open(detailPlan);
               },
             },
             secondary: detailPlan.isMine
               ? {
-                  label: "Open a copy",
+                  label: t("Open a copy"),
                   onClick: () => void open(detailPlan, true),
                 }
               : undefined,
             actionBusy: busyId === detailPlan.id,
             keys: [
               {
-                label: detailPlan.myVote === 1 ? "Take back your vote" : "Vote this up",
+                label: detailPlan.myVote === 1 ? t("Take back your vote") : t("Vote this up"),
                 icon: "vote",
                 active: detailPlan.myVote === 1,
                 count: detailPlan.score,
                 onClick: () => void vote(detailPlan),
               },
               {
-                label: "Copy the share link",
+                label: t("Copy the share link"),
                 icon: "link",
                 onClick: () => void copyLink(detailPlan),
               },
               ...(detailPlan.isMine
                 ? [
                     {
-                      label: detailPlan.isPublic ? "Make it private" : "Make it public",
+                      label: detailPlan.isPublic ? t("Make it private") : t("Make it public"),
                       icon: detailPlan.isPublic ? ("private" as const) : ("public" as const),
                       onClick: () => void setVisibility(detailPlan),
                     },
@@ -525,12 +527,12 @@ export function SetupsGrid({
         filters={filters}
         placeholder={
           scope === "mine"
-            ? "Search my posts (#tag, @name)"
+            ? t("Search my posts (#tag, @name)")
             : scope === "saved"
-              ? "Search saved setups"
-              : "Search public setups (#tag, @name)"
+              ? t("Search saved setups")
+              : t("Search public setups (#tag, @name)")
         }
-        sortOptions={SETUP_SORTS}
+        sortOptions={SETUP_SORTS.map((option) => ({ ...option, label: t(option.label) }))}
         knownTags={knownTags}
         myPosts={
           scope === "network" && username
@@ -555,24 +557,23 @@ export function SetupsGrid({
         {error ? <p className="mb-2 text-[11px] text-red-400">{error}</p> : null}
         {needsAccount && !isAuthLoading ? (
           <p className="text-[12px] leading-relaxed text-[var(--mc-ink-muted)]">
-            Sign in (top right) to see your posts here. Share a design with the Share button
-            in the header, then manage it from this page.
+            {t("Sign in (top right) to see your posts here. Share a design with the Share button in the header, then manage it from this page.")}
           </p>
         ) : isLoading && plans.length === 0 ? (
           // Loading is a moment the whole page is about, so it sits in the
           // middle, large, and breathes: not a whisper in the corner.
           <div className="flex h-full min-h-[240px] items-center justify-center">
-            <LoaderCircle className="h-14 w-14 animate-spin text-neutral-200" aria-label="Loading" />
+            <LoaderCircle className="h-14 w-14 animate-spin text-neutral-200" aria-label={t("Loading")} />
           </div>
         ) : plans.length === 0 && !error ? (
           <p className="text-[12px] leading-relaxed text-[var(--mc-ink-muted)]">
             {search
-              ? "No setups match."
+              ? t("No setups match.")
               : scope === "mine"
-                ? "Nothing posted yet. Share a design with the Share button in the header."
+                ? t("Nothing posted yet. Share a design with the Share button in the header.")
                 : scope === "saved"
-                  ? "Nothing saved yet. Click the ribbon on a public setup to keep it here."
-                  : "Nothing shared yet."}
+                  ? t("Nothing saved yet. Click the ribbon on a public setup to keep it here.")
+                  : t("Nothing shared yet.")}
           </p>
         ) : (
           <>
@@ -586,14 +587,14 @@ export function SetupsGrid({
                     onCreator={plan.authorName ? () => setQuery((current) => withAuthor(current, plan.authorName ?? "")) : undefined}
                     when={
                       copiedId === plan.id
-                        ? "link copied"
+                        ? t("link copied")
                         : sort === "commented" && plan.lastCommentAt
-                          ? `commented ${formatRelativeDate(plan.lastCommentAt)}`
+                          ? t("commented {when}", { when: formatRelativeDate(plan.lastCommentAt) })
                           : sort === "active" && plan.lastActivityAt
-                            ? `active ${formatRelativeDate(plan.lastActivityAt)}`
+                            ? t("active {when}", { when: formatRelativeDate(plan.lastActivityAt) })
                             : wasEdited(plan)
-                              ? `edited ${formatRelativeDate(plan.updatedAt ?? plan.createdAt)}`
-                              : `posted ${formatRelativeDate(plan.createdAt)}`
+                              ? t("edited {when}", { when: formatRelativeDate(plan.updatedAt ?? plan.createdAt) })
+                              : t("posted {when}", { when: formatRelativeDate(plan.createdAt) })
                     }
                     tier={plan.highestTier}
                     onTier={
@@ -631,7 +632,7 @@ export function SetupsGrid({
               // The next page comes on its own as this sentinel scrolls into
               // view; the spinner is only there to say so.
               <div ref={moreRef} className="mt-3 flex h-10 items-center justify-center">
-                <LoaderCircle className="h-5 w-5 animate-spin text-neutral-400" aria-label="Loading more" />
+                <LoaderCircle className="h-5 w-5 animate-spin text-neutral-400" aria-label={t("Loading more")} />
               </div>
             ) : null}
           </>
@@ -644,18 +645,18 @@ export function SetupsGrid({
         <LibraryMenu
           left={menu.left}
           top={menu.top}
-          label={`Options for ${menuPlan.name}`}
+          label={t("Options for {name}", { name: menuPlan.name })}
           onClose={closeMenu}
         >
           <MenuItem
-            label={menuPlan.isMine ? "Open" : "Open a copy"}
+            label={menuPlan.isMine ? t("Open") : t("Open a copy")}
             onClick={() => {
               closeMenu();
               void open(menuPlan);
             }}
           />
           <MenuItem
-            label="Copy link"
+            label={t("Copy link")}
             onClick={() => {
               closeMenu();
               void copyLink(menuPlan);
@@ -665,29 +666,29 @@ export function SetupsGrid({
             <>
               <MenuRule />
               <MenuItem
-                label={menuPlan.isPublic ? "Make private" : "Make public"}
+                label={menuPlan.isPublic ? t("Make private") : t("Make public")}
                 onClick={() => {
                   closeMenu();
                   void setVisibility(menuPlan);
                 }}
               />
               <MenuItem
-                label="Edit tags"
+                label={t("Edit tags")}
                 onClick={() => {
                   setTagEdit({ id: menuPlan.id, left: menu.left, top: menu.top });
                   closeMenu();
                 }}
               />
               <MenuItem
-                label="Change icon"
+                label={t("Change icon")}
                 onClick={() => {
                   closeMenu();
                   setIconEditId(menuPlan.id);
                 }}
               />
               {hasEditableDesign ? <ArmedMenuItem
-                label={`Replace with "${activeTabName}"`}
-                armedLabel="Confirm: replace the post"
+                label={t('Replace with "{name}"', { name: activeTabName })}
+                armedLabel={t("Confirm: replace the post")}
                 armed={armed?.id === menuPlan.id && armed.what === "overwrite"}
                 onArm={() => setArmed({ id: menuPlan.id, what: "overwrite" })}
                 onFire={() => {
@@ -696,8 +697,8 @@ export function SetupsGrid({
                 }}
               /> : null}
               <ArmedMenuItem
-                label="Take down"
-                armedLabel="Confirm: take it down for everyone"
+                label={t("Take down")}
+                armedLabel={t("Confirm: take it down for everyone")}
                 armed={armed?.id === menuPlan.id && armed.what === "takedown"}
                 onArm={() => setArmed({ id: menuPlan.id, what: "takedown" })}
                 onFire={() => {
@@ -724,7 +725,7 @@ export function SetupsGrid({
 
       {iconEditId ? (
         <IconPicker
-          title="Pick an icon"
+          title={t("Pick an icon")}
           suggestions={iconSuggestionsFromStats(
             plans.find((entry) => entry.id === iconEditId)?.needs,
             plans.find((entry) => entry.id === iconEditId)?.outputs,
