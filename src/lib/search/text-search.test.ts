@@ -7,6 +7,7 @@ import {
   searchCorrector,
 } from "./text-index";
 import {
+  isIndexableSearchToken,
   matchSearchEntry,
   parseSearchQuery,
   searchQueryMatches,
@@ -193,5 +194,41 @@ describe("trigram narrowing", () => {
 
   it("says so when nothing can match", () => {
     expect(queryTextSearchIndex(index, parseSearchQuery("naquadah"))).toEqual([]);
+  });
+});
+
+describe("Chinese, which is written without spaces", () => {
+  // Iron Ingot, reached by its Chinese name while the index also carries the
+  // English one: the same entry, whichever language the reader types.
+  const IRON_INGOT = {
+    nameText: "iron ingot",
+    nameTextAlt: "铁锭",
+    name: [...splitSearchTokens("Iron Ingot"), ...splitSearchTokens("铁锭")],
+    id: splitSearchTokens("gregtech:gt.metaitem.01@11305"),
+  };
+
+  it("cuts a Chinese word into single characters", () => {
+    expect(splitSearchTokens("铁锭")).toEqual(["铁", "锭"]);
+  });
+
+  it("treats one Chinese character as a word the index can keep", () => {
+    expect(isIndexableSearchToken("铁")).toBe(true);
+    // A two-letter latin word still cannot narrow, and says so.
+    expect(isIndexableSearchToken("ok")).toBe(false);
+  });
+
+  it("finds the item by its Chinese name", () => {
+    expect(matchSearchEntry(parseSearchQuery("铁锭"), IRON_INGOT)).toBeGreaterThan(0);
+  });
+
+  it("puts the whole Chinese name above one character of it", () => {
+    const phrase = matchSearchEntry(parseSearchQuery("铁锭"), IRON_INGOT) ?? 0;
+    const single = matchSearchEntry(parseSearchQuery("铁"), IRON_INGOT) ?? 0;
+    expect(phrase).toBeGreaterThan(single);
+  });
+
+  it("narrows on a Chinese character through the index", () => {
+    const index = buildTextSearchIndex(["铁 锭 iron ingot", "copper ingot"], [0, 1]);
+    expect(queryTextSearchIndex(index, parseSearchQuery("铁锭"))).toEqual([0]);
   });
 });

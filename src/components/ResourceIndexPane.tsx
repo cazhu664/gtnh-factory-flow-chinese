@@ -16,6 +16,7 @@ import { applyRecipeInputOverrides } from "@/lib/model/recipe-input-overrides";
 import {
   buildSearchVocabulary,
   matchSearchEntry,
+  normalizeSearchText,
   parseSearchQuery,
   resolveSearchPhases,
   splitSearchTokens,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/search";
 import { useFactoryStore } from "@/store/factory-store";
 import { useT, type TranslateParams } from "@/lib/i18n";
+import { datasetNameInChinese } from "@/lib/i18n/dataset-names";
 import { POWER_EU_CLAUSE_ID } from "@/lib/power/power-search";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { isEchoOfTouch } from "@/lib/pointer-kind";
@@ -522,7 +524,8 @@ function useResourcePageSize(
     const updatePageSize = () => {
       const { columns: nextColumns, slot } = neiGridFit(container.clientWidth);
       const rows = Math.max(1, Math.floor(container.clientHeight / slot));
-      container.style.setProperty("--nei-cell", `${slot}px`);
+      // On the column, not this scroll box: the recent shelf beside it is a sibling, so it reads the same slot size.
+      (container.closest<HTMLElement>(".nei") ?? container).style.setProperty("--nei-cell", `${slot}px`);
       const nextPageSize = nextColumns * rows;
 
       setPageSize((current) => (current === nextPageSize ? current : nextPageSize));
@@ -639,11 +642,18 @@ function useBoardResourceResults(
       return { resources: [], total: 0, mods: [], outcome: EXACT_SEARCH };
     }
 
-    const fields = resources.map((resource) => ({
-      nameText: (resource.displayName ?? resource.id).toLowerCase(),
-      name: splitSearchTokens(resource.displayName ?? ""),
-      id: splitSearchTokens(resource.id),
-    }));
+    const fields = resources.map((resource) => {
+      const chineseName = datasetNameInChinese(resource.displayName);
+      return {
+        nameText: (resource.displayName ?? resource.id).toLowerCase(),
+        nameTextAlt: chineseName ? normalizeSearchText(chineseName) : undefined,
+        name: [
+          ...splitSearchTokens(resource.displayName ?? ""),
+          ...(chineseName ? splitSearchTokens(chineseName) : []),
+        ],
+        id: splitSearchTokens(resource.id),
+      };
+    });
     const vocabulary = buildSearchVocabulary(
       resources.map((resource) => resource.displayName ?? ""),
     );

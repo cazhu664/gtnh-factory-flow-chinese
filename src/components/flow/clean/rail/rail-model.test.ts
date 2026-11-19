@@ -1,12 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   mockForced,
   mockLeftovers,
   mockUnneeded,
 } from "@/lib/solver/plan/__fixtures__/mock-extras";
+import { setLocale } from "@/lib/i18n/core";
 import { layoutRail, spareHeight, visibleSlice, SECTION_H, ROW_H } from "./rail-layout";
 import { buildRailModel, visibleLines } from "./rail-model";
 import { buildSpares, cardDepths, effectiveShares, sparedByResource } from "./spare-model";
+
+afterEach(() => setLocale("en"));
 
 const model = (mock: typeof mockForced) => buildRailModel(mock.project, mock.result);
 
@@ -241,6 +244,15 @@ describe("the rail's layout", () => {
       .map((p) => (p.item as { line: { label: string } }).line.label);
     expect(names.every((n) => n.toLowerCase().includes("tin"))).toBe(true);
     expect(names.length).toBeGreaterThan(0);
+  });
+
+  it("filters by the Chinese name a player can see", () => {
+    setLocale("zh");
+    const { placed } = layoutRail({ rail, spares, filter: "铜粉", folded: new Set(), peak: true });
+    const names = placed
+      .filter((p) => p.item.t === "line")
+      .map((p) => (p.item as { line: { label: string } }).line.label);
+    expect(names).toContain("Copper Dust");
   });
 
   it("says so when nothing matches or nothing is there", () => {

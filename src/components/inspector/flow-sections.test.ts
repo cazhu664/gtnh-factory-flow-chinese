@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { ResourceBalance } from "@/lib/model/types";
+import { setLocale } from "@/lib/i18n/core";
 import {
   applyNetFlow,
   applyResourceMarks,
@@ -12,6 +13,8 @@ import {
   type FlowSectionId,
   type ResourceMarks,
 } from "./flow-sections";
+
+afterEach(() => setLocale("en"));
 
 const HEIGHTS = { header: 30, item: 48, empty: 38, chart: 60 };
 
@@ -258,6 +261,18 @@ describe("filterFlowBalances", () => {
 
   it("returns nothing when there is no match", () => {
     expect(filterFlowBalances(items, "titanium")).toEqual([]);
+  });
+
+  it("matches the Chinese name a player can see, keeping the English one working", () => {
+    // The row prints `resourceLabel`, so in 中文 the typed Chinese name has to
+    // find it, and an English name still has to as well.
+    setLocale("zh");
+    const ingots = [
+      makeBalance({ key: "item:iron_ingot", resourceId: "iron_ingot", displayName: "Iron Ingot" }),
+    ];
+    expect(filterFlowBalances(ingots, "铁锭")).toEqual(ingots);
+    expect(filterFlowBalances(ingots, "iron")).toEqual(ingots);
+    expect(filterFlowBalances(ingots, "铜")).toEqual([]);
   });
 });
 

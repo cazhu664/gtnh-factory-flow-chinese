@@ -8,6 +8,7 @@ import {
 } from "./rail-model";
 import { sparedByResource, type SpareView } from "./spare-model";
 import { t } from "@/lib/i18n";
+import { datasetNameLabel } from "@/lib/i18n/dataset-names";
 
 /**
  * The rail's list as a flat run of items with their tops and heights. Pure,
@@ -61,7 +62,15 @@ export interface LayoutInput {
 
 const matches = (filter: string, label: string) => {
   const f = filter.trim().toLowerCase();
-  return f === "" || label.toLowerCase().includes(f);
+  if (f === "") {
+    return true;
+  }
+  if (label.toLowerCase().includes(f)) {
+    return true;
+  }
+  // The row's tooltip shows the name in the reader's language, so in 中文 the
+  // Chinese name a player types has to find the row.
+  return (datasetNameLabel(label) ?? "").toLowerCase().includes(f);
 };
 
 export function spareHeight(spare: SpareView): number {

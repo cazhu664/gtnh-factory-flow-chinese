@@ -1,3 +1,4 @@
+import { datasetNameLabel } from "@/lib/i18n/dataset-names";
 import { makeResourceKey } from "@/lib/model/resources";
 import type { FactoryProject, FactoryStorage, ResourceBalance } from "@/lib/model/types";
 
@@ -96,16 +97,19 @@ export function filterFlowBalances(items: ResourceBalance[], filter: string) {
     return items;
   }
 
-  return items.filter((balance) => {
-    if (balance.displayName && balance.displayName.toLowerCase().includes(normalized)) {
-      return true;
-    }
+  // The row shows `resourceLabel` (the dataset name in the reader's language),
+  // so in 中文 a player typing the Chinese name they can see has to find it.
+  const matchesName = (name: string | undefined) =>
+    Boolean(name) &&
+    (name!.toLowerCase().includes(normalized) ||
+      (datasetNameLabel(name) ?? "").toLowerCase().includes(normalized));
 
-    return (
+  return items.filter(
+    (balance) =>
+      matchesName(balance.displayName) ||
       balance.resourceId.toLowerCase().includes(normalized) ||
-      balance.key.toLowerCase().includes(normalized)
-    );
-  });
+      balance.key.toLowerCase().includes(normalized),
+  );
 }
 
 export interface ResourceMarks {

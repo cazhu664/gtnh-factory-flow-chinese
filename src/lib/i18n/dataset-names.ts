@@ -29,6 +29,41 @@ export function datasetNameLabel(name: string | undefined): string | undefined {
 }
 
 /**
+ * The Chinese name of a dataset name, or undefined when none is known. Unlike
+ * `datasetNameLabel` this ignores the current language: the search index is
+ * built once and serves every reader, so a Chinese query has to find an item
+ * whatever UI language the browser is in.
+ */
+export function datasetNameInChinese(name: string | undefined): string | undefined {
+  if (!name) {
+    return undefined;
+  }
+  return ZH_DATASET_NAMES[name];
+}
+
+/**
+ * The Chinese names a recipe title ("Plant Ball: Wheat") holds, for search
+ * text: each half looked up on its own, plus the whole title when it is itself
+ * a name. Empty when neither half is known.
+ */
+export function datasetRecipeChineseNames(name: string | undefined): string[] {
+  if (!name) {
+    return [];
+  }
+  const direct = ZH_DATASET_NAMES[name];
+  if (direct) {
+    return [direct];
+  }
+  const at = name.indexOf(": ");
+  if (at <= 0) {
+    return [];
+  }
+  const head = ZH_DATASET_NAMES[name.slice(0, at)];
+  const tail = ZH_DATASET_NAMES[name.slice(at + 2)];
+  return [head, tail].filter((term): term is string => Boolean(term));
+}
+
+/**
  * A recipe title, which the pipeline writes as "<machine>: <product>" ("Crop
  * Farm: Wheat"). Both halves are dataset names, so each is looked up on its
  * own; the title itself is tried first for the names that carry no separator.

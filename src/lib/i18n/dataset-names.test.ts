@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { setLocale } from "./core";
-import { datasetNameLabel, datasetRecipeLabel } from "./dataset-names";
+import { datasetNameInChinese, datasetNameLabel, datasetRecipeChineseNames, datasetRecipeLabel } from "./dataset-names";
 
 afterEach(() => setLocale("en"));
 
@@ -29,5 +29,23 @@ describe("datasetRecipeLabel", () => {
   it("keeps the dataset name when neither half is known", () => {
     setLocale("zh");
     expect(datasetRecipeLabel("Foo: Bar")).toBe("Foo: Bar");
+  });
+});
+
+describe("Chinese names for the search index", () => {
+  it("gives the Chinese name whatever language the reader is in", () => {
+    // The index is built once on the server and serves every reader, so the
+    // Chinese name must never depend on the UI locale.
+    setLocale("en");
+    expect(datasetNameInChinese("Iron Ingot")).toBe("铁锭");
+  });
+
+  it("gives both halves of a machine: product title", () => {
+    expect(datasetRecipeChineseNames("Macerator: Iron Ingot")).toEqual(["研磨机", "铁锭"]);
+  });
+
+  it("gives nothing for a name the map does not know", () => {
+    expect(datasetNameInChinese("Some Untranslated Thing")).toBeUndefined();
+    expect(datasetRecipeChineseNames("Foo: Bar")).toEqual([]);
   });
 });

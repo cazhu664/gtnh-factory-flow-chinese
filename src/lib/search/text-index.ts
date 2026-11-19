@@ -12,6 +12,7 @@ import {
   MIN_INDEXABLE_LENGTH,
   type SearchQuery,
   type SearchTerm,
+  isCjkSearchToken,
   searchQueryIndexableTerms,
   splitSearchTokens,
   withSearchCorrections,
@@ -199,7 +200,9 @@ function unionOrderedIndexes(left: number[], right: number[]): number[] {
 
 export function getTokenTrigrams(token: string): string[] {
   if (token.length < MIN_INDEXABLE_LENGTH) {
-    return [];
+    // A CJK character is a whole word in one code unit, so it indexes as
+    // itself; a 1-2 letter latin word cannot narrow and says so.
+    return isCjkSearchToken(token) ? [token] : [];
   }
 
   const trigrams = new Set<string>();

@@ -43,6 +43,12 @@ export interface SearchQuery {
 export interface SearchEntryFields {
   /** Normalized display name, for whole-phrase bonuses. */
   nameText?: string;
+  /**
+   * The name in the reader's other language (Chinese today), normalized, for
+   * the same whole-phrase bonus the English name gets. The index serves both
+   * languages at once, so an entry carries whichever names it has.
+   */
+  nameTextAlt?: string;
   /** Display name tokens. */
   name?: string[];
   /** Registry id, mod id, ore dictionary group. */
@@ -132,14 +138,28 @@ const RELATED_TERMS: Record<string, string[]> = {
 /** Accents split off by NFKD, so "Créosote" and "Creosote" are one word. */
 const COMBINING_MARKS = new RegExp("[\\u0300-\\u036f]", "g");
 
+/**
+ * A character that is a word on its own: Chinese, Japanese kana and Korean
+ * hangul carry meaning per character and are written without spaces, so a run
+ * of them is cut into single characters rather than left as one token the way
+ * a spaced language would read it.
+ */
+const CJK_CHAR = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/;
+
+/** A latin/digit word or a single CJK character: what a search line is made of. */
+const SEARCH_TOKEN = /[a-z0-9]+|[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/g;
+
 export function normalizeSearchText(value: string): string {
   return value.normalize("NFKD").replace(COMBINING_MARKS, "").trim().toLowerCase();
 }
 
+/** Whether a token is a single CJK character (a whole word in one code unit). */
+export function isCjkSearchToken(token: string): boolean {
+  return CJK_CHAR.test(token);
+}
+
 export function splitSearchTokens(value: string): string[] {
-  return normalizeSearchText(value)
-    .split(/[^a-z0-9]+/i)
-    .filter(Boolean);
+  return normalizeSearchText(value).match(SEARCH_TOKEN) ?? [];
 }
 
 /**
@@ -283,19 +303,27 @@ export function matchSearchEntry(
   }
 
   // The whole line, not the words in it: an exact name beats a name that merely
-  // contains every word somewhere.
-  const name = entry.nameText;
-  if (name && query.text) {
-    if (name === query.text) {
-      score += NAME_EQUALS_BONUS;
-    } else if (name.startsWith(query.text)) {
-      score += NAME_STARTS_BONUS;
-    } else if (name.includes(query.text)) {
-      score += NAME_CONTAINS_BONUS;
-    }
-  }
+  // contains every word somewhere. An entry answers to either language's name.
+  return (
+    score +
+    Math.max(
+      namePhraseBonus(entry.nameText, query.text),
+      namePhraseBonus(entry.nameTextAlt, query.text),
+    )
+  );
+}
 
-  return score;
+function namePhraseBonus(name: string | undefined, text: string): number {
+  if (!name || !text) {
+    return 0;
+  }
+  if (name === text) {
+    return NAME_EQUALS_BONUS;
+  }
+  if (name.startsWith(text)) {
+    return NAME_STARTS_BONUS;
+  }
+  return name.includes(text) ? NAME_CONTAINS_BONUS : 0;
 }
 
 export function searchQueryMatches(query: SearchQuery, entry: SearchEntryFields): boolean {
@@ -373,12 +401,21 @@ function scoreToken(tokens: string[] | undefined, token: string): number {
   return best;
 }
 
+/**
+ * A token the trigram index can narrow on. A latin word needs three letters to
+ * have a trigram; a CJK character is a whole word in one code unit, so it
+ * indexes as itself and a Chinese search still narrows.
+ */
+export function isIndexableSearchToken(token: string): boolean {
+  return token.length >= MIN_INDEXABLE_LENGTH || isCjkSearchToken(token);
+}
+
 /** Every token any variant could need, for trigram narrowing. */
 export function searchQueryIndexableTerms(query: SearchQuery): string[][][] {
   const terms: string[][][] = [];
   for (const term of query.terms) {
     const variants = term.variants.filter((variant) =>
-      variant.tokens.every((token) => token.length >= MIN_INDEXABLE_LENGTH),
+      variant.tokens.every(isIndexableSearchToken),
     );
     // One variant too short to index means this word could match anything, so
     // it cannot narrow the candidate set for the others.

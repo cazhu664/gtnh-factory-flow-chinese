@@ -151,16 +151,21 @@
   line-height: 14px;
 }
 
-/* The recent shelf: one row of the same slots under a hairline. */
+/* The recent shelf: one row of the list's own slots under a hairline. The newest is leftmost; as the list does, the
+   row lines up with the grid's 6 px side margins and is cut off where the column ends (no centring, which would clip
+   both ends). Its height is its slot's, so the hairline and the gap above do not eat into it. */
 .nei-recent {
   display: flex;
   flex: none;
-  justify-content: center;
+  justify-content: flex-start;
   overflow: hidden;
-  height: var(--nei-slot);
   margin: 2px 0 4px;
-  padding-top: 2px;
+  padding: 2px 6px 0;
   border-top: 1px solid #34363c;
+}
+/* The shelf's slots keep the grid's size: without this they shrink to the art's width. */
+.nei-recent .nei-slot {
+  flex: none;
 }
 
 /* The search field: Minecraft's text field (a #A0A0A0 frame on black), NEI's size. */

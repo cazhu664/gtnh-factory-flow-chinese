@@ -48,6 +48,7 @@ import {
   buildTokenSearchIndex,
   matchSearchEntry,
   matchSearchTokens,
+  normalizeSearchText,
   parseSearchQuery,
   queryTextSearchIndex,
   resolveSearchPhases,
@@ -58,6 +59,7 @@ import {
   type SearchVocabulary,
   type TextSearchIndex,
 } from "@/lib/search";
+import { datasetNameInChinese, datasetRecipeChineseNames } from "@/lib/i18n/dataset-names";
 
 type TierFilter = "all" | Exclude<MachineTier, "DEMO">;
 type SearchableResource = Pick<
@@ -1605,7 +1607,7 @@ async function getRecipeSearchIndex(
   lookup: LoadedRecipeLookupIndex,
 ): Promise<{ index: TextSearchIndex; entryCount: number }> {
   if (lookup.searchText.length) {
-    return { index: ensureLookupSearchIndex(lookup), entryCount: lookup.recipeCount };
+    return { index: ensureLookupSearchIndex(catalog, lookup), entryCount: lookup.recipeCount };
   }
 
   const recipeCatalog = catalog.recipes ? catalog : await loadRecipeIndex(catalog.version.id);
@@ -1676,7 +1678,7 @@ async function prewarmDatasetVersionOnce(
 
   if (catalog.version.recipeLookupIndexPath) {
     const lookup = await loadRecipeLookupIndex(catalog.version);
-    ensureLookupSearchIndex(lookup);
+    ensureLookupSearchIndex(catalog, lookup);
   } else {
     const recipeCatalog = await loadRecipeIndex(versionId);
     ensureIndexes(recipeCatalog);
@@ -2159,12 +2161,76 @@ async function getPassiveSourceResourceKeys(
   return keys;
 }
 
-function ensureLookupSearchIndex(lookup: LoadedRecipeLookupIndex): TextSearchIndex {
-  lookup.searchIndex ??= buildTextSearchIndex(
-    lookup.searchText,
-    lookup.searchText.map((_, index) => index),
+function ensureLookupSearchIndex(
+  catalog: LoadedRecipeIndex,
+  lookup: LoadedRecipeLookupIndex,
+): TextSearchIndex {
+  if (lookup.searchIndex) {
+    return lookup.searchIndex;
+  }
+  const chineseText = buildLookupChineseSearchText(catalog, lookup);
+  const tokensByEntry: string[][] = [];
+  for (let index = 0; index < lookup.recipeCount; index += 1) {
+    tokensByEntry[index] = [
+      ...new Set([
+        ...splitSearchTokens(lookup.searchText[index] ?? ""),
+        ...splitSearchTokens(chineseText[index] ?? ""),
+      ]),
+    ];
+  }
+  lookup.searchIndex = buildTokenSearchIndex(
+    tokensByEntry,
+    Array.from({ length: lookup.recipeCount }, (_unused, index) => index),
   );
   return lookup.searchIndex;
+}
+
+/**
+ * The Chinese words each recipe is reachable by, in lookup-index order: the
+ * Chinese names of its inputs and outputs, and the Chinese name of its recipe
+ * map. The published lookup index carries English search text only, so this is
+ * built on the side the first time a typed query needs it, and kept with the
+ * index. Empty when the dataset ships no Chinese names.
+ */
+function buildLookupChineseSearchText(
+  catalog: LoadedRecipeIndex,
+  lookup: LoadedRecipeLookupIndex,
+): string[] {
+  const resourcesByKey = getCatalogResourcesByKey(catalog);
+  const chineseByResourceKey = new Map<string, string>();
+  const chineseByMapId = lookup.recipeMaps.map((recipeMap) => datasetNameInChinese(recipeMap) ?? "");
+  const text: string[] = [];
+  const append = (recipeIndex: number, term: string) => {
+    if (!term) {
+      return;
+    }
+    const existing = text[recipeIndex];
+    text[recipeIndex] = existing ? `${existing} ${term}` : term;
+  };
+
+  for (const [key, recipesByMap] of lookup.entries) {
+    const at = key.indexOf(":");
+    const resourceKey = at < 0 ? "" : key.slice(at + 1);
+    let chinese = chineseByResourceKey.get(resourceKey);
+    if (chinese === undefined) {
+      chinese = datasetNameInChinese(resourcesByKey.get(resourceKey)?.displayName) ?? "";
+      chineseByResourceKey.set(resourceKey, chinese);
+    }
+    if (!chinese) {
+      continue;
+    }
+    for (const recipeIndexes of recipesByMap.values()) {
+      for (const recipeIndex of recipeIndexes) {
+        append(recipeIndex, chinese);
+      }
+    }
+  }
+
+  for (let recipeIndex = 0; recipeIndex < lookup.recipeCount; recipeIndex += 1) {
+    const mapId = lookup.recipeMapIdsByRecipeIndex[recipeIndex] ?? -1;
+    append(recipeIndex, chineseByMapId[mapId] ?? "");
+  }
+  return text;
 }
 
 async function getRecipeSummariesByIndexMap(
@@ -2721,8 +2787,15 @@ function ensureIndexes(catalog: LoadedRecipeIndex): QueryIndexes {
     recipeMapSet.add(recipeMap);
     tierIndexes[recipeIndex] =
       catalog.recipeTierIndexes?.[recipeIndex] ?? getTierIndex(getRecipeTier(recipe));
-    searchText[recipeIndex] =
-      catalog.recipeSearchText?.[recipeIndex] ?? buildRecipeSearchText(recipe, resourcesByKey);
+    // The published English search text is kept as it is and the Chinese words
+    // are appended: the index serves both languages, and a Chinese-only reader
+    // finds a recipe by what its inputs and outputs are called in 中文.
+    searchText[recipeIndex] = [
+      catalog.recipeSearchText?.[recipeIndex] ?? buildRecipeSearchText(recipe, resourcesByKey),
+      buildRecipeChineseSearchText(recipe, resourcesByKey),
+    ]
+      .filter(Boolean)
+      .join(" ");
     iconScores[recipeIndex] =
       catalog.recipeIconScores?.[recipeIndex] ?? recipeIconScore(recipe, resourcesByKey);
     for (const output of recipe.outputs ?? []) {
@@ -2827,9 +2900,14 @@ function ensureResourceIndexes(catalog: LoadedRecipeIndex): ResourceQueryIndexes
 }
 
 function resourceSearchFields(resource: DatasetResourceIndexEntry): SearchEntryFields {
+  const chineseName = datasetNameInChinese(resource.displayName ?? resource.id);
   return {
     nameText: normalizeText(resource.displayName ?? resource.id),
-    name: splitSearchTokens(resource.displayName ?? ""),
+    nameTextAlt: chineseName ? normalizeSearchText(chineseName) : undefined,
+    name: [
+      ...splitSearchTokens(resource.displayName ?? ""),
+      ...(chineseName ? splitSearchTokens(chineseName) : []),
+    ],
     id: splitSearchTokens(`${resource.id} ${(resource.oreDictionary ?? []).join(" ")}`),
     text: splitSearchTokens((resource.tooltip ?? []).join(" ")),
   };
@@ -2898,6 +2976,35 @@ function resourceSearchTerms(
     ...(resource.tooltip ?? []),
     ...(indexed?.tooltip ?? []),
   ].filter((term): term is string => Boolean(term));
+}
+
+/**
+ * The Chinese half of a recipe's search text: the Chinese reading of its
+ * title, its recipe map and every input and output. Empty strings are dropped,
+ * so a dataset with no Chinese names simply adds nothing.
+ */
+function buildRecipeChineseSearchText(
+  recipe: RecipeSummary,
+  resourcesByKey?: Map<string, DatasetResource | DatasetResourceIndexEntry>,
+): string {
+  return [
+    ...datasetRecipeChineseNames(recipe.name),
+    datasetNameInChinese(recipe.recipeMap),
+    ...(recipe.inputs ?? []).flatMap((input) => resourceChineseNames(input, resourcesByKey)),
+    ...(recipe.outputs ?? []).flatMap((output) => resourceChineseNames(output, resourcesByKey)),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function resourceChineseNames(
+  resource: SearchableResource,
+  resourcesByKey?: Map<string, DatasetResource | DatasetResourceIndexEntry>,
+): string[] {
+  const indexed = resourcesByKey?.get(`${resource.kind}:${resource.id}`);
+  return [datasetNameInChinese(resource.displayName), datasetNameInChinese(indexed?.displayName)].filter(
+    (term): term is string => Boolean(term),
+  );
 }
 
 

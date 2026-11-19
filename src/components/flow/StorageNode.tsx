@@ -42,6 +42,7 @@ import { getCategoryPresentation } from "@/lib/model/category-presentation";
 import { STORAGE_NODE_WIDTH, STORAGE_NODE_HEIGHT } from "@/lib/board-grid";
 import { resourceLabel } from "@/lib/model/resources";
 import { useT } from "@/lib/i18n";
+import { datasetNameLabel } from "@/lib/i18n/dataset-names";
 
 
 export interface StorageNodeData extends Record<string, unknown> {
@@ -1231,9 +1232,14 @@ function storageMatchesSearch(storage: FactoryStorage, query: string) {
     return false;
   }
 
-  return `${storage.displayName ?? ""} ${storage.resourceId}`
-    .toLowerCase()
-    .includes(normalizedQuery);
+  // The card prints `resourceLabel` (the name in the reader's language), so in
+  // 中文 the Chinese name a player types has to light the drawer.
+  return (
+    storage.resourceId.toLowerCase().includes(normalizedQuery) ||
+    Boolean(storage.displayName) &&
+      ((storage.displayName ?? "").toLowerCase().includes(normalizedQuery) ||
+        (datasetNameLabel(storage.displayName) ?? "").toLowerCase().includes(normalizedQuery))
+  );
 }
 
 function formatCompactRate(value: number, kind: string): string {
